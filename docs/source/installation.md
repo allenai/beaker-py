@@ -1,23 +1,23 @@
 Installation
 ============
 
-**my_package** supports Python >= 3.6.
+**beaker-py** supports Python >= 3.7.
 
 ## Installing with `pip`
 
-**my_package** is available [on PyPI](https://pypi.org/project/my_package/). Just run
+**beaker-py** is available [on PyPI](https://pypi.org/project/beaker-py/). Just run
 
 ```bash
-pip install my_package
+pip install beaker-py
 ```
 
 ## Installing from source
 
-To install **my_package** from source, first clone [the repository](https://github.com/allenai/my_package):
+To install **beaker-py** from source, first clone [the repository](https://github.com/allenai/beaker-py):
 
 ```bash
-git clone https://github.com/allenai/my_package.git
-cd my_package
+git clone https://github.com/allenai/beaker-py.git
+cd beaker-py
 ```
 
 Then run

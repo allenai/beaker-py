@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from my_package.version import VERSION
+from beaker.version import VERSION
 
 
 def main():
@@ -16,7 +16,7 @@ def main():
             lines.insert(i + 1, "\n")
             lines.insert(
                 i + 2,
-                f"## [v{VERSION}](https://github.com/allenai/my_package/releases/tag/v{VERSION}) - "
+                f"## [v{VERSION}](https://github.com/allenai/beaker-py/releases/tag/v{VERSION}) - "
                 f"{datetime.now().strftime('%Y-%m-%d')}\n",
             )
             break
