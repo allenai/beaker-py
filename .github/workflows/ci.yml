@@ -19,6 +19,7 @@ env:
   CACHE_PREFIX: v0
   PYTHON_PATH: ./
   DEFAULT_PYTHON: 3.8
+  BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
 
 jobs:
   checks:
