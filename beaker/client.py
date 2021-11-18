@@ -8,6 +8,10 @@ from tqdm import tqdm
 
 
 class Beaker:
+    """
+    A client for interacting with `Beaker <https://beaker.org>`_.
+    """
+
     RECOVERABLE_SERVER_ERROR_CODES = (502, 503, 504)
     MAX_RETRIES = 5
     API_VERSION = "v3"
@@ -46,15 +50,27 @@ class Beaker:
             return response
 
     def whoami(self) -> Dict[str, Any]:
+        """
+        Check who you are authenticated as.
+        """
         return self.request("user").json()
 
     def experiment(self, exp_id: str) -> Dict[str, Any]:
+        """
+        Get info about an experiment.
+        """
         return self.request(f"experiments/{exp_id}").json()
 
     def dataset(self, dataset_id: str) -> Dict[str, Any]:
+        """
+        Get info about a dataset.
+        """
         return self.request(f"datasets/{dataset_id}").json()
 
     def logs(self, job_id: str) -> Generator[bytes, None, None]:
+        """
+        Download the logs for a job.
+        """
         response = self.request(f"jobs/{job_id}/logs")
         content_length = response.headers.get("Content-Length")
         total = int(content_length) if content_length is not None else None
@@ -69,6 +85,9 @@ class Beaker:
     def logs_for_experiment(
         self, exp_id: str, job_id: Optional[str] = None
     ) -> Generator[bytes, None, None]:
+        """
+        Download the logs for an experiment.
+        """
         exp = self.experiment(exp_id)
         if job_id is None:
             if len(exp["jobs"]) > 1:
