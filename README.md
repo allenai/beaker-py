@@ -1,3 +1,3 @@
 # beaker-py
 
-A Python Beaker client.
+A [Beaker](https://beaker.org) client for Python.
