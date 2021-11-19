@@ -6,8 +6,6 @@
 **beaker-py**
 ===============
 
-.. automodule:: beaker
-
 Contents
 --------
 
@@ -16,7 +14,7 @@ Contents
    :caption: Getting started:
 
    installation
-   overview
+   quickstart
    api
    CHANGELOG
 
