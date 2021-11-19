@@ -37,3 +37,6 @@ sphinx-copybutton==0.4.0
 
 # Live rebuilding and reloading of docs for developing locally.
 sphinx-autobuild==2021.3.14
+
+# Generating cute names for test fixtures.
+petname==2.6

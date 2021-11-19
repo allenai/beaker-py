@@ -1,14 +1,14 @@
 import json
 import urllib.parse
+from collections import OrderedDict
 from contextlib import contextmanager
 from typing import Any, Dict, Generator, Optional
 
+import docker
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from tqdm import tqdm
-
-from .util import run_cmd, stream_cmd
 
 
 class Beaker:
@@ -20,12 +20,14 @@ class Beaker:
     MAX_RETRIES = 5
     API_VERSION = "v3"
 
-    def __init__(self, token: str):
+    def __init__(self, token: str, workspace: Optional[str] = None):
         self.base_url = f"https://beaker.org/api/{self.API_VERSION}"
         self.token = token
+        self.docker = docker.from_env()
+        self.workspace = workspace
 
     @classmethod
-    def from_env(cls) -> "Beaker":
+    def from_env(cls, **kwargs) -> "Beaker":
         """
         Initialize client from environment variables. Expects the beaker auth token
         to be set as the ``BEAKER_TOKEN`` environment variable.
@@ -33,7 +35,7 @@ class Beaker:
         import os
 
         token = os.environ["BEAKER_TOKEN"]
-        return cls(token)
+        return cls(token, **kwargs)
 
     @contextmanager
     def _session_with_backoff(self) -> requests.Session:
@@ -117,30 +119,56 @@ class Beaker:
         return self.logs(job_id)
 
     def create_image(
-        self, name: str, workspace: str, image_tag: str, image_digest: str
+        self, name: str, image_tag: str, workspace: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Upload a Docker image to Beaker.
         """
+        workspace = workspace or self.workspace
+
+        # Get local Docker image object.
+        image = self.docker.images.get(image_tag)
+
+        # Create new image on Beaker.
         image_data = self.request(
             "images",
             method="POST",
-            data={"Workspace": workspace, "ImageID": image_digest, "ImageTag": image_tag},
+            data={"Workspace": workspace, "ImageID": image.id, "ImageTag": image_tag},
             query={"name": name},
         ).json()
 
+        # Get the repo data for the Beaker image.
         repo_data = self.request(
             f"images/{image_data['id']}/repository", query={"upload": True}
         ).json()
         auth = repo_data["auth"]
 
-        run_cmd(f"docker tag {image_tag} {repo_data['imageTag']}")
-        run_cmd(f"docker login -u {auth['user']} -p {auth['password']} {auth['server_address']}")
+        # Tag the local image with the new tag for the Beaker image.
+        image.tag(repo_data["imageTag"])
 
-        for line in stream_cmd(f"docker push {repo_data['imageTag']}"):
-            print(line)
+        # Push the image to Beaker.
+        with tqdm(
+            self.docker.api.push(
+                repo_data["imageTag"],
+                stream=True,
+                decode=True,
+                auth_config={
+                    "username": auth["user"],
+                    "password": auth["password"],
+                    "server_address": auth["server_address"],
+                },
+            ),
+            desc="Pushing image",
+            bar_format="{desc}: {elapsed}{postfix}",
+        ) as pbar:
+            for line in pbar:
+                if "id" in line:
+                    pbar.set_postfix(OrderedDict([("id", line["id"]), ("status", line["status"])]))
 
+        # Commit changes to Beaker.
         self.request(f"images/{image_data['id']}", method="PATCH", data={"Commit": True})
+
+        # Return info about the Beaker image.
         return self.request(f"images/{image_data['id']}").json()
 
     def delete_image(self, image_id: str):
