@@ -1,3 +1,5 @@
+import json
+import urllib.parse
 from contextlib import contextmanager
 from typing import Any, Dict, Generator, Optional
 
@@ -5,6 +7,8 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from tqdm import tqdm
+
+from .util import run_cmd, stream_cmd
 
 
 class Beaker:
@@ -42,10 +46,25 @@ class Beaker:
         session.mount(self.base_url, HTTPAdapter(max_retries=retries))
         yield session
 
-    def request(self, resource: str) -> requests.Response:
+    def request(
+        self,
+        resource: str,
+        method: str = "GET",
+        query: Optional[Dict[str, Any]] = None,
+        data: Optional[Dict[str, Any]] = None,
+    ) -> requests.Response:
         with self._session_with_backoff() as session:
             url = f"{self.base_url}/{resource}"
-            response = session.get(url, headers={"Authorization": f"Bearer {self.token}"})
+            if query is not None:
+                url = url + "?" + urllib.parse.urlencode(query)
+            response = getattr(session, method.lower())(
+                url,
+                headers={
+                    "Authorization": f"Bearer {self.token}",
+                    "Content-Type": "application/json",
+                },
+                data=None if data is None else json.dumps(data),
+            )
             response.raise_for_status()
             return response
 
@@ -96,3 +115,33 @@ class Beaker:
                 )
             job_id = exp["jobs"][0]["id"]
         return self.logs(job_id)
+
+    def create_image(
+        self, name: str, workspace: str, image_tag: str, image_digest: str
+    ) -> Dict[str, Any]:
+        """
+        Upload a Docker image to Beaker.
+        """
+        image_data = self.request(
+            "images",
+            method="POST",
+            data={"Workspace": workspace, "ImageID": image_digest, "ImageTag": image_tag},
+            query={"name": name},
+        ).json()
+
+        repo_data = self.request(
+            f"images/{image_data['id']}/repository", query={"upload": True}
+        ).json()
+        auth = repo_data["auth"]
+
+        run_cmd(f"docker tag {image_tag} {repo_data['imageTag']}")
+        run_cmd(f"docker login -u {auth['user']} -p {auth['password']} {auth['server_address']}")
+
+        for line in stream_cmd(f"docker push {repo_data['imageTag']}"):
+            print(line)
+
+        self.request(f"images/{image_data['id']}", method="PATCH", data={"Commit": True})
+        return self.request(f"images/{image_data['id']}").json()
+
+    def delete_image(self, image_id: str):
+        self.request(f"images/{image_id}", method="DELETE")
