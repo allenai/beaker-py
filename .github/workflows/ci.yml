@@ -92,11 +92,13 @@ jobs:
 
       - name: Install editable (cache hit)
         if: steps.virtualenv-cache.outputs.cache-hit == 'true'
+        shell: bash
         run: |
           . .venv/bin/activate
           pip install --no-deps -e .[dev]
 
       - name: Show environment info
+        shell: bash
         run: |
           . .venv/bin/activate
           which python
@@ -104,6 +106,7 @@ jobs:
           pip freeze
 
       - name: ${{ matrix.task.name }}
+        shell: bash
         run: |
           . .venv/bin/activate
           ${{ matrix.task.run }}
@@ -117,6 +120,7 @@ jobs:
 
       - name: Clean up
         if: always()
+        shell: bash
         run: |
           . .venv/bin/activate
           pip uninstall -y beaker
