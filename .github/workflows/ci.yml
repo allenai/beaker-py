@@ -23,7 +23,7 @@ env:
 
 jobs:
   checks:
-    name: python ${{ matrix.python }} - ${{ matrix.task.name }}
+    name: ${{ matrix.os }} - py ${{ matrix.python }} - ${{ matrix.task.name }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
