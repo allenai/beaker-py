@@ -123,7 +123,7 @@ jobs:
         shell: bash
         run: |
           . .venv/bin/activate
-          pip uninstall -y beaker
+          pip uninstall -y beaker-py
 
   release:
     name: Release
