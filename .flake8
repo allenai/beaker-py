@@ -7,6 +7,10 @@ ignore =
     E203
     # line break before binary operator
     W503
+    # star import
+    F403
+    # import may be defined in a star import
+    F405
 
 exclude =
     .venv

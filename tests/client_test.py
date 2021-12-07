@@ -5,11 +5,14 @@ import petname
 import pytest
 
 from beaker.client import Beaker
+from beaker.config import Config
 
 
 @pytest.fixture(scope="module")
 def client():
-    return Beaker.from_env(workspace="ai2/beaker-py")
+    config = Config.from_env()
+    config.default_workspace = "ai2/beaker-py"
+    return Beaker(config)
 
 
 @pytest.fixture(scope="module")
@@ -27,5 +30,4 @@ def test_images(client, docker_client):
     beaker_image_name = petname.generate() + "-" + str(random.randint(0, 99))
     push_result = client.create_image(beaker_image_name, "hello-world")
     assert push_result["originalTag"] == "hello-world"
-
     client.delete_image(push_result["id"])

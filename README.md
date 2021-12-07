@@ -41,15 +41,14 @@ pip install -e .
 Create a Beaker client with your Beaker [user token](https://beaker.org/user):
 
 ```python
-from beaker import Beaker
+from beaker import Beaker, Config
 
-beaker = Beaker("my beaker token", workspace="my_org/my_workspace")
+beaker = Beaker(Config(user_token="my beaker token", workspace="my_org/my_workspace"))
 ```
 
-You can also create your client from environment variables with:
+You can also create your client from a beaker config file or environment variables with:
 
 ```python
-# Assumes your user token is set as the environment variable `BEAKER_TOKEN`.
 beaker = Beaker.from_env()
 ```
 
