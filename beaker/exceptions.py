@@ -1,4 +1,6 @@
-from requests.exceptions import HTTPError  # re-imported here for convenience
+from requests.exceptions import (  # noqa: F401, re-imported here for convenience
+    HTTPError,
+)
 
 
 class BeakerError(Exception):
