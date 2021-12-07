@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added many new methods.
+- Added `beaker.exceptions` module.
+
+### Changed
+
+- Several breaking changes to `Beaker` method names.
+
 ## [v0.1.0](https://github.com/allenai/beaker-py/releases/tag/v0.1.0) - 2021-11-19
 
 ### Added
