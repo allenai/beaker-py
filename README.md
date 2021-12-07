@@ -43,7 +43,7 @@ Create a Beaker client with your Beaker [user token](https://beaker.org/user):
 ```python
 from beaker import Beaker, Config
 
-beaker = Beaker(Config(user_token="my beaker token", workspace="my_org/my_workspace"))
+beaker = Beaker(Config(user_token="my beaker token", default_workspace="my_org/my_workspace"))
 ```
 
 You can also create your client from a beaker config file or environment variables with:
