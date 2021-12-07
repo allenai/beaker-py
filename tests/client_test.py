@@ -27,5 +27,4 @@ def test_images(client, docker_client):
     beaker_image_name = petname.generate() + "-" + str(random.randint(0, 99))
     push_result = client.create_image(beaker_image_name, "hello-world")
     assert push_result["originalTag"] == "hello-world"
-
     client.delete_image(push_result["id"])
