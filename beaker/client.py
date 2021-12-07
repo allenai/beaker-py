@@ -10,6 +10,7 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from tqdm import tqdm
 
+from .config import Config
 from .exceptions import *
 
 __all__ = ["Beaker"]
@@ -24,11 +25,10 @@ class Beaker:
     MAX_RETRIES = 5
     API_VERSION = "v3"
 
-    def __init__(self, token: str, workspace: Optional[str] = None):
-        self.base_url = f"https://beaker.org/api/{self.API_VERSION}"
-        self.token = token
+    def __init__(self, config: Config):
+        self.config = config
+        self.base_url = f"{self.config.agent_address}/api/{self.API_VERSION}"
         self.docker = docker.from_env()
-        self.workspace = workspace
 
     @property
     def user(self) -> str:
@@ -43,10 +43,7 @@ class Beaker:
         Initialize client from environment variables. Expects the beaker auth token
         to be set as the ``BEAKER_TOKEN`` environment variable.
         """
-        import os
-
-        token = os.environ["BEAKER_TOKEN"]
-        return cls(token, **kwargs)
+        return cls(Config.from_env())
 
     @contextmanager
     def _session_with_backoff(self) -> requests.Session:
@@ -74,7 +71,7 @@ class Beaker:
             response = getattr(session, method.lower())(
                 url,
                 headers={
-                    "Authorization": f"Bearer {self.token}",
+                    "Authorization": f"Bearer {self.config.user_token}",
                     "Content-Type": "application/json",
                 },
                 data=None if data is None else json.dumps(data),
@@ -100,7 +97,7 @@ class Beaker:
         HTTPError
 
         """
-        workspace_name = workspace or self.workspace
+        workspace_name = workspace or self.config.default_workspace
         if workspace_name is None:
             raise ValueError("'workspace' argument required")
         return self.request(
@@ -134,7 +131,7 @@ class Beaker:
         HTTPError
 
         """
-        workspace_name = workspace or self.workspace
+        workspace_name = workspace or self.config.default_workspace
         if workspace_name is None:
             raise ValueError("'workspace' argument required")
         return self.request(
@@ -229,7 +226,7 @@ class Beaker:
         HTTPError
 
         """
-        workspace = workspace or self.workspace
+        workspace = workspace or self.config.default_workspace
 
         # Get local Docker image object.
         image = self.docker.images.get(image_tag)

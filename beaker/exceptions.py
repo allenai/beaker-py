@@ -10,6 +10,10 @@ class BeakerError(Exception):
     """
 
 
+class ConfigurationError(BeakerError):
+    pass
+
+
 class ImageNotFound(BeakerError):
     pass
 
