@@ -189,6 +189,8 @@ class Beaker:
         ------
         ExperimentNotFound
         JobNotFound
+        HTTPError
+
         """
         exp = self.get_experiment(exp_id)
         if job_id is None:
