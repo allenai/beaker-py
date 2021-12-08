@@ -105,6 +105,16 @@ class Beaker:
             exceptions_for_status={404: WorkspaceNotFound(workspace_name)},
         ).json()
 
+    def ensure_workspace(self, workspace: str):
+        """
+        Ensure the given workspace exists.
+        """
+        try:
+            self.get_workspace(workspace)
+        except WorkspaceNotFound:
+            org, name = workspace.split("/")
+            self.request("workspaces", method="POST", data={"name": name, "org": org})
+
     def get_experiment(self, exp_id: str) -> Dict[str, Any]:
         """
         Get info about an experiment.
@@ -134,6 +144,8 @@ class Beaker:
         workspace_name = workspace or self.config.default_workspace
         if workspace_name is None:
             raise ValueError("'workspace' argument required")
+        # Ensure workspace exists.
+        self.ensure_workspace(workspace_name)
         return self.request(
             f"workspaces/{urllib.parse.quote(workspace_name, safe='')}/experiments",
             method="POST",
@@ -229,6 +241,11 @@ class Beaker:
 
         """
         workspace = workspace or self.config.default_workspace
+        if workspace is None:
+            raise ValueError("'workspace' argument required")
+
+        # Ensure workspace exists.
+        self.ensure_workspace(workspace)
 
         # Get local Docker image object.
         image = self.docker.images.get(image_tag)

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed bug with `Config.save()`.
+- Fixed bug with `create_image()` where it would fail if workspace doesn't exist yet.
 
 ## [v0.2.0](https://github.com/allenai/beaker-py/releases/tag/v0.2.0) - 2021-12-07
 
