@@ -76,11 +76,12 @@ class Config:
         with open(path) as config_file:
             return cls(**yaml.load(config_file, Loader=yaml.SafeLoader))
 
-    def save(self, path: Optional[Path]):
+    def save(self, path: Optional[Path] = None):
         """
         Save the config to the given path.
         """
         path = path or self.DEFAULT_CONFIG_LOCATION
+        path.parent.mkdir(parents=True)
         with open(path, "w") as config_file:
             yaml.dump(asdict(self), config_file)
 
