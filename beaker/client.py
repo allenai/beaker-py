@@ -38,12 +38,11 @@ class Beaker:
         return self.whoami()["name"]
 
     @classmethod
-    def from_env(cls, **kwargs) -> "Beaker":
+    def from_env(cls, **overrides) -> "Beaker":
         """
-        Initialize client from environment variables. Expects the beaker auth token
-        to be set as the ``BEAKER_TOKEN`` environment variable.
+        Initialize client from a config file and/or environment variables.
         """
-        return cls(Config.from_env())
+        return cls(Config.from_env(**overrides))
 
     @contextmanager
     def _session_with_backoff(self) -> requests.Session:
@@ -108,6 +107,13 @@ class Beaker:
     def ensure_workspace(self, workspace: str):
         """
         Ensure the given workspace exists.
+
+        Raises
+        ------
+        HTTPError
+        ValueError
+            If the workspace name is invalid.
+
         """
         try:
             self.get_workspace(workspace)

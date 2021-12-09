@@ -37,7 +37,7 @@ class Config:
     TOKEN_KEY: ClassVar[str] = "BEAKER_TOKEN"
 
     @classmethod
-    def from_env(cls) -> "Config":
+    def from_env(cls, **overrides) -> "Config":
         """
         Initialize a config from environment variables or a local config file if one
         can be found.
@@ -65,6 +65,13 @@ class Config:
         # Override with environment variables.
         if cls.ADDRESS_KEY in os.environ:
             config.agent_address = os.environ[cls.ADDRESS_KEY]
+
+        # Override with any arguments passed to this method.
+        for name, value in overrides.items():
+            if hasattr(config, name):
+                setattr(config, name, value)
+            else:
+                raise AttributeError(f"'{cls.__name__}' has to attribute '{name}'")
 
         return config
 

@@ -5,14 +5,11 @@ import petname
 import pytest
 
 from beaker.client import Beaker
-from beaker.config import Config
 
 
 @pytest.fixture(scope="module")
 def client():
-    config = Config.from_env()
-    config.default_workspace = "ai2/beaker-py"
-    return Beaker(config)
+    return Beaker.from_env(default_workspace="ai2/beaker-py")
 
 
 @pytest.fixture(scope="module")
