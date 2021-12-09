@@ -28,7 +28,7 @@ class Beaker:
     def __init__(self, config: Config):
         self.config = config
         self.base_url = f"{self.config.agent_address}/api/{self.API_VERSION}"
-        self.docker = docker.from_env()
+        self._docker: Optional[docker.DockerClient] = None
 
     @property
     def user(self) -> str:
@@ -43,6 +43,13 @@ class Beaker:
         Initialize client from a config file and/or environment variables.
         """
         return cls(Config.from_env(**overrides))
+
+    @property
+    def docker(self) -> docker.DockerClient:
+        if self._docker is None:
+            self._docker = docker.from_env()
+        assert self._docker is not None
+        return self._docker
 
     @contextmanager
     def _session_with_backoff(self) -> requests.Session:
