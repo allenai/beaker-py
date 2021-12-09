@@ -7,6 +7,13 @@ import yaml
 
 from .exceptions import ConfigurationError
 
+DEFAULT_CONFIG_LOCATION: Optional[Path] = None
+try:
+    DEFAULT_CONFIG_LOCATION = Path.home() / ".beaker" / "config.yml"
+except RuntimeError:
+    # Can't locate home directory.
+    pass
+
 
 @dataclass
 class Config:
@@ -31,7 +38,6 @@ class Config:
     Default Beaker workspace to use.
     """
 
-    DEFAULT_CONFIG_LOCATION: ClassVar[Path] = Path.home() / ".beaker" / "config.yml"
     ADDRESS_KEY: ClassVar[str] = "BEAKER_ADDR"
     CONFIG_PATH_KEY: ClassVar[str] = "BEAKER_CONFIG"
     TOKEN_KEY: ClassVar[str] = "BEAKER_TOKEN"
@@ -87,8 +93,14 @@ class Config:
         """
         Save the config to the given path.
         """
-        path = path or self.DEFAULT_CONFIG_LOCATION
-        path.parent.mkdir(parents=True)
+        if path is None:
+            if self.CONFIG_PATH_KEY in os.environ:
+                path = Path(os.environ[self.CONFIG_PATH_KEY])
+            elif DEFAULT_CONFIG_LOCATION is not None:
+                path = DEFAULT_CONFIG_LOCATION
+        if path is None:
+            raise ValueError("param 'path' is required")
+        path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w") as config_file:
             yaml.dump(asdict(self), config_file)
 
@@ -98,8 +110,7 @@ class Config:
             path = Path(os.environ[cls.CONFIG_PATH_KEY])
             if path.is_file():
                 return path
-
-        if cls.DEFAULT_CONFIG_LOCATION.is_file():
-            return cls.DEFAULT_CONFIG_LOCATION
+        elif DEFAULT_CONFIG_LOCATION is not None and DEFAULT_CONFIG_LOCATION.is_file():
+            return DEFAULT_CONFIG_LOCATION
 
         return None
