@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v0.2.4](https://github.com/allenai/beaker-py/releases/tag/v0.2.4) - 2021-12-09
+
 ### Changed
 
 - Docker Client is initialized lazily so that some functionality of `Beaker` client can be used on systems without Docker.
