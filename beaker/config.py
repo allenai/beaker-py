@@ -63,9 +63,11 @@ class Config:
             config = cls(
                 user_token=os.environ[cls.TOKEN_KEY],
             )
+        elif user_token in overrides:
+            config = cls(user_token=user_token)
         else:
             raise ConfigurationError(
-                f"Missing config file or environment variable '{cls.TOKEN_KEY}'"
+                f"Failed to find config file or environment variable '{cls.TOKEN_KEY}'"
             )
 
         # Override with environment variables.
