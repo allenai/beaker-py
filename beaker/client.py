@@ -2,7 +2,7 @@ import json
 import urllib.parse
 from collections import OrderedDict
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Optional
+from typing import Any, Dict, Generator, List, Optional
 
 import docker
 import requests
@@ -197,7 +197,7 @@ class Beaker:
         content_length = response.headers.get("Content-Length")
         total = int(content_length) if content_length is not None else None
         progress = tqdm(
-            unit="iB", unit_scale=True, unit_divisor=1024, total=total, desc="downloading"
+            unit="iB", unit_scale=True, unit_divisor=1024, total=total, desc="downloading logs"
         )
         for chunk in response.iter_content(chunk_size=1024):
             if chunk:
@@ -321,3 +321,12 @@ class Beaker:
             method="DELETE",
             exceptions_for_status={404: ImageNotFound(image_id)},
         )
+
+    def list_experiments(self, workspace: Optional[str] = None) -> List[Dict[str, Any]]:
+        workspace_name = workspace or self.config.default_workspace
+        if workspace_name is None:
+            raise ValueError("'workspace' argument required")
+        return self.request(
+            f"workspaces/{urllib.parse.quote(workspace_name, safe='')}/experiments",
+            exceptions_for_status={404: WorkspaceNotFound(workspace_name)},
+        ).json()["data"]
