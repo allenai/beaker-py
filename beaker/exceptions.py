@@ -34,6 +34,10 @@ class ExperimentConflict(BeakerError):
     pass
 
 
+class DatasetConflict(BeakerError):
+    pass
+
+
 class DatasetNotFound(BeakerError):
     pass
 
