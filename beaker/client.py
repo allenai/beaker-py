@@ -1,8 +1,10 @@
 import json
+import os
 import urllib.parse
 from collections import OrderedDict
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, List, Optional
+from pathlib import Path
+from typing import Any, Dict, Generator, List, Optional, Union
 
 import docker
 import requests
@@ -12,8 +14,12 @@ from tqdm import tqdm
 
 from .config import Config
 from .exceptions import *
+from .version import VERSION
 
 __all__ = ["Beaker"]
+
+
+PathOrStr = Union[os.PathLike, Path]
 
 
 class Beaker:
@@ -67,20 +73,26 @@ class Beaker:
         resource: str,
         method: str = "GET",
         query: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
+        data: Optional[Any] = None,
         exceptions_for_status: Optional[Dict[int, BeakerError]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        token: Optional[str] = None,
+        base_url: Optional[str] = None,
     ) -> requests.Response:
         with self._session_with_backoff() as session:
-            url = f"{self.base_url}/{resource}"
+            url = f"{base_url or self.base_url}/{resource}"
             if query is not None:
                 url = url + "?" + urllib.parse.urlencode(query)
+            default_headers = {
+                "Authorization": f"Bearer {token or self.config.user_token}",
+                "Content-Type": "application/json",
+            }
+            if headers is not None:
+                default_headers.update(headers)
             response = getattr(session, method.lower())(
                 url,
-                headers={
-                    "Authorization": f"Bearer {self.config.user_token}",
-                    "Content-Type": "application/json",
-                },
-                data=None if data is None else json.dumps(data),
+                headers=default_headers,
+                data=json.dumps(data) if isinstance(data, dict) else data,
             )
             if exceptions_for_status is not None and response.status_code in exceptions_for_status:
                 raise exceptions_for_status[response.status_code]
@@ -178,7 +190,80 @@ class Beaker:
 
         """
         return self.request(
-            f"datasets/{dataset_id}", exceptions_for_status={404: DatasetNotFound(dataset_id)}
+            f"datasets/{urllib.parse.quote(dataset_id, safe='')}",
+            exceptions_for_status={404: DatasetNotFound(dataset_id)},
+        ).json()
+
+    def delete_dataset(self, dataset_id: str):
+        self.request(
+            f"datasets/{urllib.parse.quote(dataset_id, safe='')}",
+            method="DELETE",
+            exceptions_for_status={404: DatasetNotFound(dataset_id)},
+        )
+
+    def create_dataset(
+        self,
+        name: str,
+        source: PathOrStr,
+        target: Optional[str] = None,
+        workspace: Optional[str] = None,
+        force: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Create a dataset with the source file(s).
+        """
+        workspace_name = workspace or self.config.default_workspace
+        if workspace_name is None:
+            raise ValueError("'workspace' argument required")
+
+        # Ensure workspace exists.
+        self.ensure_workspace(workspace_name)
+
+        # Ensure source exists.
+        source: Path = Path(source)
+        if not source.exists():
+            raise FileNotFoundError(source)
+
+        if not source.is_file():
+            raise NotImplementedError("'create_dataset()' only works for single files so far")
+
+        # Create the dataset.
+        def make_dataset() -> Dict[str, Any]:
+            return self.request(
+                "datasets",
+                method="POST",
+                query={"name": name},
+                data={"workspace": workspace_name, "fileheap": True},
+                exceptions_for_status={409: DatasetConflict(name)},
+            ).json()
+
+        try:
+            dataset_info = make_dataset()
+        except DatasetConflict:
+            if force:
+                self.delete_dataset(f"{self.user}/{name}")
+                dataset_info = make_dataset()
+            else:
+                raise
+
+        # Upload the file.
+        with source.open("rb") as source_file:
+            self.request(
+                f"datasets/{dataset_info['storage']['id']}/files/{target or source.name}",
+                method="PUT",
+                data=source_file,
+                token=dataset_info["storage"]["token"],
+                base_url=dataset_info["storage"]["address"],
+                headers={
+                    "User-Agent": f"beaker-py v{VERSION}",
+                },
+            )
+
+        # Commit the dataset.
+        return self.request(
+            f"datasets/{dataset_info['id']}",
+            method="PATCH",
+            data={"commit": True},
         ).json()
 
     def get_logs(self, job_id: str) -> Generator[bytes, None, None]:
