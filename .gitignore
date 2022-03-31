@@ -48,3 +48,7 @@ __pycache__
 
 docs/build
 site/
+
+# local integration testing
+
+beaker.yml
