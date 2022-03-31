@@ -151,7 +151,8 @@ class Beaker:
 
         """
         return self.request(
-            f"experiments/{exp_id}", exceptions_for_status={404: ExperimentNotFound(exp_id)}
+            f"experiments/{urllib.parse.quote(exp_id, safe='')}",
+            exceptions_for_status={404: ExperimentNotFound(exp_id)},
         ).json()
 
     def create_experiment(
