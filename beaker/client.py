@@ -190,8 +190,16 @@ class Beaker:
 
         """
         return self.request(
-            f"datasets/{dataset_id}", exceptions_for_status={404: DatasetNotFound(dataset_id)}
+            f"datasets/{urllib.parse.quote(dataset_id, safe='')}",
+            exceptions_for_status={404: DatasetNotFound(dataset_id)},
         ).json()
+
+    def delete_dataset(self, dataset_id: str):
+        self.request(
+            f"datasets/{urllib.parse.quote(dataset_id, safe='')}",
+            method="DELETE",
+            exceptions_for_status={404: DatasetNotFound(dataset_id)},
+        )
 
     def create_dataset(
         self,
@@ -199,6 +207,7 @@ class Beaker:
         source: PathOrStr,
         target: Optional[str] = None,
         workspace: Optional[str] = None,
+        force: bool = False,
     ) -> Dict[str, Any]:
         """
         Create a dataset with the source file(s).
@@ -219,13 +228,23 @@ class Beaker:
             raise NotImplementedError("'create_dataset()' only works for single files so far")
 
         # Create the dataset.
-        dataset_info = self.request(
-            "datasets",
-            method="POST",
-            query={"name": name},
-            data={"workspace": workspace_name, "fileheap": True},
-            exceptions_for_status={409: DatasetConflict(name)},
-        ).json()
+        def make_dataset() -> Dict[str, Any]:
+            return self.request(
+                "datasets",
+                method="POST",
+                query={"name": name},
+                data={"workspace": workspace_name, "fileheap": True},
+                exceptions_for_status={409: DatasetConflict(name)},
+            ).json()
+
+        try:
+            dataset_info = make_dataset()
+        except DatasetConflict:
+            if force:
+                self.delete_dataset(f"{self.user}/{name}")
+                dataset_info = make_dataset()
+            else:
+                raise
 
         # Upload the file.
         with source.open("rb") as source_file:
