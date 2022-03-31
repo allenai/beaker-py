@@ -4,15 +4,16 @@
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import os
+import sys
+from datetime import datetime
+
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import os
-import sys
-
 sys.path.insert(0, os.path.abspath("../../"))
 
 from beaker.version import VERSION, VERSION_SHORT  # noqa: E402
@@ -20,7 +21,7 @@ from beaker.version import VERSION, VERSION_SHORT  # noqa: E402
 # -- Project information -----------------------------------------------------
 
 project = "beaker-py"
-copyright = "2021, Allen Institute for Artificial Intelligence"
+copyright = f"{datetime.today().year}, Allen Institute for Artificial Intelligence"
 author = "Allen Institute for Artificial Intelligence"
 version = VERSION_SHORT
 release = VERSION
@@ -38,6 +39,11 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
 ]
+
+# Tell myst-parser to assign header anchors for h1-h3.
+myst_heading_anchors = 3
+
+suppress_warnings = ["myst.header"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
