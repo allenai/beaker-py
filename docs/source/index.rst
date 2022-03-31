@@ -16,12 +16,12 @@ Contents
    installation
    quickstart
    api
-   CHANGELOG
 
 .. toctree::
    :hidden:
    :caption: Development
 
+   CHANGELOG
    License <https://raw.githubusercontent.com/allenai/beaker-py/main/LICENSE>
    CONTRIBUTING
    GitHub Repository <https://github.com/allenai/beaker-py>
