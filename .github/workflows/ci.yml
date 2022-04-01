@@ -42,7 +42,7 @@ jobs:
 
           - name: Test
             run: |
-              pytest -v --color=yes tests/
+              pytest -v --color=yes --doctest-modules beaker/ tests/
 
           - name: Build
             run: |

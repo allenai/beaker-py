@@ -38,6 +38,7 @@ extensions = [
     "myst_parser",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
+    "sphinx_autodoc_typehints",
 ]
 
 # Tell myst-parser to assign header anchors for h1-h3.
@@ -55,7 +56,16 @@ exclude_patterns = ["_build"]
 
 source_suffix = [".rst", ".md"]
 
-intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "docker": ("https://docker-py.readthedocs.io/en/stable/", None),
+}
+
+# By default, sort documented members by type within classes and modules.
+autodoc_member_order = "groupwise"
+
+# Include default values when documenting parameter types.
+typehints_defaults = "comma"
 
 
 # -- Options for HTML output -------------------------------------------------
