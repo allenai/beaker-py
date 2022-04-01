@@ -1,7 +1,6 @@
 import json
 import os
 import urllib.parse
-from collections import OrderedDict
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional, Union
@@ -10,7 +9,6 @@ import docker
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-from tqdm import tqdm
 
 from .config import Config
 from .exceptions import *
@@ -78,6 +76,7 @@ class Beaker:
         headers: Optional[Dict[str, str]] = None,
         token: Optional[str] = None,
         base_url: Optional[str] = None,
+        stream: bool = False,
     ) -> requests.Response:
         with self._session_with_backoff() as session:
             url = f"{base_url or self.base_url}/{resource}"
@@ -93,6 +92,7 @@ class Beaker:
                 url,
                 headers=default_headers,
                 data=json.dumps(data) if isinstance(data, dict) else data,
+                stream=stream,
             )
             if exceptions_for_status is not None and response.status_code in exceptions_for_status:
                 raise exceptions_for_status[response.status_code]
@@ -267,7 +267,7 @@ class Beaker:
             data={"commit": True},
         ).json()
 
-    def get_logs(self, job_id: str) -> Generator[bytes, None, None]:
+    def get_logs(self, job_id: str, quiet: bool = False) -> Generator[bytes, None, None]:
         """
         Download the logs for a job.
 
@@ -277,21 +277,44 @@ class Beaker:
         HTTPError
 
         """
+        from rich.progress import (
+            FileSizeColumn,
+            Progress,
+            SpinnerColumn,
+            TimeElapsedColumn,
+        )
+
         response = self.request(
-            f"jobs/{job_id}/logs", exceptions_for_status={404: JobNotFound(job_id)}
+            f"jobs/{job_id}/logs",
+            exceptions_for_status={404: JobNotFound(job_id)},
+            stream=True,
         )
-        content_length = response.headers.get("Content-Length")
-        total = int(content_length) if content_length is not None else None
-        progress = tqdm(
-            unit="iB", unit_scale=True, unit_divisor=1024, total=total, desc="downloading logs"
-        )
-        for chunk in response.iter_content(chunk_size=1024):
-            if chunk:
-                progress.update(len(chunk))
-                yield chunk
+
+        # TODO: currently beaker doesn't provide the Content-Length header, update this if they do.
+        #  content_length = response.headers.get("Content-Length")
+        #  total = int(content_length) if content_length is not None else None
+
+        with Progress(
+            "[progress.description]{task.description}",
+            SpinnerColumn(),
+            FileSizeColumn(),
+            TimeElapsedColumn(),
+            disable=quiet,
+        ) as progress:
+            task_id = progress.add_task("Downloading:")
+            total = 0
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    advance = len(chunk)
+                    total += advance
+                    progress.update(task_id, total=total + 1, advance=advance)
+                    yield chunk
 
     def get_logs_for_experiment(
-        self, exp_id: str, job_id: Optional[str] = None
+        self,
+        exp_id: str,
+        job_id: Optional[str] = None,
+        quiet: bool = False,
     ) -> Generator[bytes, None, None]:
         """
         Download the logs for an experiment.
@@ -310,7 +333,7 @@ class Beaker:
                     f"Experiment {exp_id} has more than 1 job. You need to specify the 'job_id'."
                 )
             job_id = exp["jobs"][0]["id"]
-        return self.get_logs(job_id)
+        return self.get_logs(job_id, quiet=quiet)
 
     def get_image(self, image: str) -> Dict[str, Any]:
         """
@@ -328,7 +351,11 @@ class Beaker:
         ).json()
 
     def create_image(
-        self, name: str, image_tag: str, workspace: Optional[str] = None
+        self,
+        name: str,
+        image_tag: str,
+        workspace: Optional[str] = None,
+        quiet: bool = False,
     ) -> Dict[str, Any]:
         """
         Upload a Docker image to Beaker.
@@ -368,8 +395,20 @@ class Beaker:
         image.tag(repo_data["imageTag"])
 
         # Push the image to Beaker.
-        with tqdm(
-            self.docker.api.push(
+        from rich.progress import BarColumn, Progress, TimeRemainingColumn
+
+        from .util import DownloadUploadColumn
+
+        with Progress(
+            "[progress.description]{task.description}",
+            BarColumn(),
+            "[progress.percentage]{task.percentage:>3.0f}%",
+            TimeRemainingColumn(),
+            DownloadUploadColumn(),
+            disable=quiet,
+        ) as progress:
+            layer_id_to_task: Dict[str, str] = {}
+            for line in self.docker.api.push(
                 repo_data["imageTag"],
                 stream=True,
                 decode=True,
@@ -378,13 +417,39 @@ class Beaker:
                     "password": auth["password"],
                     "server_address": auth["server_address"],
                 },
-            ),
-            desc="Pushing image",
-            bar_format="{desc}: {elapsed}{postfix}",
-        ) as pbar:
-            for line in pbar:
-                if "id" in line:
-                    pbar.set_postfix(OrderedDict([("id", line["id"]), ("status", line["status"])]))
+            ):
+                if "id" not in line or "status" not in line:
+                    continue
+                layer_id = line["id"]
+                status = line["status"].lower()
+                progress_detail = line.get("progressDetail")
+                task_id: str
+                if layer_id not in layer_id_to_task:
+                    task_id = progress.add_task(layer_id, start=True, total=1)
+                    layer_id_to_task[layer_id] = task_id
+                else:
+                    task_id = layer_id_to_task[layer_id]
+                if status in {"preparing", "waiting"}:
+                    progress.update(
+                        task_id, total=1, completed=0, description=f"{layer_id}: {status.title()}"
+                    )
+                elif status == "pushing" and progress_detail:
+                    progress.update(
+                        task_id,
+                        total=progress_detail["total"],
+                        completed=progress_detail["current"],
+                        description=f"{layer_id}: Pushing",
+                    )
+                elif status == "pushed":
+                    progress.update(
+                        task_id, total=1, completed=1, description=f"{layer_id}: Push complete"
+                    )
+                elif status == "layer already exists":
+                    progress.update(
+                        task_id, total=1, completed=1, description=f"{layer_id}: Already exists"
+                    )
+                else:
+                    raise ValueError(f"unhandled status '{status}' ({line})")
 
         # Commit changes to Beaker.
         self.request(f"images/{image_data['id']}", method="PATCH", data={"Commit": True})
