@@ -1,4 +1,17 @@
 """
+User
+----
+
+You can check who you are logged in as with :data:`Beaker.user`:
+
+>>> beaker.user
+'petew'
+
+Or get more information about your account with :meth:`Beaker.whoami()`:
+
+>>> beaker.whoami().institution
+'AllenAI'
+
 Workspaces
 ----------
 

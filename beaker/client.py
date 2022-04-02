@@ -62,7 +62,7 @@ class Beaker:
         """
         The name of the user associated with this account.
         """
-        return self.whoami()["name"]
+        return self.whoami().name
 
     @property
     def docker(self) -> docker.DockerClient:
