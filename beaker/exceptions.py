@@ -31,7 +31,9 @@ class ExperimentNotFound(BeakerError):
 
 
 class ExperimentConflict(BeakerError):
-    pass
+    """
+    Raised when attempting to create an experiment when an experiment by that name already exists.
+    """
 
 
 class DatasetConflict(BeakerError):
@@ -44,3 +46,9 @@ class DatasetNotFound(BeakerError):
 
 class JobNotFound(BeakerError):
     pass
+
+
+class WorkspaceNotSet(BeakerError):
+    """
+    Raised when workspace argument is not provided and there is no default workspace set.
+    """

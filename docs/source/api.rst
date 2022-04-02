@@ -6,11 +6,19 @@ Client
 
 .. autoclass:: beaker.Beaker
    :members:
+   :member-order: bysource
+
+Data Models
+-----------
+
+.. automodule:: beaker.data_model
+   :members:
+   :undoc-members:
 
 Config
 ------
 
-.. autoclass:: beaker.config.Config
+.. autoclass:: beaker.Config
    :members:
 
 Exceptions
