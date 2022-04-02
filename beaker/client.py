@@ -533,7 +533,7 @@ class Beaker:
 
         """
         self.request(
-            f"images/{image}",
+            f"images/{urllib.parse.quote(image, safe='')}",
             method="DELETE",
             exceptions_for_status={404: ImageNotFound(image)},
         )
