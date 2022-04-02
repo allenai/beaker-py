@@ -34,6 +34,7 @@ class Account(BaseModel):
     id: str
     name: str
     display_name: str = Field(alias="displayName")
+    institution: Optional[str] = None
 
 
 class Workspace(BaseModel):
@@ -76,17 +77,23 @@ class ExecutionResult(BaseModel):
     beaker: str
 
 
+class ExecutionLimits(BaseModel):
+    cpu_count: Optional[float] = Field(alias="cpuCount")
+    memory: Optional[str] = None
+    gpus: List[str] = Field(default_factory=list)
+
+
 class Execution(BaseModel):
     id: str
     task: str
     experiment: str
     workspace: str
     author: Account
-    node: str
     spec: Dict[str, Any]
     result: ExecutionResult
     state: ExecutionState
-    limits: Dict[str, Any]
+    node: Optional[str] = None
+    limits: Optional[ExecutionLimits] = None
     priority: str = "normal"
 
 
@@ -118,11 +125,11 @@ class Job(BaseModel):
     author: Account
     workspace: str
     cluster: str
-    node: str
     status: JobStatus
-    requests: JobRequests
-    limits: JobLimits
     execution: JobExecution
+    node: Optional[str] = None
+    requests: Optional[JobRequests] = None
+    limits: Optional[JobLimits] = None
 
 
 class Experiment(BaseModel):
@@ -135,3 +142,34 @@ class Experiment(BaseModel):
     jobs: List[Job] = Field(default_factory=list)
     workspace_ref: WorkspaceRef = Field(alias="workspaceRef")
     full_name: str = Field(alias="fullName")
+
+
+class DatasetStorage(BaseModel):
+    id: str
+    address: str
+    token: str
+    token_expires: datetime = Field(alias="tokenExpires")
+
+
+class Dataset(BaseModel):
+    id: str
+    name: str
+    owner: Account
+    author: Account
+    created: datetime
+    committed: Optional[datetime] = None
+    workspace_ref: WorkspaceRef = Field(alias="workspaceRef")
+    full_name: str = Field(alias="fullName")
+    storage: Optional[DatasetStorage] = None
+
+
+class Image(BaseModel):
+    id: str
+    name: str
+    owner: Account
+    author: Account
+    created: datetime
+    committed: Optional[datetime] = None
+    workspace_ref: WorkspaceRef = Field(alias="workspaceRef")
+    full_name: str = Field(alias="fullName")
+    original_tag: str = Field(alias="originalTag")

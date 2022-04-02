@@ -25,7 +25,7 @@ jobs:
   checks:
     name: ${{ matrix.os }} - py ${{ matrix.python }} - ${{ matrix.task.name }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:

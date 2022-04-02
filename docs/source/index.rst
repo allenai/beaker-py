@@ -15,6 +15,7 @@ Contents
 
    installation
    quickstart
+   overview
    api
 
 .. toctree::

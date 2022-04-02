@@ -118,11 +118,11 @@ class Beaker:
             response.raise_for_status()
             return response
 
-    def whoami(self) -> Dict[str, Any]:
+    def whoami(self) -> Account:
         """
         Check who you are authenticated as.
         """
-        return self.request("user").json()
+        return Account(**self.request("user").json())
 
     def get_workspace(self, workspace: Optional[str] = None) -> Workspace:
         """
@@ -133,11 +133,6 @@ class Beaker:
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` or :data:`Config.default_workspace` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
-
-        :examples:
-
-        >>> beaker.get_workspace().name
-        'beaker-py'
 
         """
         workspace_name = self._resolve_workspace(workspace, ensure_exists=False)
@@ -169,15 +164,10 @@ class Beaker:
         """
         Get info about an experiment.
 
-        :param experiment: The experiment name or ID.
+        :param experiment: The experiment ID or full name.
 
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises HTTPError: Any other HTTP exception that can occur.
-
-        :examples:
-
-        >>> beaker.get_experiment("petew/run-5").executions[0].state.exit_code
-        0
 
         """
         return Experiment(
@@ -189,7 +179,7 @@ class Beaker:
 
     def create_experiment(
         self, name: str, spec: Dict[str, Any], workspace: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> Experiment:
         """
         Create a new Beaker experiment with the given ``spec``.
 
@@ -204,28 +194,31 @@ class Beaker:
 
         """
         workspace_name = self._resolve_workspace(workspace)
-        return self.request(
+        experiment_data = self.request(
             f"workspaces/{urllib.parse.quote(workspace_name, safe='')}/experiments",
             method="POST",
             query={"name": name},
             data=spec,
             exceptions_for_status={409: ExperimentConflict(name)},
         ).json()
+        return self.get_experiment(experiment_data["id"])
 
-    def get_dataset(self, dataset: str) -> Dict[str, Any]:
+    def get_dataset(self, dataset: str) -> Dataset:
         """
         Get info about a dataset.
 
-        :param dataset: The dataset name or ID.
+        :param dataset: The dataset ID or full name.
 
         :raises DatasetNotFound: If the dataset can't be found.
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
-        return self.request(
-            f"datasets/{urllib.parse.quote(dataset, safe='')}",
-            exceptions_for_status={404: DatasetNotFound(dataset)},
-        ).json()
+        return Dataset(
+            **self.request(
+                f"datasets/{urllib.parse.quote(dataset, safe='')}",
+                exceptions_for_status={404: DatasetNotFound(dataset)},
+            ).json()
+        )
 
     def create_dataset(
         self,
@@ -234,7 +227,7 @@ class Beaker:
         target: Optional[str] = None,
         workspace: Optional[str] = None,
         force: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> Dataset:
         """
         Create a dataset with the source file(s).
 
@@ -298,17 +291,20 @@ class Beaker:
             )
 
         # Commit the dataset.
-        return self.request(
+        self.request(
             f"datasets/{dataset_info['id']}",
             method="PATCH",
             data={"commit": True},
         ).json()
 
+        # Return info about the dataset.
+        return self.get_dataset(dataset_info["id"])
+
     def delete_dataset(self, dataset: str):
         """
         Delete a dataset.
 
-        :param dataset: The dataset name or ID.
+        :param dataset: The dataset ID or full name.
 
         :raises DatasetNotFound: If the dataset can't be found.
         :raises HTTPError: Any other HTTP exception that can occur.
@@ -372,7 +368,7 @@ class Beaker:
 
     def get_logs_for_experiment(
         self,
-        exp_id: str,
+        experiment: str,
         job_id: Optional[str] = None,
         quiet: bool = False,
     ) -> Generator[bytes, None, None]:
@@ -382,7 +378,7 @@ class Beaker:
         Returns a generator with the streaming bytes from the download.
         The generator should be exhausted, otherwise the logs downloaded will be incomplete.
 
-        :param exp_id: The ID of the Beaker experiment.
+        :param experiment: The experiment ID or full name.
         :param job_id: The ID of a specific job from the Beaker experiment to get the logs for.
             Required if there are more than one jobs in the experiment.
         :param quiet: If ``True``, progress won't be displayed.
@@ -392,29 +388,31 @@ class Beaker:
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
-        exp = self.get_experiment(exp_id)
+        exp = self.get_experiment(experiment)
         if job_id is None:
             if len(exp["jobs"]) > 1:
                 raise ValueError(
-                    f"Experiment {exp_id} has more than 1 job. You need to specify the 'job_id'."
+                    f"Experiment {experiment} has more than 1 job. You need to specify the 'job_id'."
                 )
             job_id = exp["jobs"][0]["id"]
         return self.get_logs(job_id, quiet=quiet)
 
-    def get_image(self, image: str) -> Dict[str, Any]:
+    def get_image(self, image: str) -> Image:
         """
         Get info about an image.
 
-        :param image: The Beaker image name or ID.
+        :param image: The Beaker image ID or full name.
 
         :raises ImageNotFound: If the image can't be found on Beaker.
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
-        return self.request(
-            f"images/{urllib.parse.quote(image, safe='')}",
-            exceptions_for_status={404: ImageNotFound(image)},
-        ).json()
+        return Image(
+            **self.request(
+                f"images/{urllib.parse.quote(image, safe='')}",
+                exceptions_for_status={404: ImageNotFound(image)},
+            ).json()
+        )
 
     def create_image(
         self,
@@ -422,7 +420,7 @@ class Beaker:
         image_tag: str,
         workspace: Optional[str] = None,
         quiet: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> Image:
         """
         Upload a Docker image to Beaker.
 
@@ -528,7 +526,7 @@ class Beaker:
         """
         Delete an image.
 
-        :param image: The Beaker image name or ID.
+        :param image: The Beaker image ID or full name.
 
         :raises ImageNotFound: If the image can't be found on Beaker.
         :raises HTTPError: Any other HTTP exception that can occur.
@@ -540,7 +538,7 @@ class Beaker:
             exceptions_for_status={404: ImageNotFound(image)},
         )
 
-    def list_experiments(self, workspace: Optional[str] = None) -> List[Dict[str, Any]]:
+    def list_experiments(self, workspace: Optional[str] = None) -> List[Experiment]:
         """
         :param workspace: The workspace to upload the dataset to. If not specified,
             :data:`Config.default_workspace` is used.
@@ -551,10 +549,13 @@ class Beaker:
 
         """
         workspace_name = self._resolve_workspace(workspace, ensure_exists=False)
-        return self.request(
-            f"workspaces/{urllib.parse.quote(workspace_name, safe='')}/experiments",
-            exceptions_for_status={404: WorkspaceNotFound(workspace_name)},
-        ).json()["data"]
+        return [
+            Experiment(**d)
+            for d in self.request(
+                f"workspaces/{urllib.parse.quote(workspace_name, safe='')}/experiments",
+                exceptions_for_status={404: WorkspaceNotFound(workspace_name)},
+            ).json()["data"]
+        ]
 
     def _resolve_workspace(self, workspace: Optional[str], ensure_exists: bool = True) -> str:
         workspace_name = workspace or self.config.default_workspace

@@ -46,6 +46,6 @@ from beaker import Beaker
 
 beaker = Beaker.from_env(default_workspace="my_org/my_workspace")
 ```
+<!-- end quickstart -->
 
 See the [API Docs](https://beaker-py.readthedocs.io/en/latest/api.html) to learn about the Beaker client's methods.
-<!-- end quickstart -->
