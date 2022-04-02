@@ -1,4 +1,5 @@
 import uuid
+from typing import Generator
 
 import petname
 import pytest
@@ -30,7 +31,7 @@ def docker_image_name(doctest_namespace, client: Beaker):
 
 
 @pytest.fixture(autouse=True, scope="module")
-def beaker_image_name(doctest_namespace, client: Beaker) -> str:
+def beaker_image_name(doctest_namespace, client: Beaker) -> Generator[str, None, None]:
     image = petname.generate() + "-" + str(uuid.uuid4())[:8]
     doctest_namespace["beaker_image_name"] = image
     yield image
@@ -55,7 +56,7 @@ def experiment_name(doctest_namespace) -> str:
 
 
 @pytest.fixture(autouse=True, scope="module")
-def dataset_name(doctest_namespace, client: Beaker) -> str:
+def dataset_name(doctest_namespace, client: Beaker) -> Generator[str, None, None]:
     name = petname.generate() + "-" + str(uuid.uuid4())[:8]
     doctest_namespace["dataset_name"] = name
     yield name
