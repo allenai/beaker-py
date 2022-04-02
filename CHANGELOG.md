@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v0.3.9](https://github.com/allenai/beaker-py/releases/tag/v0.3.9) - 2022-04-01
+
 ### Fixed
 
 - Fixed bug in `delete_image()` that would result in `ImageNotFound` error when using image full name instead of ID.
