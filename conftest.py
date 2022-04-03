@@ -5,7 +5,7 @@ import petname
 import pytest
 
 from beaker.client import Beaker
-from beaker.exceptions import DatasetNotFound, ImageNotFound
+from beaker.exceptions import DatasetNotFound, ExperimentNotFound, ImageNotFound
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -49,10 +49,14 @@ def beaker_cluster_name(doctest_namespace) -> str:
 
 
 @pytest.fixture(autouse=True, scope="module")
-def experiment_name(doctest_namespace) -> str:
+def experiment_name(doctest_namespace, client: Beaker) -> Generator[str, None, None]:
     name = petname.generate() + "-" + str(uuid.uuid4())[:8]
     doctest_namespace["experiment_name"] = name
-    return name
+    yield name
+    try:
+        client.experiment.delete(f"{client.account.whoami().name}/{name}")
+    except ExperimentNotFound:
+        pass
 
 
 @pytest.fixture(autouse=True, scope="module")
