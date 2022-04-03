@@ -1,3 +1,4 @@
+from pydantic import ValidationError  # noqa: F401, re-imported here for convenience
 from requests.exceptions import (  # noqa: F401, re-imported here for convenience
     HTTPError,
 )
@@ -5,8 +6,9 @@ from requests.exceptions import (  # noqa: F401, re-imported here for convenienc
 
 class BeakerError(Exception):
     """
-    Base class for all Beaker errors other than :exc:`HTTPError` which is re-exported
-    from :exc:`requests.exceptions.HTTPError`.
+    Base class for all Beaker errors other than :exc:`HTTPError`, which is re-exported
+    from :exc:`requests.exceptions.HTTPError`, and :exc:`ValidationError`, which is
+    re-exported from `pydantic <https://pydantic-docs.helpmanual.io/>`_.
     """
 
 
@@ -19,7 +21,9 @@ class ImageNotFound(BeakerError):
 
 
 class ImageConflict(BeakerError):
-    pass
+    """
+    Raised when attempting to create an image if an image by that name already exists.
+    """
 
 
 class WorkspaceNotFound(BeakerError):
@@ -32,12 +36,14 @@ class ExperimentNotFound(BeakerError):
 
 class ExperimentConflict(BeakerError):
     """
-    Raised when attempting to create an experiment when an experiment by that name already exists.
+    Raised when attempting to create an experiment if an experiment by that name already exists.
     """
 
 
 class DatasetConflict(BeakerError):
-    pass
+    """
+    Raised when attempting to create a dataset if a dataset by that name already exists.
+    """
 
 
 class DatasetNotFound(BeakerError):

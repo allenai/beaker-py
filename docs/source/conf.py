@@ -38,6 +38,7 @@ extensions = [
     "myst_parser",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
+    "sphinx_copybutton",
     "sphinx_autodoc_typehints",
 ]
 
@@ -83,3 +84,5 @@ html_title = f"beaker-py v{VERSION}"
 html_static_path = ["_static"]
 
 html_css_files = ["css/custom.css"]
+
+html_favicon = "_static/favicon.ico"

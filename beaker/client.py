@@ -46,7 +46,7 @@ class Beaker:
         """
         Initialize client from a config file and/or environment variables.
 
-        >>> beaker = Beaker.from_env()
+        :param overrides: Fields in the :class:`Config` to override.
         """
         return cls(Config.from_env(**overrides))
 
@@ -122,7 +122,7 @@ class Beaker:
         """
         Check who you are authenticated as.
         """
-        return Account(**self.request("user").json())
+        return Account.from_json(self.request("user").json())
 
     def get_workspace(self, workspace: Optional[str] = None) -> Workspace:
         """
@@ -136,8 +136,8 @@ class Beaker:
 
         """
         workspace_name = self._resolve_workspace(workspace, ensure_exists=False)
-        return Workspace(
-            **self.request(
+        return Workspace.from_json(
+            self.request(
                 f"workspaces/{urllib.parse.quote(workspace_name, safe='')}",
                 exceptions_for_status={404: WorkspaceNotFound(workspace_name)},
             ).json()
@@ -170,8 +170,8 @@ class Beaker:
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
-        return Experiment(
-            **self.request(
+        return Experiment.from_json(
+            self.request(
                 f"experiments/{urllib.parse.quote(experiment, safe='')}",
                 exceptions_for_status={404: ExperimentNotFound(experiment)},
             ).json()
@@ -183,9 +183,12 @@ class Beaker:
         """
         Create a new Beaker experiment with the given ``spec``.
 
+        :param name: The name to assign the experiment.
         :param spec: A Beaker `experiment spec
             <https://github.com/beaker/docs/blob/main/docs/concept/experiments.md#spec-format>`_
             in the form of a Python dictionary.
+        :param workspace: The workspace to create the experiment under. If not specified,
+            :data:`Config.default_workspace` is used.
 
         :raises ExperimentConflict: If an experiment with the given name already exists.
         :raises WorkspaceNotFound: If the workspace doesn't exist.
@@ -213,8 +216,8 @@ class Beaker:
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
-        return Dataset(
-            **self.request(
+        return Dataset.from_json(
+            self.request(
                 f"datasets/{urllib.parse.quote(dataset, safe='')}",
                 exceptions_for_status={404: DatasetNotFound(dataset)},
             ).json()
@@ -407,8 +410,8 @@ class Beaker:
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
-        return Image(
-            **self.request(
+        return Image.from_json(
+            self.request(
                 f"images/{urllib.parse.quote(image, safe='')}",
                 exceptions_for_status={404: ImageNotFound(image)},
             ).json()
@@ -426,7 +429,7 @@ class Beaker:
 
         :param name: The name to assign to the image on Beaker.
         :param image_tag: The tag of the local image you're uploading.
-        :param workspace: The workspace to upload the dataset to. If not specified,
+        :param workspace: The workspace to upload the image to. If not specified,
             :data:`Config.default_workspace` is used.
         :param quiet: If ``True``, progress won't be displayed.
 
@@ -550,7 +553,7 @@ class Beaker:
         """
         workspace_name = self._resolve_workspace(workspace, ensure_exists=False)
         return [
-            Experiment(**d)
+            Experiment.from_json(d)
             for d in self.request(
                 f"workspaces/{urllib.parse.quote(workspace_name, safe='')}/experiments",
                 exceptions_for_status={404: WorkspaceNotFound(workspace_name)},
