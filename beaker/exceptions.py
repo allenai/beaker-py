@@ -1,4 +1,4 @@
-from pydantic import ValidationError
+from pydantic import ValidationError  # noqa: F401, re-imported here for convenience
 from requests.exceptions import (  # noqa: F401, re-imported here for convenience
     HTTPError,
 )
