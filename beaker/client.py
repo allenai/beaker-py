@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import urllib.parse
 from contextlib import contextmanager
 from pathlib import Path
@@ -209,7 +210,9 @@ class WorkspaceClient(ServiceClient):
         return Workspace.from_json(
             self.request(
                 f"workspaces/{urllib.parse.quote(workspace_name, safe='')}",
-                exceptions_for_status={404: WorkspaceNotFound(workspace_name)},
+                exceptions_for_status={
+                    404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
+                },
             ).json()
         )
 
@@ -231,6 +234,12 @@ class WorkspaceClient(ServiceClient):
             except ValueError:
                 raise ValueError(f"Invalided workspace name '{workspace}'")
             self.request("workspaces", method="POST", data={"name": name, "org": org})
+
+    def _not_found_err_msg(self, workspace: str) -> str:
+        return (
+            f"'{workspace}': Make sure you're using the *full* name of the workspace "
+            f"(with the account prefix, e.g. 'username/workspace_name')"
+        )
 
 
 class DatasetClient(ServiceClient):
@@ -328,7 +337,7 @@ class DatasetClient(ServiceClient):
         return Dataset.from_json(
             self.request(
                 f"datasets/{urllib.parse.quote(dataset, safe='')}",
-                exceptions_for_status={404: DatasetNotFound(dataset)},
+                exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset))},
             ).json()
         )
 
@@ -345,7 +354,13 @@ class DatasetClient(ServiceClient):
         self.request(
             f"datasets/{urllib.parse.quote(dataset, safe='')}",
             method="DELETE",
-            exceptions_for_status={404: DatasetNotFound(dataset)},
+            exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset))},
+        )
+
+    def _not_found_err_msg(self, dataset: str) -> str:
+        return (
+            f"'{dataset}': Make sure you're using a valid Beaker dataset ID or the "
+            f"*full* name of the dataset (with the account prefix, e.g. 'username/dataset_name')"
         )
 
 
@@ -472,7 +487,7 @@ class ImageClient(ServiceClient):
         return Image.from_json(
             self.request(
                 f"images/{urllib.parse.quote(image, safe='')}",
-                exceptions_for_status={404: ImageNotFound(image)},
+                exceptions_for_status={404: ImageNotFound(self._not_found_err_msg(image))},
             ).json()
         )
 
@@ -489,7 +504,13 @@ class ImageClient(ServiceClient):
         self.request(
             f"images/{urllib.parse.quote(image, safe='')}",
             method="DELETE",
-            exceptions_for_status={404: ImageNotFound(image)},
+            exceptions_for_status={404: ImageNotFound(self._not_found_err_msg(image))},
+        )
+
+    def _not_found_err_msg(self, image: str) -> str:
+        return (
+            f"'{image}': Make sure you're using a valid Beaker image ID or the "
+            f"*full* name of the image (with the account prefix, e.g. 'username/image_name')"
         )
 
 
@@ -584,13 +605,29 @@ class ExperimentClient(ServiceClient):
 
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises HTTPError: Any other HTTP exception that can occur.
-
         """
         return Experiment.from_json(
             self.request(
                 f"experiments/{urllib.parse.quote(experiment, safe='')}",
-                exceptions_for_status={404: ExperimentNotFound(experiment)},
+                exceptions_for_status={
+                    404: ExperimentNotFound(self._not_found_err_msg(experiment))
+                },
             ).json()
+        )
+
+    def delete(self, experiment: str):
+        """
+        Delete an experiment.
+
+        :param experiment: The experiment ID or full name.
+
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        self.request(
+            f"experiments/{urllib.parse.quote(experiment, safe='')}",
+            method="DELETE",
+            exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment))},
         )
 
     def list(self, workspace: Optional[str] = None) -> List[Experiment]:
@@ -602,7 +639,6 @@ class ExperimentClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
-
         """
         workspace_name = self._resolve_workspace(workspace, ensure_exists=False)
         return [
@@ -643,3 +679,54 @@ class ExperimentClient(ServiceClient):
                 )
             job_id = exp["jobs"][0]["id"]
         return self.beaker.job.logs(job_id, quiet=quiet)
+
+    def await_all(
+        self,
+        experiment: str,
+        timeout: Optional[int] = None,
+        poll_interval: float = 2.0,
+        quiet: bool = False,
+    ) -> Experiment:
+        """
+        Wait for all jobs in an experiment to complete.
+
+        :param experiment: The experiment ID or full name.
+        :param timeout: Maximum amount of time to wait for (in seocnds).
+        :param poll_interval: Time to wait between polling the experiment (in seconds).
+        :param quiet: If ``True``, progress won't be displayed.
+
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises TimeoutError: If the ``timeout`` expires.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
+
+        start = time.time()
+
+        with Progress(
+            "[progress.description]{task.description}",
+            SpinnerColumn(),
+            TimeElapsedColumn(),
+            disable=quiet,
+        ) as progress:
+            task_id = progress.add_task(f"Waiting on {experiment}:")
+            polls = 0
+            while True:
+                exp = self.get(experiment)
+                if exp.executions:
+                    for execution in exp.executions:
+                        if execution.state.exit_code is None:
+                            break
+                    else:
+                        return exp
+                if timeout is not None and time.time() - start >= timeout:
+                    raise TimeoutError
+                polls += 1
+                progress.update(task_id, total=polls + 1, advance=1)
+                time.sleep(poll_interval)
+
+    def _not_found_err_msg(self, experiment: str) -> str:
+        return (
+            f"'{experiment}': Make sure you're using a valid Beaker experiment ID or the "
+            f"*full* name of the experiment (with the account prefix, e.g. 'username/experiment_name')"
+        )
