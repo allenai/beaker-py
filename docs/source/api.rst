@@ -8,6 +8,30 @@ Client
    :members:
    :member-order: bysource
 
+.. autoclass:: beaker.client.AccountClient
+   :members:
+   :member-order: bysource
+
+.. autoclass:: beaker.client.WorkspaceClient
+   :members:
+   :member-order: bysource
+
+.. autoclass:: beaker.client.DatasetClient
+   :members:
+   :member-order: bysource
+
+.. autoclass:: beaker.client.ImageClient
+   :members:
+   :member-order: bysource
+
+.. autoclass:: beaker.client.JobClient
+   :members:
+   :member-order: bysource
+
+.. autoclass:: beaker.client.ExperimentClient
+   :members:
+   :member-order: bysource
+
 Data Models
 -----------
 

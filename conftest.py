@@ -36,7 +36,7 @@ def beaker_image_name(doctest_namespace, client: Beaker) -> Generator[str, None,
     doctest_namespace["beaker_image_name"] = image
     yield image
     try:
-        client.delete_image(f"{client.user}/{image}")
+        client.image.delete(f"{client.account.whoami().name}/{image}")
     except ImageNotFound:
         pass
 
@@ -61,6 +61,6 @@ def dataset_name(doctest_namespace, client: Beaker) -> Generator[str, None, None
     doctest_namespace["dataset_name"] = name
     yield name
     try:
-        client.delete_dataset(f"{client.user}/{name}")
+        client.dataset.delete(f"{client.account.whoami().name}/{name}")
     except DatasetNotFound:
         pass
