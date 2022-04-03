@@ -1,8 +1,13 @@
+import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from pydantic import BaseModel as _BaseModel
-from pydantic import Field
+from pydantic import Field, ValidationError
+
+T = TypeVar("T")
+
+logger = logging.getLogger(__name__)
 
 
 class BaseModel(_BaseModel):
@@ -20,6 +25,14 @@ class BaseModel(_BaseModel):
                     return self.dict()[snake_case_key]
                 except KeyError:
                     pass
+            raise
+
+    @classmethod
+    def from_json(cls: Type[T], json_data: Dict[str, Any]) -> T:
+        try:
+            return cls(**json_data)
+        except ValidationError:
+            logger.error("Error validating raw JSON data for %s: %s", cls.__name__, json_data)
             raise
 
 

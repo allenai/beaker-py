@@ -24,7 +24,7 @@ Config
 Exceptions
 ----------
 
-.. autoexception:: beaker.exceptions.HTTPError
-
 .. automodule:: beaker.exceptions
    :members:
+
+.. autoexception:: beaker.exceptions.HTTPError
