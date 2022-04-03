@@ -6,4 +6,4 @@ Quick start
 :end-before: <!-- end quickstart -->
 ```
 
-See the [API Docs](/api) to learn about the {class}`~beaker.Beaker` client's methods.
+See the [overview](/overview) to learn about the {class}`~beaker.Beaker` client's methods.
