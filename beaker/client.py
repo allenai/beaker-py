@@ -196,10 +196,12 @@ class WorkspaceClient(ServiceClient):
         """
         Get information about the workspace.
 
-        :param workspace: The workspace name. Defaults to :data:`Config.default_workspace`.
+        :param workspace: The workspace name. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
-        :raises WorkspaceNotSet: If neither ``workspace`` or :data:`Config.default_workspace` are set.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
@@ -248,7 +250,7 @@ class DatasetClient(ServiceClient):
         :param target: If ``source`` is a file, you can change the name of the file in the dataset
             by specifying ``target``.
         :param workspace: The workspace to upload the dataset to. If not specified,
-            :data:`Config.default_workspace` is used.
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param force: If ``True`` and a dataset by the given name already exists, it will be overwritten.
 
         .. attention::
@@ -257,7 +259,8 @@ class DatasetClient(ServiceClient):
 
         :raises DatasetConflict: If a dataset by that name already exists and ``force=False``.
         :raises WorkspaceNotFound: If the workspace doesn't exist.
-        :raises WorkspaceNotSet: If neither ``workspace`` or :data:`Config.default_workspace` are set.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         workspace_name = self._resolve_workspace(workspace)
@@ -360,12 +363,13 @@ class ImageClient(ServiceClient):
         :param name: The name to assign to the image on Beaker.
         :param image_tag: The tag of the local image you're uploading.
         :param workspace: The workspace to upload the image to. If not specified,
-            :data:`Config.default_workspace` is used.
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param quiet: If ``True``, progress won't be displayed.
 
         :raises ImageConflict: If an image with the given name already exists.
         :raises WorkspaceNotFound: If the workspace doesn't exist.
-        :raises WorkspaceNotSet: If neither ``workspace`` or :data:`Config.default_workspace` are set.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
@@ -498,7 +502,7 @@ class JobClient(ServiceClient):
         The generator should be exhausted, otherwise the logs downloaded will be incomplete.
 
         .. seealso::
-            :meth:`get_logs_for_experiment()`
+            :meth:`Beaker.experiment.logs() <ExperimentClient.logs>`
 
         :param job_id: The ID of the Beaker job.
         :param quiet: If ``True``, progress won't be displayed.
@@ -553,11 +557,12 @@ class ExperimentClient(ServiceClient):
             <https://github.com/beaker/docs/blob/main/docs/concept/experiments.md#spec-format>`_
             in the form of a Python dictionary.
         :param workspace: The workspace to create the experiment under. If not specified,
-            :data:`Config.default_workspace` is used.
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
 
         :raises ExperimentConflict: If an experiment with the given name already exists.
         :raises WorkspaceNotFound: If the workspace doesn't exist.
-        :raises WorkspaceNotSet: If neither ``workspace`` or :data:`Config.default_workspace` are set.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
@@ -591,10 +596,11 @@ class ExperimentClient(ServiceClient):
     def list(self, workspace: Optional[str] = None) -> List[Experiment]:
         """
         :param workspace: The workspace to upload the dataset to. If not specified,
-            :data:`Config.default_workspace` is used.
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
-        :raises WorkspaceNotSet: If neither ``workspace`` or :data:`Config.default_workspace` are set.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
