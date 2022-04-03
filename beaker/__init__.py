@@ -63,11 +63,19 @@ For example, create an experiment with :meth:`Beaker.experiment.create() <client
 ...         },
 ...     ],
 ... }
->>> experiment = beaker.experiment.create(experiment_name, spec, workspace=workspace_name)
+>>> experiment = beaker.experiment.create(
+...     experiment_name,
+...     spec,
+...     workspace=workspace_name,
+... )
 
 Wait for the experiment to complete:
 
->>> beaker.experiment.await_all(experiment.full_name, timeout=60 * 3, quiet=True)
+>>> experiment = beaker.experiment.await_all(
+...     experiment.full_name,
+...     timeout=60 * 3,
+...     quiet=True,
+... )
 <BLANKLINE>
 
 Get the logs from the experiment with :meth:`Beaker.experiment.logs() <client.ExperimentClient.logs>`:
