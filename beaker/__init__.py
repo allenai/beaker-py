@@ -1,48 +1,52 @@
 """
-User
-----
+Accounts
+--------
 
-You can check who you are logged in as with :data:`Beaker.user`:
+Manage your Beaker account with :data:`Beaker.account`.
 
->>> beaker.user
-'petew'
+For example, you can check who you are logged in as with
+:meth:`Beaker.account.whoami() <client.AccountClient.whoami>`:
 
-Or get more information about your account with :meth:`Beaker.whoami()`:
-
->>> beaker.whoami().institution
-'AllenAI'
+>>> username = beaker.account.whoami().name
 
 Workspaces
 ----------
 
-You can create a workspace with :meth:`Beaker.ensure_workspace()`:
+Manage Beaker workspaces with :data:`Beaker.workspace`.
 
->>> beaker.ensure_workspace(workspace_name)
+For example, you can create a workspace with :meth:`Beaker.workspace.ensure() <client.WorkspaceClient.ensure>`:
 
-And you can retreive metadata about a workspace with :meth:`Beaker.get_workspace()`:
+>>> beaker.workspace.ensure(workspace_name)
 
->>> beaker.get_workspace(workspace_name).id
+And you can retreive metadata about a workspace with :meth:`Beaker.workspace.get() <client.WorkspaceClient.get>`:
+
+>>> beaker.workspace.get(workspace_name).id
 '01FPB5S64Y649S1948QHQHVCVE'
 
 Images
 ------
 
-Upload a local Docker image to Beaker with :meth:`Beaker.create_image()`:
+Manage Beaker images with :data:`Beaker.image`.
 
->>> image = beaker.create_image(beaker_image_name, docker_image_name, quiet=True)
+For example, upload a local Docker image to Beaker with :meth:`Beaker.image.create() <client.ImageClient.create>`:
+
+>>> image = beaker.image.create(beaker_image_name, docker_image_name, quiet=True)
 <BLANKLINE>
 
-The object returned is the same :class:`~data_model.Image` object you get from :meth:`Beaker.get_image()`.
+The object returned is the same :class:`~data_model.Image` object you get from
+:meth:`Beaker.image.get() <client.ImageClient.get>`.
 It contains some metadata about the image:
 
->>> image = beaker.get_image(f"{beaker.user}/{beaker_image_name}")
+>>> image = beaker.image.get(f"{username}/{beaker_image_name}")
 >>> image.original_tag
 'hello-world'
 
 Experiments
 -----------
 
-Create an experiment with :meth:`Beaker.create_experiment()`:
+Manage Beaker experiments with :data:`Beaker.experiment`.
+
+For example, create an experiment with :meth:`Beaker.experiment.create() <client.ExperimentClient.create>`:
 
 >>> spec = {
 ...     "version": "v2-alpha",
@@ -59,32 +63,34 @@ Create an experiment with :meth:`Beaker.create_experiment()`:
 ...         },
 ...     ],
 ... }
->>> experiment = beaker.create_experiment(experiment_name, spec, workspace=workspace_name)
+>>> experiment = beaker.experiment.create(experiment_name, spec, workspace=workspace_name)
 
 Wait for the experiment to complete:
 
 >>> while True:
-...    experiment = beaker.get_experiment(experiment.full_name)
+...    experiment = beaker.experiment.get(experiment.full_name)
 ...    if experiment.executions and experiment.executions[0].state.exit_code is not None:
 ...        break
 ...    else:
 ...        import time
 ...        time.sleep(2)
 
-Get the logs from the experiment with :meth:`Beaker.get_logs_for_experiment()`:
+Get the logs from the experiment with :meth:`Beaker.experiment.logs() <client.ExperimentClient.logs>`:
 
 >>> logs = "".join([
 ...    line.decode() for line in
-...    beaker.get_logs_for_experiment(experiment.full_name, quiet=True)
+...    beaker.experiment.logs(experiment.full_name, quiet=True)
 ... ])
 <BLANKLINE>
 
 Datasets
 --------
 
-Create a dataset from a local file with :meth:`Beaker.create_dataset()`:
+Manage Beaker datasets with :data:`Beaker.dataset`.
 
->>> dataset = beaker.create_dataset(dataset_name, "README.md")
+For example, create a dataset from a local file with :meth:`Beaker.dataset.create() <client.DatasetClient.create>`:
+
+>>> dataset = beaker.dataset.create(dataset_name, "README.md")
 
 """
 

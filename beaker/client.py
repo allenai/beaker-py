@@ -30,16 +30,21 @@ class Beaker:
     The easiest way to initialize a Beaker client is with :meth:`.from_env()`.
     """
 
-    RECOVERABLE_SERVER_ERROR_CODES = (502, 503, 504)
-    MAX_RETRIES = 5
-    API_VERSION = "v3"
-
     def __init__(self, config: Config):
         self._config = config
-        self._base_url = f"{self._config.agent_address}/api/{self.API_VERSION}"
         self._docker: Optional[docker.DockerClient] = None
+
+        # Initialize service clients:
+        self._account = AccountClient(self)
+        self._workspace = WorkspaceClient(self)
+        self._dataset = DatasetClient(self)
+        self._image = ImageClient(self)
+        self._job = JobClient(self)
+        self._experiment = ExperimentClient(self)
+
+        # Ensure default workspace exists.
         if self._config.default_workspace is not None:
-            self.ensure_workspace(self._config.default_workspace)
+            self.workspace.ensure(self._config.default_workspace)
 
     @classmethod
     def from_env(cls, **overrides) -> "Beaker":
@@ -58,21 +63,71 @@ class Beaker:
         return self._config
 
     @property
-    def user(self) -> str:
+    def account(self) -> "AccountClient":
         """
-        The name of the user associated with this account.
+        Manage accounts.
         """
-        return self.whoami().name
+        return self._account
+
+    @property
+    def workspace(self) -> "WorkspaceClient":
+        """
+        Manage workspaces.
+        """
+        return self._workspace
+
+    @property
+    def dataset(self) -> "DatasetClient":
+        """
+        Manage datasets.
+        """
+        return self._dataset
+
+    @property
+    def image(self) -> "ImageClient":
+        """
+        Manage images.
+        """
+        return self._image
+
+    @property
+    def job(self) -> "JobClient":
+        """
+        Manage jobs.
+        """
+        return self._job
+
+    @property
+    def experiment(self) -> "ExperimentClient":
+        """
+        Manage experiments.
+        """
+        return self._experiment
 
     @property
     def docker(self) -> docker.DockerClient:
-        """
-        The :class:`~docker.client.DockerClient`.
-        """
         if self._docker is None:
             self._docker = docker.from_env()
         assert self._docker is not None
         return self._docker
+
+
+class ServiceClient:
+    RECOVERABLE_SERVER_ERROR_CODES = (502, 503, 504)
+    MAX_RETRIES = 5
+    API_VERSION = "v3"
+
+    def __init__(self, beaker: Beaker):
+        self.beaker = beaker
+        self._base_url = f"{self.config.agent_address}/api/{self.API_VERSION}"
+
+    @property
+    def config(self) -> Config:
+        return self.beaker.config
+
+    @property
+    def docker(self) -> docker.DockerClient:
+        return self.beaker.docker
 
     @contextmanager
     def _session_with_backoff(self) -> requests.Session:
@@ -118,13 +173,26 @@ class Beaker:
             response.raise_for_status()
             return response
 
+    def _resolve_workspace(self, workspace: Optional[str], ensure_exists: bool = True) -> str:
+        workspace_name = workspace or self.config.default_workspace
+        if workspace_name is None:
+            raise WorkspaceNotSet("'workspace' argument required since default workspace not set")
+        else:
+            if ensure_exists:
+                self.beaker.workspace.ensure(workspace_name)
+            return workspace_name
+
+
+class AccountClient(ServiceClient):
     def whoami(self) -> Account:
         """
         Check who you are authenticated as.
         """
         return Account.from_json(self.request("user").json())
 
-    def get_workspace(self, workspace: Optional[str] = None) -> Workspace:
+
+class WorkspaceClient(ServiceClient):
+    def get(self, workspace: Optional[str] = None) -> Workspace:
         """
         Get information about the workspace.
 
@@ -143,16 +211,18 @@ class Beaker:
             ).json()
         )
 
-    def ensure_workspace(self, workspace: str):
+    def ensure(self, workspace: str):
         """
         Ensure that the given workspace exists.
+
+        :param workspace: The full workspace name.
 
         :raises HTTPError: Any other HTTP exception that can occur.
         :raises ValueError: If the workspace name is invalid.
 
         """
         try:
-            self.get_workspace(workspace)
+            self.get(workspace)
         except WorkspaceNotFound:
             try:
                 org, name = workspace.split("/")
@@ -160,70 +230,9 @@ class Beaker:
                 raise ValueError(f"Invalided workspace name '{workspace}'")
             self.request("workspaces", method="POST", data={"name": name, "org": org})
 
-    def get_experiment(self, experiment: str) -> Experiment:
-        """
-        Get info about an experiment.
 
-        :param experiment: The experiment ID or full name.
-
-        :raises ExperimentNotFound: If the experiment can't be found.
-        :raises HTTPError: Any other HTTP exception that can occur.
-
-        """
-        return Experiment.from_json(
-            self.request(
-                f"experiments/{urllib.parse.quote(experiment, safe='')}",
-                exceptions_for_status={404: ExperimentNotFound(experiment)},
-            ).json()
-        )
-
-    def create_experiment(
-        self, name: str, spec: Dict[str, Any], workspace: Optional[str] = None
-    ) -> Experiment:
-        """
-        Create a new Beaker experiment with the given ``spec``.
-
-        :param name: The name to assign the experiment.
-        :param spec: A Beaker `experiment spec
-            <https://github.com/beaker/docs/blob/main/docs/concept/experiments.md#spec-format>`_
-            in the form of a Python dictionary.
-        :param workspace: The workspace to create the experiment under. If not specified,
-            :data:`Config.default_workspace` is used.
-
-        :raises ExperimentConflict: If an experiment with the given name already exists.
-        :raises WorkspaceNotFound: If the workspace doesn't exist.
-        :raises WorkspaceNotSet: If neither ``workspace`` or :data:`Config.default_workspace` are set.
-        :raises HTTPError: Any other HTTP exception that can occur.
-
-        """
-        workspace_name = self._resolve_workspace(workspace)
-        experiment_data = self.request(
-            f"workspaces/{urllib.parse.quote(workspace_name, safe='')}/experiments",
-            method="POST",
-            query={"name": name},
-            data=spec,
-            exceptions_for_status={409: ExperimentConflict(name)},
-        ).json()
-        return self.get_experiment(experiment_data["id"])
-
-    def get_dataset(self, dataset: str) -> Dataset:
-        """
-        Get info about a dataset.
-
-        :param dataset: The dataset ID or full name.
-
-        :raises DatasetNotFound: If the dataset can't be found.
-        :raises HTTPError: Any other HTTP exception that can occur.
-
-        """
-        return Dataset.from_json(
-            self.request(
-                f"datasets/{urllib.parse.quote(dataset, safe='')}",
-                exceptions_for_status={404: DatasetNotFound(dataset)},
-            ).json()
-        )
-
-    def create_dataset(
+class DatasetClient(ServiceClient):
+    def create(
         self,
         name: str,
         source: PathOrStr,
@@ -275,7 +284,7 @@ class Beaker:
             dataset_info = make_dataset()
         except DatasetConflict:
             if force:
-                self.delete_dataset(f"{self.user}/{name}")
+                self.delete(f"{self.beaker.account.whoami().name}/{name}")
                 dataset_info = make_dataset()
             else:
                 raise
@@ -301,9 +310,26 @@ class Beaker:
         ).json()
 
         # Return info about the dataset.
-        return self.get_dataset(dataset_info["id"])
+        return self.get(dataset_info["id"])
 
-    def delete_dataset(self, dataset: str):
+    def get(self, dataset: str) -> Dataset:
+        """
+        Get info about a dataset.
+
+        :param dataset: The dataset ID or full name.
+
+        :raises DatasetNotFound: If the dataset can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+
+        """
+        return Dataset.from_json(
+            self.request(
+                f"datasets/{urllib.parse.quote(dataset, safe='')}",
+                exceptions_for_status={404: DatasetNotFound(dataset)},
+            ).json()
+        )
+
+    def delete(self, dataset: str):
         """
         Delete a dataset.
 
@@ -319,105 +345,9 @@ class Beaker:
             exceptions_for_status={404: DatasetNotFound(dataset)},
         )
 
-    def get_logs(self, job_id: str, quiet: bool = False) -> Generator[bytes, None, None]:
-        """
-        Download the logs for a job.
 
-        Returns a generator with the streaming bytes from the download.
-        The generator should be exhausted, otherwise the logs downloaded will be incomplete.
-
-        .. seealso::
-            :meth:`get_logs_for_experiment()`
-
-        :param job_id: The ID of the Beaker job.
-        :param quiet: If ``True``, progress won't be displayed.
-
-        :raises JobNotFound: If the job can't be found.
-        :raises HTTPError: Any other HTTP exception that can occur.
-
-        """
-        from rich.progress import (
-            FileSizeColumn,
-            Progress,
-            SpinnerColumn,
-            TimeElapsedColumn,
-        )
-
-        response = self.request(
-            f"jobs/{job_id}/logs",
-            exceptions_for_status={404: JobNotFound(job_id)},
-            stream=True,
-        )
-
-        # TODO: currently beaker doesn't provide the Content-Length header, update this if they do.
-        #  content_length = response.headers.get("Content-Length")
-        #  total = int(content_length) if content_length is not None else None
-
-        with Progress(
-            "[progress.description]{task.description}",
-            SpinnerColumn(),
-            FileSizeColumn(),
-            TimeElapsedColumn(),
-            disable=quiet,
-        ) as progress:
-            task_id = progress.add_task("Downloading:")
-            total = 0
-            for chunk in response.iter_content(chunk_size=1024):
-                if chunk:
-                    advance = len(chunk)
-                    total += advance
-                    progress.update(task_id, total=total + 1, advance=advance)
-                    yield chunk
-
-    def get_logs_for_experiment(
-        self,
-        experiment: str,
-        job_id: Optional[str] = None,
-        quiet: bool = False,
-    ) -> Generator[bytes, None, None]:
-        """
-        Download the logs for an experiment.
-
-        Returns a generator with the streaming bytes from the download.
-        The generator should be exhausted, otherwise the logs downloaded will be incomplete.
-
-        :param experiment: The experiment ID or full name.
-        :param job_id: The ID of a specific job from the Beaker experiment to get the logs for.
-            Required if there are more than one jobs in the experiment.
-        :param quiet: If ``True``, progress won't be displayed.
-
-        :raises ExperimentNotFound: If the experiment can't be found.
-        :raises JobNotFound: If the job can't be found.
-        :raises HTTPError: Any other HTTP exception that can occur.
-
-        """
-        exp = self.get_experiment(experiment)
-        if job_id is None:
-            if len(exp["jobs"]) > 1:
-                raise ValueError(
-                    f"Experiment {experiment} has more than 1 job. You need to specify the 'job_id'."
-                )
-            job_id = exp["jobs"][0]["id"]
-        return self.get_logs(job_id, quiet=quiet)
-
-    def get_image(self, image: str) -> Image:
-        """
-        Get info about an image.
-
-        :param image: The Beaker image ID or full name.
-
-        :raises ImageNotFound: If the image can't be found on Beaker.
-        :raises HTTPError: Any other HTTP exception that can occur.
-
-        """
-        return Image.from_json(
-            self.request(
-                f"images/{urllib.parse.quote(image, safe='')}",
-                exceptions_for_status={404: ImageNotFound(image)},
-            ).json()
-        )
-
-    def create_image(
+class ImageClient(ServiceClient):
+    def create(
         self,
         name: str,
         image_tag: str,
@@ -523,11 +453,28 @@ class Beaker:
         self.request(f"images/{image_data['id']}", method="PATCH", data={"Commit": True})
 
         # Return info about the Beaker image.
-        return self.get_image(image_data["id"])
+        return self.get(image_data["id"])
 
-    def delete_image(self, image: str):
+    def get(self, image: str) -> Image:
         """
-        Delete an image.
+        Get info about an image on Beaker.
+
+        :param image: The Beaker image ID or full name.
+
+        :raises ImageNotFound: If the image can't be found on Beaker.
+        :raises HTTPError: Any other HTTP exception that can occur.
+
+        """
+        return Image.from_json(
+            self.request(
+                f"images/{urllib.parse.quote(image, safe='')}",
+                exceptions_for_status={404: ImageNotFound(image)},
+            ).json()
+        )
+
+    def delete(self, image: str):
+        """
+        Delete an image on Beaker.
 
         :param image: The Beaker image ID or full name.
 
@@ -541,7 +488,107 @@ class Beaker:
             exceptions_for_status={404: ImageNotFound(image)},
         )
 
-    def list_experiments(self, workspace: Optional[str] = None) -> List[Experiment]:
+
+class JobClient(ServiceClient):
+    def logs(self, job_id: str, quiet: bool = False) -> Generator[bytes, None, None]:
+        """
+        Download the logs for a job.
+
+        Returns a generator with the streaming bytes from the download.
+        The generator should be exhausted, otherwise the logs downloaded will be incomplete.
+
+        .. seealso::
+            :meth:`get_logs_for_experiment()`
+
+        :param job_id: The ID of the Beaker job.
+        :param quiet: If ``True``, progress won't be displayed.
+
+        :raises JobNotFound: If the job can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+
+        """
+        from rich.progress import (
+            FileSizeColumn,
+            Progress,
+            SpinnerColumn,
+            TimeElapsedColumn,
+        )
+
+        response = self.request(
+            f"jobs/{job_id}/logs",
+            exceptions_for_status={404: JobNotFound(job_id)},
+            stream=True,
+        )
+
+        # TODO: currently beaker doesn't provide the Content-Length header, update this if they do.
+        #  content_length = response.headers.get("Content-Length")
+        #  total = int(content_length) if content_length is not None else None
+
+        with Progress(
+            "[progress.description]{task.description}",
+            SpinnerColumn(),
+            FileSizeColumn(),
+            TimeElapsedColumn(),
+            disable=quiet,
+        ) as progress:
+            task_id = progress.add_task("Downloading:")
+            total = 0
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    advance = len(chunk)
+                    total += advance
+                    progress.update(task_id, total=total + 1, advance=advance)
+                    yield chunk
+
+
+class ExperimentClient(ServiceClient):
+    def create(
+        self, name: str, spec: Dict[str, Any], workspace: Optional[str] = None
+    ) -> Experiment:
+        """
+        Create a new Beaker experiment with the given ``spec``.
+
+        :param name: The name to assign the experiment.
+        :param spec: A Beaker `experiment spec
+            <https://github.com/beaker/docs/blob/main/docs/concept/experiments.md#spec-format>`_
+            in the form of a Python dictionary.
+        :param workspace: The workspace to create the experiment under. If not specified,
+            :data:`Config.default_workspace` is used.
+
+        :raises ExperimentConflict: If an experiment with the given name already exists.
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` or :data:`Config.default_workspace` are set.
+        :raises HTTPError: Any other HTTP exception that can occur.
+
+        """
+        workspace_name = self._resolve_workspace(workspace)
+        experiment_data = self.request(
+            f"workspaces/{urllib.parse.quote(workspace_name, safe='')}/experiments",
+            method="POST",
+            query={"name": name},
+            data=spec,
+            exceptions_for_status={409: ExperimentConflict(name)},
+        ).json()
+        return self.get(experiment_data["id"])
+
+    def get(self, experiment: str) -> Experiment:
+        """
+        Get info about an experiment.
+
+        :param experiment: The experiment ID or full name.
+
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+
+        """
+        return Experiment.from_json(
+            self.request(
+                f"experiments/{urllib.parse.quote(experiment, safe='')}",
+                exceptions_for_status={404: ExperimentNotFound(experiment)},
+            ).json()
+        )
+
+    def list(self, workspace: Optional[str] = None) -> List[Experiment]:
         """
         :param workspace: The workspace to upload the dataset to. If not specified,
             :data:`Config.default_workspace` is used.
@@ -560,11 +607,33 @@ class Beaker:
             ).json()["data"]
         ]
 
-    def _resolve_workspace(self, workspace: Optional[str], ensure_exists: bool = True) -> str:
-        workspace_name = workspace or self.config.default_workspace
-        if workspace_name is None:
-            raise WorkspaceNotSet("'workspace' argument required since default workspace not set")
-        else:
-            if ensure_exists:
-                self.ensure_workspace(workspace_name)
-            return workspace_name
+    def logs(
+        self,
+        experiment: str,
+        job_id: Optional[str] = None,
+        quiet: bool = False,
+    ) -> Generator[bytes, None, None]:
+        """
+        Download the logs for an experiment.
+
+        Returns a generator with the streaming bytes from the download.
+        The generator should be exhausted, otherwise the logs downloaded will be incomplete.
+
+        :param experiment: The experiment ID or full name.
+        :param job_id: The ID of a specific job from the Beaker experiment to get the logs for.
+            Required if there are more than one jobs in the experiment.
+        :param quiet: If ``True``, progress won't be displayed.
+
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises JobNotFound: If the job can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+
+        """
+        exp = self.get(experiment)
+        if job_id is None:
+            if len(exp["jobs"]) > 1:
+                raise ValueError(
+                    f"Experiment {experiment} has more than 1 job. You need to specify the 'job_id'."
+                )
+            job_id = exp["jobs"][0]["id"]
+        return self.beaker.job.logs(job_id, quiet=quiet)
