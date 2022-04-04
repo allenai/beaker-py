@@ -1,4 +1,5 @@
 import uuid
+from pathlib import Path
 from typing import Generator
 
 import petname
