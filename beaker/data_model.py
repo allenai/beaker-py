@@ -166,13 +166,13 @@ class DatasetStorage(BaseModel):
 
 class Dataset(BaseModel):
     id: str
-    name: str
     owner: Account
     author: Account
     created: datetime
     committed: Optional[datetime] = None
     workspace_ref: WorkspaceRef = Field(alias="workspaceRef")
-    full_name: str = Field(alias="fullName")
+    name: Optional[str] = None
+    full_name: Optional[str] = Field(alias="fullName", default=None)
     storage: Optional[DatasetStorage] = None
 
 

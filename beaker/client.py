@@ -11,16 +11,26 @@ import requests
 from cachetools import TTLCache, cached
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+from rich.progress import (
+    BarColumn,
+    FileSizeColumn,
+    Progress,
+    SpinnerColumn,
+    TaskID,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
 
 from .config import Config
 from .data_model import *
 from .exceptions import *
+from .util import BufferedReaderWithProgress, DownloadUploadColumn
 from .version import VERSION
 
 __all__ = ["Beaker"]
 
 
-PathOrStr = Union[os.PathLike, Path]
+PathOrStr = Union[os.PathLike, str]
 
 
 class Beaker:
@@ -253,9 +263,10 @@ class DatasetClient(ServiceClient):
         self,
         name: str,
         source: PathOrStr,
-        target: Optional[str] = None,
+        target: Optional[PathOrStr] = None,
         workspace: Optional[str] = None,
         force: bool = False,
+        quiet: bool = False,
     ) -> Dataset:
         """
         Create a dataset with the source file(s).
@@ -263,14 +274,12 @@ class DatasetClient(ServiceClient):
         :param name: The name to assign to the new dataset.
         :param source: The local source file or directory of the dataset.
         :param target: If ``source`` is a file, you can change the name of the file in the dataset
-            by specifying ``target``.
+            by specifying ``target``. If ``source`` is a directory, you can set ``target`` to
+            specify a directory in the dataset to upload ``source`` under.
         :param workspace: The workspace to upload the dataset to. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param force: If ``True`` and a dataset by the given name already exists, it will be overwritten.
-
-        .. attention::
-            Currently only a single file ``source`` is supported.
-            See `issue#39 <https://github.com/allenai/beaker-py/issues/39>`_ for tracking.
+        :param quiet: If ``True``, progress won't be displayed.
 
         :raises DatasetConflict: If a dataset by that name already exists and ``force=False``.
         :raises WorkspaceNotFound: If the workspace doesn't exist.
@@ -285,18 +294,17 @@ class DatasetClient(ServiceClient):
         if not source.exists():
             raise FileNotFoundError(source)
 
-        if not source.is_file():
-            raise NotImplementedError("'create_dataset()' only works for single files so far")
-
         # Create the dataset.
-        def make_dataset() -> Dict[str, Any]:
-            return self.request(
-                "datasets",
-                method="POST",
-                query={"name": name},
-                data={"workspace": workspace_name, "fileheap": True},
-                exceptions_for_status={409: DatasetConflict(name)},
-            ).json()
+        def make_dataset() -> Dataset:
+            return Dataset.from_json(
+                self.request(
+                    "datasets",
+                    method="POST",
+                    query={"name": name},
+                    data={"workspace": workspace_name, "fileheap": True},
+                    exceptions_for_status={409: DatasetConflict(name)},
+                ).json()
+            )
 
         try:
             dataset_info = make_dataset()
@@ -306,26 +314,17 @@ class DatasetClient(ServiceClient):
                 dataset_info = make_dataset()
             else:
                 raise
+        assert dataset_info.storage is not None
 
-        # Upload the file.
-        with source.open("rb") as source_file:
-            self.request(
-                f"datasets/{dataset_info['storage']['id']}/files/{target or source.name}",
-                method="PUT",
-                data=source_file,
-                token=dataset_info["storage"]["token"],
-                base_url=dataset_info["storage"]["address"],
-                headers={
-                    "User-Agent": f"beaker-py v{VERSION}",
-                },
-            )
+        # Upload the file(s).
+        self.sync_source(dataset_info, source, target, quiet=quiet)
 
         # Commit the dataset.
         self.request(
-            f"datasets/{dataset_info['id']}",
+            f"datasets/{dataset_info.id}",
             method="PATCH",
             data={"commit": True},
-        ).json()
+        )
 
         # Return info about the dataset.
         return self.get(dataset_info["id"])
@@ -368,6 +367,92 @@ class DatasetClient(ServiceClient):
             f"'{dataset}': Make sure you're using a valid Beaker dataset ID or the "
             f"*full* name of the dataset (with the account prefix, e.g. 'username/dataset_name')"
         )
+
+    def sync_source(
+        self,
+        dataset: Dataset,
+        source,
+        PathOrStr,
+        target: Optional[PathOrStr] = None,
+        quiet: bool = False,
+    ) -> None:
+        source: Path = Path(source)
+
+        with Progress(
+            "[progress.description]{task.description}",
+            BarColumn(),
+            "[progress.percentage]{task.percentage:>3.0f}%",
+            TimeRemainingColumn(),
+            DownloadUploadColumn(),
+            disable=quiet,
+        ) as progress:
+            bytes_task = progress.add_task("Uploading dataset")
+            if source.is_file():
+                progress.update(bytes_task, total=source.lstat().st_size)
+                total_uploaded = self._upload_file(
+                    dataset, source, target or source.name, progress, bytes_task
+                )
+                progress.update(bytes_task, total=total_uploaded)
+            elif source.is_dir():
+                # Gather all files to upload and count the total number of bytes.
+                total_bytes = 0
+                paths_to_upload: Dict[Path, int] = {}
+                for path in source.glob("**/*"):
+                    if path.is_dir():
+                        continue
+                    size = path.lstat().st_size
+                    paths_to_upload[path] = size
+                    total_bytes += size
+                progress.update(bytes_task, total=total_bytes)
+
+                # Now upload.
+                for path, size in paths_to_upload.items():
+                    if not path.exists:
+                        # If this file was deleted since we started, adjust total.
+                        total_bytes -= size
+                        progress.update(bytes_task, total=total_bytes)
+                        continue
+
+                    target_path = path.relative_to(source)
+                    if target is not None:
+                        target_path = Path(target) / target_path
+
+                    # TODO: use a thread pool.
+                    actual_size = self._upload_file(
+                        dataset, path, target_path, progress, bytes_task
+                    )
+                    if actual_size != size:
+                        # If the size of the file has changed since we started, adjust total.
+                        paths_to_upload[path] = actual_size
+                        total_bytes += actual_size - size
+                        progress.update(bytes_task, total=total_bytes)
+            else:
+                raise FileNotFoundError(source)
+
+    def _upload_file(
+        self,
+        dataset: Dataset,
+        source: PathOrStr,
+        target: PathOrStr,
+        progress: Progress,
+        task_id: TaskID,
+    ) -> int:
+        # TODO: handle case where file is larger than the fileheap limit.
+        source: Path = Path(source)
+        assert dataset.storage is not None  # mypy is dumb
+        with source.open("rb") as source_file:
+            source_file_wrapper = BufferedReaderWithProgress(source_file, progress, task_id)
+            self.request(
+                f"datasets/{dataset.storage.id}/files/{str(target)}",
+                method="PUT",
+                data=source_file_wrapper,
+                token=dataset.storage.token,
+                base_url=dataset.storage.address,
+                headers={
+                    "User-Agent": f"beaker-py v{VERSION}",
+                },
+            )
+            return source_file_wrapper.total_read
 
 
 class ImageClient(ServiceClient):
@@ -418,10 +503,6 @@ class ImageClient(ServiceClient):
         image.tag(repo_data["imageTag"])
 
         # Push the image to Beaker.
-        from rich.progress import BarColumn, Progress, TaskID, TimeRemainingColumn
-
-        from .util import DownloadUploadColumn
-
         with Progress(
             "[progress.description]{task.description}",
             BarColumn(),
@@ -539,13 +620,6 @@ class JobClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
-        from rich.progress import (
-            FileSizeColumn,
-            Progress,
-            SpinnerColumn,
-            TimeElapsedColumn,
-        )
-
         response = self.request(
             f"jobs/{job_id}/logs",
             exceptions_for_status={404: JobNotFound(job_id)},
@@ -707,10 +781,7 @@ class ExperimentClient(ServiceClient):
         :raises TimeoutError: If the ``timeout`` expires.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
-
         start = time.time()
-
         with Progress(
             "[progress.description]{task.description}",
             SpinnerColumn(),
