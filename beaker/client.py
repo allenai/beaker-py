@@ -288,6 +288,7 @@ class DatasetClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
+        :raises EmptySourceFileError: If the source is an empty file.
         """
         workspace_name = self._resolve_workspace(workspace)
 
@@ -391,7 +392,10 @@ class DatasetClient(ServiceClient):
         ) as progress:
             bytes_task = progress.add_task("Uploading dataset")
             if source.is_file():
-                progress.update(bytes_task, total=source.lstat().st_size)
+                size = source.lstat().st_size
+                if size == 0:
+                    raise EmptySourceFileError(source)
+                progress.update(bytes_task, total=size)
                 total_uploaded = self._upload_file(
                     dataset, source, target or source.name, progress, bytes_task
                 )
@@ -406,6 +410,8 @@ class DatasetClient(ServiceClient):
                     if path.is_dir():
                         continue
                     size = path.lstat().st_size
+                    if size == 0:
+                        continue
                     path_to_size[path] = size
                     total_bytes += size
                 progress.update(bytes_task, total=total_bytes)
