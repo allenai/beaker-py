@@ -4,6 +4,7 @@
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import logging
 import os
 import sys
 from datetime import datetime
@@ -86,3 +87,15 @@ html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
 html_favicon = "_static/favicon.ico"
+
+# -- Hack to get rid of stupid warnigns from sphinx_autodoc_typehints --------
+
+
+class ShutupSphinxAutodocTypehintsFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        if "Cannot resolve forward reference" in record.msg:
+            return False
+        return True
+
+
+logging.getLogger("sphinx.sphinx_autodoc_typehints").addFilter(ShutupSphinxAutodocTypehintsFilter())

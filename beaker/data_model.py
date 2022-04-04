@@ -164,6 +164,13 @@ class DatasetStorage(BaseModel):
     token_expires: datetime = Field(alias="tokenExpires")
 
 
+class DatasetSize(BaseModel):
+    final: bool
+    files: int
+    bytes: int
+    bytes_human: str = Field(alias="bytesHuman")
+
+
 class Dataset(BaseModel):
     id: str
     owner: Account
@@ -174,6 +181,26 @@ class Dataset(BaseModel):
     name: Optional[str] = None
     full_name: Optional[str] = Field(alias="fullName", default=None)
     storage: Optional[DatasetStorage] = None
+
+
+class DatasetStorageInfo(BaseModel):
+    id: str
+    created: Optional[datetime] = None
+    size: Optional[DatasetSize] = None
+    readonly: bool = True
+
+
+class FileInfo(BaseModel):
+    path: str
+    size: int
+    digest: str
+    updated: datetime
+    url: str
+
+
+class DatasetManifest(BaseModel):
+    files: List[FileInfo]
+    cursor: Optional[str] = None
 
 
 class Image(BaseModel):

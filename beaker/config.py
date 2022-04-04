@@ -15,6 +15,9 @@ except RuntimeError:
     pass
 
 
+__all__ = ["Config"]
+
+
 @dataclass
 class Config:
     user_token: str
