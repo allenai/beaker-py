@@ -267,6 +267,7 @@ class DatasetClient(ServiceClient):
         workspace: Optional[str] = None,
         force: bool = False,
         quiet: bool = False,
+        max_workers: int = 8,
     ) -> Dataset:
         """
         Create a dataset with the source file(s).
@@ -280,6 +281,7 @@ class DatasetClient(ServiceClient):
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param force: If ``True`` and a dataset by the given name already exists, it will be overwritten.
         :param quiet: If ``True``, progress won't be displayed.
+        :param max_workers: The maximum number of thread pool workers to use to upload files concurrently.
 
         :raises DatasetConflict: If a dataset by that name already exists and ``force=False``.
         :raises WorkspaceNotFound: If the workspace doesn't exist.
@@ -317,7 +319,7 @@ class DatasetClient(ServiceClient):
         assert dataset_info.storage is not None
 
         # Upload the file(s).
-        self.sync_source(dataset_info, source, target, quiet=quiet)
+        self.sync_source(dataset_info, source, target, quiet=quiet, max_workers=max_workers)
 
         # Commit the dataset.
         self.request(
@@ -375,6 +377,7 @@ class DatasetClient(ServiceClient):
         PathOrStr,
         target: Optional[PathOrStr] = None,
         quiet: bool = False,
+        max_workers: int = 8,
     ) -> None:
         source: Path = Path(source)
 
@@ -394,38 +397,47 @@ class DatasetClient(ServiceClient):
                 )
                 progress.update(bytes_task, total=total_uploaded)
             elif source.is_dir():
+                import concurrent.futures
+
                 # Gather all files to upload and count the total number of bytes.
                 total_bytes = 0
-                paths_to_upload: Dict[Path, int] = {}
+                path_to_size: Dict[Path, int] = {}
                 for path in source.glob("**/*"):
                     if path.is_dir():
                         continue
                     size = path.lstat().st_size
-                    paths_to_upload[path] = size
+                    path_to_size[path] = size
                     total_bytes += size
                 progress.update(bytes_task, total=total_bytes)
 
                 # Now upload.
-                for path, size in paths_to_upload.items():
-                    if not path.exists:
-                        # If this file was deleted since we started, adjust total.
-                        total_bytes -= size
-                        progress.update(bytes_task, total=total_bytes)
-                        continue
+                with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+                    # Dispatch tasks to thread pool executor.
+                    future_to_path = {}
+                    for path in path_to_size:
+                        target_path = path.relative_to(source)
+                        if target is not None:
+                            target_path = Path(target) / target_path
+                        future = executor.submit(
+                            self._upload_file,
+                            dataset,
+                            path,
+                            target_path,
+                            progress,
+                            bytes_task,
+                            True,
+                        )
+                        future_to_path[future] = path
 
-                    target_path = path.relative_to(source)
-                    if target is not None:
-                        target_path = Path(target) / target_path
-
-                    # TODO: use a thread pool.
-                    actual_size = self._upload_file(
-                        dataset, path, target_path, progress, bytes_task
-                    )
-                    if actual_size != size:
-                        # If the size of the file has changed since we started, adjust total.
-                        paths_to_upload[path] = actual_size
-                        total_bytes += actual_size - size
-                        progress.update(bytes_task, total=total_bytes)
+                    # Collect completed tasks.
+                    for future in concurrent.futures.as_completed(future_to_path):
+                        path = future_to_path[future]
+                        original_size = path_to_size[path]
+                        actual_size = future.result()
+                        if actual_size != original_size:
+                            # If the size of the file has changed since we started, adjust total.
+                            total_bytes += actual_size - original_size
+                            progress.update(bytes_task, total=total_bytes)
             else:
                 raise FileNotFoundError(source)
 
@@ -436,9 +448,12 @@ class DatasetClient(ServiceClient):
         target: PathOrStr,
         progress: Progress,
         task_id: TaskID,
+        ignore_errors: bool = False,
     ) -> int:
         # TODO: handle case where file is larger than the fileheap limit.
         source: Path = Path(source)
+        if ignore_errors and not source.exists():
+            return 0
         assert dataset.storage is not None  # mypy is dumb
         with source.open("rb") as source_file:
             source_file_wrapper = BufferedReaderWithProgress(source_file, progress, task_id)

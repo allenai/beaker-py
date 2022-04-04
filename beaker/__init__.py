@@ -93,7 +93,16 @@ Manage Beaker datasets with :data:`Beaker.dataset`.
 
 For example, create a dataset from a local file with :meth:`Beaker.dataset.create() <client.DatasetClient.create>`:
 
->>> dataset = beaker.dataset.create(dataset_name, "README.md")
+>>> dataset = beaker.dataset.create(dataset_name, "README.md", quiet=True)
+<BLANKLINE>
+
+Or create a dataset from a local directory:
+
+>>> dataset = beaker.dataset.create(dataset_name, "docs/source/", force=True, quiet=True)
+<BLANKLINE>
+
+.. tip::
+    The ``force=True`` flag is used to overwrite any existing dataset with the same name.
 
 """
 
