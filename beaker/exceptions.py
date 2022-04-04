@@ -50,10 +50,8 @@ class DatasetNotFound(BeakerError):
     pass
 
 
-class EmptySourceFileError(BeakerError):
-    """
-    Raised when created a dataset from a file when the file is empty.
-    """
+class UnexpectedEOFError(BeakerError):
+    pass
 
 
 class JobNotFound(BeakerError):

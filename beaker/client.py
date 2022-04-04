@@ -259,6 +259,17 @@ class WorkspaceClient(ServiceClient):
 
 
 class DatasetClient(ServiceClient):
+    HEADER_UPLOAD_ID = "Upload-ID"
+    HEADER_UPLOAD_LENGTH = "Upload-Length"
+    HEADER_UPLOAD_OFFSET = "Upload-Offset"
+    HEADER_DIGEST = "Digest"
+    HEADER_USER_AGENT = "User-Agent"
+    USER_AGENT = f"beaker-py v{VERSION}"
+
+    SHA256 = "SHA256"
+
+    REQUEST_SIZE_LIMIT = 32 * 1024 * 1024
+
     def create(
         self,
         name: str,
@@ -288,14 +299,16 @@ class DatasetClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
-        :raises EmptySourceFileError: If the source is an empty file.
+        :raises UnexpectedEOFError: If ``source`` is a single empty file, or if ``source`` is a directory and
+            the contents of one of the directories files is changed while creating the dataset.
+        :raises FileNotFoundError: If the ``source`` doesn't exist.
         """
         workspace_name = self._resolve_workspace(workspace)
 
         # Ensure source exists.
         source: Path = Path(source)
         if not source.exists():
-            raise FileNotFoundError(source)
+            raise FileNotFoundError(str(source))
 
         # Create the dataset.
         def make_dataset() -> Dataset:
@@ -330,7 +343,7 @@ class DatasetClient(ServiceClient):
         )
 
         # Return info about the dataset.
-        return self.get(dataset_info["id"])
+        return self.get(dataset_info.id)
 
     def get(self, dataset: str) -> Dataset:
         """
@@ -394,10 +407,10 @@ class DatasetClient(ServiceClient):
             if source.is_file():
                 size = source.lstat().st_size
                 if size == 0:
-                    raise EmptySourceFileError(source)
+                    raise UnexpectedEOFError(str(source))
                 progress.update(bytes_task, total=size)
                 total_uploaded = self._upload_file(
-                    dataset, source, target or source.name, progress, bytes_task
+                    dataset, size, source, target or source.name, progress, bytes_task
                 )
                 progress.update(bytes_task, total=total_uploaded)
             elif source.is_dir():
@@ -420,13 +433,14 @@ class DatasetClient(ServiceClient):
                 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
                     # Dispatch tasks to thread pool executor.
                     future_to_path = {}
-                    for path in path_to_size:
+                    for path, size in path_to_size.items():
                         target_path = path.relative_to(source)
                         if target is not None:
                             target_path = Path(target) / target_path
                         future = executor.submit(
                             self._upload_file,
                             dataset,
+                            size,
                             path,
                             target_path,
                             progress,
@@ -450,30 +464,89 @@ class DatasetClient(ServiceClient):
     def _upload_file(
         self,
         dataset: Dataset,
+        size: int,
         source: PathOrStr,
         target: PathOrStr,
         progress: Progress,
         task_id: TaskID,
         ignore_errors: bool = False,
     ) -> int:
-        # TODO: handle case where file is larger than the fileheap limit.
         source: Path = Path(source)
+        assert dataset.storage is not None
         if ignore_errors and not source.exists():
             return 0
-        assert dataset.storage is not None  # mypy is dumb
+
         with source.open("rb") as source_file:
             source_file_wrapper = BufferedReaderWithProgress(source_file, progress, task_id)
+            body: Optional[BufferedReaderWithProgress] = source_file_wrapper
+            digest: Optional[bytes] = None
+
+            if size > self.REQUEST_SIZE_LIMIT:
+                response = self.request(
+                    "uploads",
+                    method="POST",
+                    token=dataset.storage.token,
+                    base_url=dataset.storage.address,
+                    headers={self.HEADER_USER_AGENT: self.USER_AGENT},
+                )
+                upload_id = response.headers[self.HEADER_UPLOAD_ID]
+
+                written = 0
+                while written < size:
+                    chunk = source_file_wrapper.read(self.REQUEST_SIZE_LIMIT)
+                    if not chunk:
+                        break
+                    response = self.request(
+                        f"uploads/{upload_id}",
+                        method="PATCH",
+                        data=chunk,
+                        token=dataset.storage.token,
+                        base_url=dataset.storage.address,
+                        headers={
+                            self.HEADER_USER_AGENT: self.USER_AGENT,
+                            self.HEADER_UPLOAD_LENGTH: str(size),
+                            self.HEADER_UPLOAD_OFFSET: str(written),
+                        },
+                    )
+                    written += len(chunk)
+
+                    encoded_digest = response.headers.get(self.HEADER_DIGEST)
+                    if encoded_digest:
+                        digest = self._decode_digest(encoded_digest)
+                        break
+
+                if written != size:
+                    raise UnexpectedEOFError(str(source))
+
+                body = None
+
+            headers = {
+                self.HEADER_USER_AGENT: self.USER_AGENT,
+            }
+            if digest:
+                headers[self.HEADER_DIGEST] = self._encode_digest(digest)
             self.request(
                 f"datasets/{dataset.storage.id}/files/{str(target)}",
                 method="PUT",
-                data=source_file_wrapper,
+                data=body,
                 token=dataset.storage.token,
                 base_url=dataset.storage.address,
-                headers={
-                    "User-Agent": f"beaker-py v{VERSION}",
-                },
+                headers=headers,
+                stream=body is not None,
             )
+
             return source_file_wrapper.total_read
+
+    def _encode_digest(self, digest: bytes) -> str:
+        import base64
+
+        return f"{self.SHA256} {base64.standard_b64encode(digest).decode()}"
+
+    def _decode_digest(self, encoded_digest: str) -> bytes:
+        import base64
+
+        _, encoded = encoded_digest.split(" ", 2)
+        return base64.standard_b64decode(encoded)
 
 
 class ImageClient(ServiceClient):
