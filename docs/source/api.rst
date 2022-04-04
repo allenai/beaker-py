@@ -8,29 +8,48 @@ Client
    :members:
    :member-order: bysource
 
-.. autoclass:: beaker.client.AccountClient
+Account
+~~~~~~~
+
+.. autoclass:: beaker.services.AccountClient
    :members:
    :member-order: bysource
 
-.. autoclass:: beaker.client.WorkspaceClient
+Workspace
+~~~~~~~~~
+
+.. autoclass:: beaker.services.WorkspaceClient
    :members:
    :member-order: bysource
 
-.. autoclass:: beaker.client.DatasetClient
+Dataset
+~~~~~~~
+
+.. autoclass:: beaker.services.DatasetClient
    :members:
    :member-order: bysource
 
-.. autoclass:: beaker.client.ImageClient
+Image
+~~~~~
+
+.. autoclass:: beaker.services.ImageClient
    :members:
    :member-order: bysource
 
-.. autoclass:: beaker.client.JobClient
+Job
+~~~
+
+.. autoclass:: beaker.services.JobClient
    :members:
    :member-order: bysource
 
-.. autoclass:: beaker.client.ExperimentClient
+Experiment
+~~~~~~~~~~
+
+.. autoclass:: beaker.services.ExperimentClient
    :members:
    :member-order: bysource
+
 
 Data Models
 -----------
@@ -52,3 +71,5 @@ Exceptions
    :members:
 
 .. autoexception:: beaker.exceptions.HTTPError
+
+.. autoexception:: beaker.exceptions.ValidationError
