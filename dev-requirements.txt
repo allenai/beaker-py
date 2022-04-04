@@ -3,6 +3,9 @@ flake8
 
 # Static type checking
 mypy==0.942
+types-requests
+types-cachetools
+types-PyYAML
 
 # Automatic code formatting
 black==22.3.0

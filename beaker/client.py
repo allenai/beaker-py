@@ -8,6 +8,7 @@ from typing import Any, Dict, Generator, List, Optional, Union
 
 import docker
 import requests
+from cachetools import TTLCache, cached
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
@@ -131,7 +132,7 @@ class ServiceClient:
         return self.beaker.docker
 
     @contextmanager
-    def _session_with_backoff(self) -> requests.Session:
+    def _session_with_backoff(self) -> Generator[requests.Session, None, None]:
         session = requests.Session()
         retries = Retry(
             total=self.MAX_RETRIES,
@@ -188,6 +189,7 @@ class ServiceClient:
 
 
 class AccountClient(ServiceClient):
+    @cached(cache=TTLCache(maxsize=10, ttl=5 * 60))
     def whoami(self) -> Account:
         """
         Check who you are authenticated as.
@@ -196,6 +198,7 @@ class AccountClient(ServiceClient):
 
 
 class WorkspaceClient(ServiceClient):
+    @cached(cache=TTLCache(maxsize=10, ttl=5 * 60))
     def get(self, workspace: Optional[str] = None) -> Workspace:
         """
         Get information about the workspace.
@@ -415,7 +418,7 @@ class ImageClient(ServiceClient):
         image.tag(repo_data["imageTag"])
 
         # Push the image to Beaker.
-        from rich.progress import BarColumn, Progress, TimeRemainingColumn
+        from rich.progress import BarColumn, Progress, TaskID, TimeRemainingColumn
 
         from .util import DownloadUploadColumn
 
@@ -427,7 +430,7 @@ class ImageClient(ServiceClient):
             DownloadUploadColumn(),
             disable=quiet,
         ) as progress:
-            layer_id_to_task: Dict[str, str] = {}
+            layer_id_to_task: Dict[str, TaskID] = {}
             for line in self.docker.api.push(
                 repo_data["imageTag"],
                 stream=True,
@@ -443,7 +446,7 @@ class ImageClient(ServiceClient):
                 layer_id = line["id"]
                 status = line["status"].lower()
                 progress_detail = line.get("progressDetail")
-                task_id: str
+                task_id: TaskID
                 if layer_id not in layer_id_to_task:
                     task_id = progress.add_task(layer_id, start=True, total=1)
                     layer_id_to_task[layer_id] = task_id
@@ -676,7 +679,7 @@ class ExperimentClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
-        exp = self.get(experiment)
+        exp = self.get(experiment if isinstance(experiment, str) else experiment.id)
         if job_id is None:
             if len(exp.jobs) > 1:
                 raise ValueError(
@@ -717,7 +720,7 @@ class ExperimentClient(ServiceClient):
             task_id = progress.add_task(f"Waiting on {experiment}:")
             polls = 0
             while True:
-                exp = self.get(experiment)
+                exp = self.get(experiment if isinstance(experiment, str) else experiment.id)
                 if exp.executions:
                     for execution in exp.executions:
                         if execution.state.exit_code is None:
