@@ -108,7 +108,7 @@ Or create a dataset from a local directory:
 
 And download a dataset with :meth:`Beaker.dataset.fetch() <services.DatasetClient.fetch>`:
 
->>> beaker.dataset.fetch(dataset_name, target=download_path, quiet=True)
+>>> beaker.dataset.fetch(dataset, target=download_path, quiet=True)
 <BLANKLINE>
 
 """

@@ -107,7 +107,7 @@ class DatasetClient(ServiceClient):
 
     def fetch(
         self,
-        dataset: str,
+        dataset: Union[str, Dataset],
         target: Optional[PathOrStr] = None,
         force: bool = False,
         max_workers: int = 8,
@@ -127,7 +127,7 @@ class DatasetClient(ServiceClient):
             in the Beaker dataset.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        dataset: Dataset = self.get(dataset)
+        dataset: Dataset = self.get(dataset.id if isinstance(dataset, Dataset) else dataset)
         assert dataset.storage is not None
 
         storage_info = DatasetStorageInfo.from_json(
