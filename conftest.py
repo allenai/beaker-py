@@ -68,3 +68,10 @@ def dataset_name(doctest_namespace, client: Beaker) -> Generator[str, None, None
         client.dataset.delete(f"{client.account.whoami().name}/{name}")
     except DatasetNotFound:
         pass
+
+
+@pytest.fixture(autouse=True)
+def download_path(doctest_namespace, dataset_name, tmp_path) -> Path:
+    path = tmp_path / dataset_name
+    doctest_namespace["download_path"] = path
+    return path

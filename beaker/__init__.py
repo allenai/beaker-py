@@ -104,6 +104,11 @@ Or create a dataset from a local directory:
 .. tip::
     The ``force=True`` flag is used to overwrite any existing dataset with the same name.
 
+And download a dataset with :meth:`Beaker.dataset.fetch() <client.DatasetClient.fetch>`:
+
+>>> beaker.dataset.fetch(dataset_name, target=download_path, quiet=True)
+<BLANKLINE>
+
 """
 
 from .client import Beaker
