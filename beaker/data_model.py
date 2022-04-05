@@ -50,6 +50,14 @@ class Account(BaseModel):
     institution: Optional[str] = None
 
 
+class Organization(BaseModel):
+    id: str
+    name: str
+    description: str
+    created: datetime
+    display_name: str = Field(alias="displayName")
+
+
 class Workspace(BaseModel):
     id: str
     name: str

@@ -9,21 +9,21 @@ from beaker.client import Beaker
 from beaker.exceptions import DatasetNotFound, ExperimentNotFound, ImageNotFound
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def workspace_name(doctest_namespace) -> str:
     workspace = "ai2/petew-testing"
     doctest_namespace["workspace_name"] = workspace
     return workspace
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def client(doctest_namespace, workspace_name):
     beaker_client = Beaker.from_env(default_workspace=workspace_name)
     doctest_namespace["beaker"] = beaker_client
     return beaker_client
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def docker_image_name(doctest_namespace, client: Beaker):
     image = "hello-world"
     client.docker.images.pull(image)
@@ -31,7 +31,7 @@ def docker_image_name(doctest_namespace, client: Beaker):
     return image
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def beaker_image_name(doctest_namespace, client: Beaker) -> Generator[str, None, None]:
     image = petname.generate() + "-" + str(uuid.uuid4())[:8]
     doctest_namespace["beaker_image_name"] = image
@@ -42,14 +42,14 @@ def beaker_image_name(doctest_namespace, client: Beaker) -> Generator[str, None,
         pass
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def beaker_cluster_name(doctest_namespace) -> str:
     cluster = "ai2/petew-cpu"
     doctest_namespace["beaker_cluster_name"] = cluster
     return cluster
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def experiment_name(doctest_namespace, client: Beaker) -> Generator[str, None, None]:
     name = petname.generate() + "-" + str(uuid.uuid4())[:8]
     doctest_namespace["experiment_name"] = name
@@ -60,7 +60,7 @@ def experiment_name(doctest_namespace, client: Beaker) -> Generator[str, None, N
         pass
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def dataset_name(doctest_namespace, client: Beaker) -> Generator[str, None, None]:
     name = petname.generate() + "-" + str(uuid.uuid4())[:8]
     doctest_namespace["dataset_name"] = name
@@ -71,7 +71,7 @@ def dataset_name(doctest_namespace, client: Beaker) -> Generator[str, None, None
         pass
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def download_path(doctest_namespace, dataset_name, tmp_path) -> Path:
     path = tmp_path / dataset_name
     doctest_namespace["download_path"] = path
