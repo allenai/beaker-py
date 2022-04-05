@@ -1,6 +1,6 @@
 requests
 pydantic>=1.9,<1.10
-rich>=12.0,<12.1
+rich>=12.0,<12.2
 PyYAML
 docker>=5.0,<6.0
 cachetools>=5.0,<6.0
