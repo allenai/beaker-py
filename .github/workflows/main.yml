@@ -1,4 +1,4 @@
-name: CI
+name: Main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -15,15 +15,13 @@ on:
       - 'v*.*.*'
 
 env:
-  # Change this to invalidate existing cache.
-  CACHE_PREFIX: v0
-  PYTHON_PATH: ./
+  CACHE_PREFIX: v0  # Change this to invalidate existing cache.
   DEFAULT_PYTHON: 3.7
   BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
 
 jobs:
   checks:
-    name: ${{ matrix.os }} - py ${{ matrix.python }} - ${{ matrix.task.name }}
+    name: ${{ matrix.os }} - python ${{ matrix.python }} - ${{ matrix.task.name }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
@@ -40,9 +38,13 @@ jobs:
             run: |
               mypy .
 
-          - name: Test
+          - name: Unit tests
             run: |
-              pytest -v --color=yes --doctest-modules beaker/ tests/
+              pytest -v --color=yes tests/
+
+          - name: Doc tests
+            run: |
+              pytest -v --color=yes --doctest-modules beaker/
 
           - name: Build
             run: |
