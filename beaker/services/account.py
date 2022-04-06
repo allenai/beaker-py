@@ -7,14 +7,14 @@ from .service_client import ServiceClient
 
 
 class AccountClient(ServiceClient):
-    @property
+    @property  # type: ignore[misc]
+    @cached(cache=TTLCache(maxsize=10, ttl=5 * 60))
     def name(self):
         """
         A convenience property to get username of your Beaker account.
         """
         return self.whoami().name
 
-    @cached(cache=TTLCache(maxsize=10, ttl=5 * 60))
     def whoami(self) -> Account:
         """
         Check who you are authenticated as.

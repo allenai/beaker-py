@@ -12,6 +12,14 @@ class BeakerError(Exception):
     """
 
 
+class AccountNotFound(BeakerError):
+    pass
+
+
+class OrganizationNotFound(BeakerError):
+    pass
+
+
 class ConfigurationError(BeakerError):
     pass
 
@@ -27,6 +35,14 @@ class ImageConflict(BeakerError):
 
 
 class WorkspaceNotFound(BeakerError):
+    pass
+
+
+class ClusterNotFound(BeakerError):
+    pass
+
+
+class ClusterConflict(BeakerError):
     pass
 
 

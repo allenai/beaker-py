@@ -9,6 +9,17 @@ For example, you can check who you are logged in as with
 
 >>> username = beaker.account.whoami().name
 
+Organizations
+-------------
+
+Manage Beaker organizations with :data:`Beaker.organization`.
+
+For example, you can get information about an organization with
+:meth:`Beaker.organization.get() <services.OrganizationClient>`:
+
+>>> beaker.organization.get(beaker_org_name).display_name
+'AI2'
+
 Workspaces
 ----------
 
@@ -22,6 +33,17 @@ And you can retreive metadata about a workspace with :meth:`Beaker.workspace.get
 
 >>> beaker.workspace.get(workspace_name).id
 '01FPB5S64Y649S1948QHQHVCVE'
+
+Clusters
+--------
+
+Manage Beaker clusters with :data:`Beaker.cluster`.
+
+For example, you can get information about a cluster with
+:meth:`Beaker.cluster.get() <services.ClusterClient.get>`:
+
+>>> beaker.cluster.get(beaker_cluster_name).autoscale
+True
 
 Images
 ------

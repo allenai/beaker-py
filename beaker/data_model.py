@@ -75,6 +75,55 @@ class Organization(BaseModel):
     display_name: str
 
 
+class OrganizationMember(BaseModel):
+    role: str
+    organization: Organization
+    user: Account
+
+
+class NodeSpec(BaseModel):
+    cpu_count: Optional[float] = None
+    memory: Optional[str] = None
+    gpu_count: Optional[int] = None
+    gpu_type: Optional[str] = None
+
+
+class NodeShape(BaseModel):
+    cpu_count: Optional[float] = None
+    memory: Optional[str] = None
+    gpu_count: Optional[int] = None
+    gpu_type: Optional[str] = None
+
+
+class Cluster(BaseModel):
+    id: str
+    name: str
+    full_name: str
+    created: datetime
+    autoscale: bool
+    capacity: int
+    preemptible: bool
+    status: str
+    node_spec: NodeSpec
+    node_shape: Optional[NodeShape] = None
+    nodeCost: Optional[str] = None
+    validated: Optional[datetime] = None
+
+    @validator("validated")
+    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
+        if v is not None and v.year == 1:
+            return None
+        return v
+
+
+class Node(BaseModel):
+    id: str
+    hostname: str
+    created: datetime
+    expiry: datetime
+    limits: NodeSpec
+
+
 class Workspace(BaseModel):
     id: str
     name: str
@@ -101,6 +150,12 @@ class ExecutionState(BaseModel):
     finalized: Optional[datetime] = None
     exit_code: Optional[int] = None
 
+    @validator("created", "scheduled", "started", "exited", "finalized")
+    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
+        if v is not None and v.year == 1:
+            return None
+        return v
+
 
 class JobStatus(BaseModel):
     created: Optional[datetime] = None
@@ -109,6 +164,12 @@ class JobStatus(BaseModel):
     exited: Optional[datetime] = None
     finalized: Optional[datetime] = None
     exit_code: Optional[int] = None
+
+    @validator("created", "scheduled", "started", "exited", "finalized")
+    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
+        if v is not None and v.year == 1:
+            return None
+        return v
 
 
 class ExecutionResult(BaseModel):
@@ -207,12 +268,24 @@ class Dataset(BaseModel):
     full_name: Optional[str] = None
     storage: Optional[DatasetStorage] = None
 
+    @validator("committed")
+    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
+        if v is not None and v.year == 1:
+            return None
+        return v
+
 
 class DatasetStorageInfo(BaseModel):
     id: str
     created: Optional[datetime] = None
     size: Optional[DatasetSize] = None
     readonly: bool = True
+
+    @validator("created")
+    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
+        if v is not None and v.year == 1:
+            return None
+        return v
 
 
 class FileInfo(BaseModel):
@@ -238,6 +311,12 @@ class Image(BaseModel):
     created: datetime
     workspace_ref: WorkspaceRef
     committed: Optional[datetime] = None
+
+    @validator("committed")
+    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
+        if v is not None and v.year == 1:
+            return None
+        return v
 
 
 SPEC_VERSION = "v2-alpha"

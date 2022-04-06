@@ -6,7 +6,8 @@ import petname
 import pytest
 
 from beaker.client import Beaker
-from beaker.exceptions import DatasetNotFound, ExperimentNotFound, ImageNotFound
+from beaker.data_model import *
+from beaker.exceptions import *
 
 
 @pytest.fixture()
@@ -19,6 +20,16 @@ def workspace_name() -> str:
 def client(workspace_name):
     beaker_client = Beaker.from_env(default_workspace=workspace_name)
     return beaker_client
+
+
+@pytest.fixture
+def beaker_org_name() -> str:
+    return "ai2"
+
+
+@pytest.fixture()
+def beaker_org(client: Beaker, beaker_org_name: str) -> Organization:
+    return client.organization.get(beaker_org_name)
 
 
 @pytest.fixture()
@@ -42,6 +53,11 @@ def beaker_image_name(client: Beaker) -> Generator[str, None, None]:
 def beaker_cluster_name() -> str:
     cluster = "ai2/petew-cpu"
     return cluster
+
+
+@pytest.fixture()
+def beaker_on_prem_cluster_name() -> str:
+    return "ai2/allennlp-cirrascale"
 
 
 @pytest.fixture()
