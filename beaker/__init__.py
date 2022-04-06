@@ -49,21 +49,18 @@ Manage Beaker experiments with :data:`Beaker.experiment`.
 
 For example, create an experiment with :meth:`Beaker.experiment.create() <services.ExperimentClient.create>`:
 
->>> spec = {
-...     "version": "v2-alpha",
-...     "tasks": [
-...         {
-...             "name": "main",
-...             "image": {"beaker": image.id},
-...             "context": {"cluster": beaker_cluster_name},
-...             "result": {
-...                 "path": "/unused"  # required even if the task produces no output.
-...             },
-...             "command": None,
-...             "arguments": None,
-...         },
+>>> spec = ExperimentSpec(
+...     tasks=[
+...         TaskSpec(
+...             name="main",
+...             image=ImageSource(beaker=image.id),
+...             context=TaskContext(cluster=beaker_cluster_name),
+...             result=ResultSpec(
+...                 path="/unused"  # required even if the task produces no output.
+...             ),
+...         ),
 ...     ],
-... }
+... )
 >>> experiment = beaker.experiment.create(
 ...     experiment_name,
 ...     spec,
