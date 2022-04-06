@@ -1,5 +1,4 @@
 import os
-import urllib.parse
 from pathlib import Path
 from typing import Deque, Dict, Generator, List, Optional, Union
 
@@ -39,6 +38,7 @@ class DatasetClient(ServiceClient):
         force: bool = False,
         max_workers: int = 8,
         quiet: bool = False,
+        commit: bool = True,
     ) -> Dataset:
         """
         Create a dataset with the source file(s).
@@ -53,6 +53,7 @@ class DatasetClient(ServiceClient):
         :param force: If ``True`` and a dataset by the given name already exists, it will be overwritten.
         :param max_workers: The maximum number of thread pool workers to use to upload files concurrently.
         :param quiet: If ``True``, progress won't be displayed.
+        :param commit: Whether to commit the dataset after successful upload.
 
         :raises DatasetConflict: If a dataset by that name already exists and ``force=False``.
         :raises WorkspaceNotFound: If the workspace doesn't exist.
@@ -96,14 +97,27 @@ class DatasetClient(ServiceClient):
         self._sync_source(dataset_info, source, target, quiet=quiet, max_workers=max_workers)
 
         # Commit the dataset.
-        self.request(
-            f"datasets/{dataset_info.id}",
-            method="PATCH",
-            data={"commit": True},
-        )
+        if commit:
+            self.commit(dataset_info.id)
 
         # Return info about the dataset.
         return self.get(dataset_info.id)
+
+    def commit(self, dataset: Union[str, Dataset]):
+        """
+        Commit the dataset.
+
+        :param dataset: The dataset ID, full name, or object.
+
+        :raises DatasetNotFound: If the dataset can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        dataset_id = dataset if isinstance(dataset, str) else dataset.id
+        self.request(
+            f"datasets/{self._url_quote(dataset_id)}",
+            method="PATCH",
+            data={"commit": True},
+        )
 
     def fetch(
         self,
@@ -201,7 +215,7 @@ class DatasetClient(ServiceClient):
         """
         return Dataset.from_json(
             self.request(
-                f"datasets/{urllib.parse.quote(dataset, safe='')}",
+                f"datasets/{self._url_quote(dataset)}",
                 exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset))},
             ).json()
         )

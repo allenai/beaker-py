@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `Beaker.account.name` property and `Beaker.account.list_organizations()` method.
 - Added `ExperimentSpec` and all components to the data model.
+- Added `Beaker.cluster` service client for managing Beaker clusters.
+- Added `Beaker.organization` service client for managing Beaker organizations.
 
 ### Changed
 

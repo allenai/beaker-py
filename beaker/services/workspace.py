@@ -1,14 +1,11 @@
 from typing import Optional
 
-from cachetools import TTLCache, cached
-
 from ..data_model import *
 from ..exceptions import *
 from .service_client import ServiceClient
 
 
 class WorkspaceClient(ServiceClient):
-    @cached(cache=TTLCache(maxsize=10, ttl=5 * 60))
     def get(self, workspace: Optional[str] = None) -> Workspace:
         """
         Get information about the workspace.
@@ -54,5 +51,5 @@ class WorkspaceClient(ServiceClient):
     def _not_found_err_msg(self, workspace: str) -> str:
         return (
             f"'{workspace}': Make sure you're using the *full* name of the workspace "
-            f"(with the account prefix, e.g. 'username/workspace_name')"
+            f"(with the organization prefix, e.g. 'org/workspace_name')"
         )

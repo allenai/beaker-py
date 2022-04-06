@@ -15,10 +15,24 @@ Account
    :members:
    :member-order: bysource
 
+Organization
+~~~~~~~~~~~~
+
+.. autoclass:: beaker.services.OrganizationClient
+   :members:
+   :member-order: bysource
+
 Workspace
 ~~~~~~~~~
 
 .. autoclass:: beaker.services.WorkspaceClient
+   :members:
+   :member-order: bysource
+
+Cluster
+~~~~~~~
+
+.. autoclass:: beaker.services.ClusterClient
    :members:
    :member-order: bysource
 

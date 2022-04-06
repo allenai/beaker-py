@@ -25,7 +25,9 @@ class Beaker:
 
         # Initialize service clients:
         self._account = AccountClient(self)
+        self._organization = OrganizationClient(self)
         self._workspace = WorkspaceClient(self)
+        self._cluster = ClusterClient(self)
         self._dataset = DatasetClient(self)
         self._image = ImageClient(self)
         self._job = JobClient(self)
@@ -59,11 +61,25 @@ class Beaker:
         return self._account
 
     @property
+    def organization(self) -> OrganizationClient:
+        """
+        Manage organizations.
+        """
+        return self._organization
+
+    @property
     def workspace(self) -> WorkspaceClient:
         """
         Manage workspaces.
         """
         return self._workspace
+
+    @property
+    def cluster(self) -> ClusterClient:
+        """
+        Manage clusters.
+        """
+        return self._cluster
 
     @property
     def dataset(self) -> DatasetClient:
