@@ -3,6 +3,7 @@ from typing import Any, Dict, Generator, Union
 
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
 
+from ..aliases import PathOrStr
 from ..data_model import *
 from ..exceptions import *
 from .service_client import ServiceClient
@@ -10,15 +11,14 @@ from .service_client import ServiceClient
 
 class ExperimentClient(ServiceClient):
     def create(
-        self, name: str, spec: Dict[str, Any], workspace: Optional[str] = None
+        self, name: str, spec: Union[ExperimentSpec, PathOrStr], workspace: Optional[str] = None
     ) -> Experiment:
         """
         Create a new Beaker experiment with the given ``spec``.
 
         :param name: The name to assign the experiment.
-        :param spec: A Beaker `experiment spec
-            <https://github.com/beaker/docs/blob/main/docs/concept/experiments.md#spec-format>`_
-            in the form of a Python dictionary.
+        :param spec: The spec for the Beaker experiment. This can either be an
+            :class:`~beaker.data_model.ExperimentSpec` instance or the path to a YAML spec file.
         :param workspace: The workspace to create the experiment under. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
 
@@ -29,12 +29,23 @@ class ExperimentClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
+        json_spec: Dict[str, Any]
+        if isinstance(spec, ExperimentSpec):
+            json_spec = spec.to_json()
+        else:
+            import yaml
+
+            with open(spec) as spec_file:
+                raw_spec = yaml.load(spec_file, Loader=yaml.SafeLoader)
+                spec = ExperimentSpec.from_json(raw_spec)
+                json_spec = spec.to_json()
+
         workspace_name = self._resolve_workspace(workspace)
         experiment_data = self.request(
             f"workspaces/{self._url_quote(workspace_name)}/experiments",
             method="POST",
             query={"name": name},
-            data=spec,
+            data=json_spec,
             exceptions_for_status={409: ExperimentConflict(name)},
         ).json()
         return self.get(experiment_data["id"])

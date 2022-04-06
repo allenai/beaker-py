@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added `Beaker.account.name` property and `Beaker.account.list_organizations()` method.
+- Added `ExperimentSpec` and all components to the data model.
+
+### Changed
+
+- `Beaker.experiment.create()` now accepts either an `ExperimentSpec` instance or the path to a YAML spec file.
 
 ## [v0.4.2](https://github.com/allenai/beaker-py/releases/tag/v0.4.2) - 2022-04-04
 
