@@ -1,6 +1,25 @@
-# beaker-py
-
-A [Beaker](https://beaker.org) client for Python.
+<div align="center">
+<br>
+<img src="https://raw.githubusercontent.com/allenai/beaker-py/main/docs/source/_static/beaker-500px-transparent.png" width="200"/>
+<br>
+<br>
+<h1>beaker-py</h1>
+<p>A <a href="https://beaker.org">Beaker</a> client for Python</p>
+<hr/>
+<a href="https://github.com/allenai/beaker-py/actions">
+    <img alt="CI" src="https://github.com/allenai/beaker-py/workflows/Main/badge.svg?event=push&branch=main">
+</a>
+<a href="https://pypi.org/project/beaker-py/">
+    <img alt="PyPI" src="https://img.shields.io/pypi/v/beaker-py">
+</a>
+<a href="https://beaker-py.readthedocs.io/en/latest/">
+    <img src="https://readthedocs.org/projects/beaker-py/badge/?version=latest" alt="Documentation Status" />
+</a>
+<a href="https://github.com/allenai/beaker-py/blob/main/LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/allenai/beaker-py.svg?color=blue&cachedrop">
+</a>
+<br/>
+</div>
 
 ## Quick links
 
