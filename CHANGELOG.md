@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Fixed warning about newer version.
+
+### Removed
+
+- Removed `Execution` data model, since it's deprecated and redundant with `Job`.
+
 ## [v0.4.3](https://github.com/allenai/beaker-py/releases/tag/v0.4.3) - 2022-04-06
 
 ### Added
@@ -19,10 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `Beaker.experiment.create()` now accepts either an `ExperimentSpec` instance or the path to a YAML spec file.
-
-### Removed
-
-- Removed `Execution` data model, since it's deprecated and redundant with `Job`.
 
 ## [v0.4.2](https://github.com/allenai/beaker-py/releases/tag/v0.4.2) - 2022-04-04
 
