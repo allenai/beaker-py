@@ -12,6 +12,9 @@ from .version import VERSION
 __all__ = ["Beaker"]
 
 
+_UPGRADE_WARNING_ISSUED = False
+
+
 class Beaker:
     """
     A client for interacting with `Beaker <https://beaker.org>`_.
@@ -23,7 +26,7 @@ class Beaker:
 
     def __init__(self, config: Config, check_for_upgrades: bool = True):
         # See if there's a newer version, and if so, suggest that the user upgrades.
-        if check_for_upgrades:
+        if check_for_upgrades and not _UPGRADE_WARNING_ISSUED:
             self._check_for_upgrades()
 
         self._config = config
@@ -51,19 +54,22 @@ class Beaker:
         import packaging.version
         import requests
 
+        global _UPGRADE_WARNING_ISSUED
+
         try:
             response = requests.get(
                 "https://api.github.com/repos/allenai/beaker-py/releases/latest", timeout=1
             )
             if response.ok:
                 latest_version = packaging.version.parse(response.json()["tag_name"])
-                if latest_version > packaging.version.parse(VERSION):
+                if latest_version >= packaging.version.parse(VERSION):
                     warnings.warn(
                         f"You're using beaker-py v{VERSION}, "
                         f"but a newer version (v{latest_version}) is available. "
                         f"Please upgrade with `pip install --upgrade beaker-py`.",
                         UserWarning,
                     )
+                    _UPGRADE_WARNING_ISSUED = True
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             pass
 
