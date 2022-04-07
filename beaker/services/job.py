@@ -88,7 +88,8 @@ class JobClient(ServiceClient):
         # Gather jobs, page by page.
         while True:
             page = Jobs.from_json(self.request("jobs", method="GET", query=request_opts).json())
-            jobs.extend(page.data)
+            if page.data:
+                jobs.extend(page.data)
             if not page.next:
                 break
             else:

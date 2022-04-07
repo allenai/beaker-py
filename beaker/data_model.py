@@ -592,7 +592,7 @@ class Job(BaseModel):
 
 
 class Jobs(BaseModel):
-    data: List[Job]
+    data: Optional[List[Job]] = None
     next: Optional[str] = None
 
 
