@@ -13,6 +13,7 @@ def doctest_fixtures(
     dataset_name,
     download_path,
     beaker_org_name,
+    beaker_node_id,
 ):
     doctest_namespace["beaker"] = client
     doctest_namespace["workspace_name"] = workspace_name
@@ -23,3 +24,4 @@ def doctest_fixtures(
     doctest_namespace["dataset_name"] = dataset_name
     doctest_namespace["download_path"] = download_path
     doctest_namespace["beaker_org_name"] = beaker_org_name
+    doctest_namespace["beaker_node_id"] = beaker_node_id

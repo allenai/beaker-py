@@ -36,6 +36,13 @@ Cluster
    :members:
    :member-order: bysource
 
+Node
+~~~~
+
+.. autoclass:: beaker.services.NodeClient
+   :members:
+   :member-order: bysource
+
 Dataset
 ~~~~~~~
 

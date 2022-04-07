@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from enum import Enum, auto, unique
+from enum import Enum, auto
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from pydantic import BaseModel as _BaseModel
@@ -20,6 +20,7 @@ class BaseModel(_BaseModel):
     class Config:
         validate_assignment = True
         alias_generator = to_lower_camel
+        use_enum_values = True
         #  extra = "forbid"
 
     @root_validator(pre=True)
@@ -55,6 +56,20 @@ class BaseModel(_BaseModel):
 
     def to_json(self) -> Dict[str, Any]:
         return self.dict(by_alias=True, exclude_none=True)
+
+
+class BaseEnum(Enum):
+    def _generate_next_value_(name, start, count, last_values):
+        return name
+
+    def __str__(self):
+        return self.value
+
+    def __eq__(self, o: object):
+        if isinstance(o, str):
+            return self.value == o
+        else:
+            return super().__eq__(o)
 
 
 class ImageSource(BaseModel):
@@ -165,7 +180,6 @@ class DataSource(BaseModel):
 
     @root_validator(pre=True)
     def _check_exactly_one_field_set(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        print(values)
         if len([v for v in values.values() if v is not None]) != 1:
             raise ValueError("Exactly one data source field must be set.")
         return values
@@ -295,12 +309,6 @@ class TaskSpec(BaseModel):
     creating an execution graph.
     """
 
-    name: str
-    """
-    Name is used for display and to refer to the task throughout the spec.
-    It must be unique among all tasks within its experiment.
-    """
-
     image: ImageSource
     """
     A base image to run, usually built with Docker.
@@ -314,6 +322,12 @@ class TaskSpec(BaseModel):
     context: TaskContext
     """
     Context describes how and where this task should run.
+    """
+
+    name: Optional[str] = None
+    """
+    Name is used for display and to refer to the task throughout the spec.
+    It must be unique among all tasks within its experiment.
     """
 
     command: Optional[List[str]] = None
@@ -421,6 +435,12 @@ class NodeShape(BaseModel):
     gpu_type: Optional[str] = None
 
 
+class NodeSpecUtil(BaseModel):
+    cpu_count: Optional[float] = None
+    gpu_count: Optional[int] = None
+    #  memory: Optional[str]   # TODO
+
+
 class Cluster(BaseModel):
     id: str
     name: str
@@ -450,6 +470,14 @@ class Node(BaseModel):
     limits: NodeSpec
 
 
+class NodeUtilization(BaseModel):
+    id: str
+    hostname: str
+    limits: NodeSpec
+    used: NodeSpecUtil
+    free: NodeSpecUtil
+
+
 class Workspace(BaseModel):
     id: str
     name: str
@@ -468,20 +496,13 @@ class WorkspaceRef(BaseModel):
     full_name: str
 
 
-@unique
-class CurrentJobStatus(Enum):
-    def _generate_next_value_(name, start, count, last_values):
-        return name
-
-    CREATED = auto()
-    SCHEDULED = auto()
-    RUNNING = auto()
-    IDLE = auto()
-    EXITED = auto()
-    FINALIZED = auto()
-
-    def __str__(self):
-        return self.value
+class CurrentJobStatus(BaseEnum):
+    created = auto()
+    scheduled = auto()
+    running = auto()
+    idle = auto()
+    exited = auto()
+    finalized = auto()
 
 
 class JobStatus(BaseModel):
@@ -512,17 +533,17 @@ class JobStatus(BaseModel):
         :raises ValueError: If status can't be determined.
         """
         if self.finalized is not None:
-            return CurrentJobStatus.FINALIZED
+            return CurrentJobStatus.finalized
         elif self.exited is not None:
-            return CurrentJobStatus.EXITED
+            return CurrentJobStatus.exited
         elif self.idle_since is not None:
-            return CurrentJobStatus.IDLE
+            return CurrentJobStatus.idle
         elif self.started is not None:
-            return CurrentJobStatus.RUNNING
+            return CurrentJobStatus.running
         elif self.scheduled is not None:
-            return CurrentJobStatus.SCHEDULED
+            return CurrentJobStatus.scheduled
         elif self.created is not None:
-            return CurrentJobStatus.CREATED
+            return CurrentJobStatus.created
         else:
             raise ValueError(f"Invalid status {self}")
 
@@ -551,18 +572,28 @@ class JobExecution(BaseModel):
     result: ExecutionResult
 
 
+class JobKind(BaseEnum):
+    execution = auto()
+    session = auto()
+
+
 class Job(BaseModel):
     id: str
-    kind: str
-    name: str
+    kind: JobKind
     author: Account
     workspace: str
     cluster: str
     status: JobStatus
-    execution: JobExecution
+    execution: Optional[JobExecution] = None
+    name: Optional[str] = None
     node: Optional[str] = None
     requests: Optional[JobRequests] = None
     limits: Optional[JobLimits] = None
+
+
+class Jobs(BaseModel):
+    data: List[Job]
+    next: Optional[str] = None
 
 
 class Experiment(BaseModel):

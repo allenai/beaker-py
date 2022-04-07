@@ -37,6 +37,7 @@ class Beaker:
         self._organization = OrganizationClient(self)
         self._workspace = WorkspaceClient(self)
         self._cluster = ClusterClient(self)
+        self._node = NodeClient(self)
         self._dataset = DatasetClient(self)
         self._image = ImageClient(self)
         self._job = JobClient(self)
@@ -116,6 +117,10 @@ class Beaker:
         Manage clusters.
         """
         return self._cluster
+
+    @property
+    def node(self) -> NodeClient:
+        return self._node
 
     @property
     def dataset(self) -> DatasetClient:

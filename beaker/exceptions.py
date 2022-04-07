@@ -78,3 +78,7 @@ class WorkspaceNotSet(BeakerError):
     """
     Raised when workspace argument is not provided and there is no default workspace set.
     """
+
+
+class NodeNotFound(BeakerError):
+    pass

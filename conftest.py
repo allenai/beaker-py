@@ -84,3 +84,18 @@ def dataset_name(client: Beaker) -> Generator[str, None, None]:
 def download_path(dataset_name, tmp_path) -> Path:
     path = tmp_path / dataset_name
     return path
+
+
+@pytest.fixture()
+def hello_world_experiment_id() -> str:
+    return "01FPB5WGRTM33P5AE6A28MT8QF"
+
+
+@pytest.fixture()
+def hello_world_job_id() -> str:
+    return "01G0062R1K182CGR5559GHT5ED"
+
+
+@pytest.fixture()
+def beaker_node_id() -> str:
+    return "01FXTYPFQ1QQ7XV4SH8VTCRZMG"
