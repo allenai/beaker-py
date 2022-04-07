@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from enum import Enum, auto, unique
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from pydantic import BaseModel as _BaseModel
@@ -142,19 +143,19 @@ class WorkspaceRef(BaseModel):
     full_name: str
 
 
-class ExecutionState(BaseModel):
-    created: Optional[datetime] = None
-    scheduled: Optional[datetime] = None
-    started: Optional[datetime] = None
-    exited: Optional[datetime] = None
-    finalized: Optional[datetime] = None
-    exit_code: Optional[int] = None
+@unique
+class CurrentJobStatus(Enum):
+    SCHEDULED = auto()
+    RUNNING = auto()
+    IDLE = auto()
+    EXITED = auto()
+    FINALIZED = auto()
 
-    @validator("created", "scheduled", "started", "exited", "finalized")
-    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
-        if v is not None and v.year == 1:
-            return None
-        return v
+    def __str__(self):
+        return self.value
+
+    def _generate_next_value_(name, start, count, last_values):
+        return name
 
 
 class JobStatus(BaseModel):
@@ -162,38 +163,44 @@ class JobStatus(BaseModel):
     scheduled: Optional[datetime] = None
     started: Optional[datetime] = None
     exited: Optional[datetime] = None
+    failed: Optional[datetime] = None
     finalized: Optional[datetime] = None
+    canceled: Optional[datetime] = None
+    idle_since: Optional[datetime] = None
     exit_code: Optional[int] = None
+    message: Optional[str] = None
 
-    @validator("created", "scheduled", "started", "exited", "finalized")
+    @validator(
+        "created", "scheduled", "started", "exited", "failed", "finalized", "canceled", "idle_since"
+    )
     def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
         if v is not None and v.year == 1:
             return None
         return v
 
+    @property
+    def current(self) -> CurrentJobStatus:
+        """
+        Get the :class:`CurrentJobStatus`.
+
+        :raises ValueError: If status can't be determined.
+        """
+        if self.finalized is not None:
+            return CurrentJobStatus.FINALIZED
+        elif self.exited is not None:
+            return CurrentJobStatus.EXITED
+        elif self.idle_since is not None:
+            return CurrentJobStatus.IDLE
+        elif self.started is not None:
+            return CurrentJobStatus.RUNNING
+        elif self.scheduled is not None:
+            return CurrentJobStatus.SCHEDULED
+        else:
+            raise ValueError(f"Invalid status {self}")
+
 
 class ExecutionResult(BaseModel):
     beaker: str
-
-
-class ExecutionLimits(BaseModel):
-    cpu_count: Optional[float] = None
-    memory: Optional[str] = None
-    gpus: List[str] = Field(default_factory=list)
-
-
-class Execution(BaseModel):
-    id: str
-    task: str
-    experiment: str
-    workspace: str
-    author: Account
-    spec: Dict[str, Any]
-    result: ExecutionResult
-    state: ExecutionState
-    node: Optional[str] = None
-    limits: Optional[ExecutionLimits] = None
-    priority: str = "normal"
 
 
 class JobRequests(BaseModel):
@@ -212,7 +219,6 @@ class JobLimits(BaseModel):
 class JobExecution(BaseModel):
     task: str
     experiment: str
-    workspace: str
     spec: Dict[str, Any]
     result: ExecutionResult
 
@@ -239,7 +245,6 @@ class Experiment(BaseModel):
     author: Account
     created: datetime
     workspace_ref: WorkspaceRef
-    executions: List[Execution] = Field(default_factory=list)
     jobs: List[Job] = Field(default_factory=list)
 
 
