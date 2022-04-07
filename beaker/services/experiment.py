@@ -164,9 +164,9 @@ class ExperimentClient(ServiceClient):
             polls = 0
             while True:
                 exp = self.get(experiment if isinstance(experiment, str) else experiment.id)
-                if exp.executions:
-                    for execution in exp.executions:
-                        if execution.state.exit_code is None:
+                if exp.jobs:
+                    for job in exp.jobs:
+                        if job.status.current == CurrentJobStatus.FINALIZED:
                             break
                     else:
                         return exp
