@@ -470,6 +470,9 @@ class WorkspaceRef(BaseModel):
 
 @unique
 class CurrentJobStatus(Enum):
+    def _generate_next_value_(name, start, count, last_values):
+        return name
+
     SCHEDULED = auto()
     RUNNING = auto()
     IDLE = auto()
@@ -478,9 +481,6 @@ class CurrentJobStatus(Enum):
 
     def __str__(self):
         return self.value
-
-    def _generate_next_value_(name, start, count, last_values):
-        return name
 
 
 class JobStatus(BaseModel):
