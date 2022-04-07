@@ -13,6 +13,9 @@ T = TypeVar("T")
 logger = logging.getLogger(__name__)
 
 
+SPEC_VERSION = "v2-alpha"
+
+
 class BaseModel(_BaseModel):
     class Config:
         validate_assignment = True
@@ -52,279 +55,6 @@ class BaseModel(_BaseModel):
 
     def to_json(self) -> Dict[str, Any]:
         return self.dict(by_alias=True, exclude_none=True)
-
-
-class WorkspaceSize(BaseModel):
-    datasets: int
-    experiments: int
-    groups: int
-    images: int
-
-
-class Account(BaseModel):
-    id: str
-    name: str
-    display_name: str
-    institution: Optional[str] = None
-
-
-class Organization(BaseModel):
-    id: str
-    name: str
-    description: str
-    created: datetime
-    display_name: str
-
-
-class OrganizationMember(BaseModel):
-    role: str
-    organization: Organization
-    user: Account
-
-
-class NodeSpec(BaseModel):
-    cpu_count: Optional[float] = None
-    memory: Optional[str] = None
-    gpu_count: Optional[int] = None
-    gpu_type: Optional[str] = None
-
-
-class NodeShape(BaseModel):
-    cpu_count: Optional[float] = None
-    memory: Optional[str] = None
-    gpu_count: Optional[int] = None
-    gpu_type: Optional[str] = None
-
-
-class Cluster(BaseModel):
-    id: str
-    name: str
-    full_name: str
-    created: datetime
-    autoscale: bool
-    capacity: int
-    preemptible: bool
-    status: str
-    node_spec: NodeSpec
-    node_shape: Optional[NodeShape] = None
-    nodeCost: Optional[str] = None
-    validated: Optional[datetime] = None
-
-    @validator("validated")
-    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
-        if v is not None and v.year == 1:
-            return None
-        return v
-
-
-class Node(BaseModel):
-    id: str
-    hostname: str
-    created: datetime
-    expiry: datetime
-    limits: NodeSpec
-
-
-class Workspace(BaseModel):
-    id: str
-    name: str
-    size: WorkspaceSize
-    owner: Account
-    author: Account
-    created: datetime
-    modified: datetime
-    archived: bool = False
-    full_name: str
-
-
-class WorkspaceRef(BaseModel):
-    id: str
-    name: str
-    full_name: str
-
-
-@unique
-class CurrentJobStatus(Enum):
-    SCHEDULED = auto()
-    RUNNING = auto()
-    IDLE = auto()
-    EXITED = auto()
-    FINALIZED = auto()
-
-    def __str__(self):
-        return self.value
-
-    def _generate_next_value_(name, start, count, last_values):
-        return name
-
-
-class JobStatus(BaseModel):
-    created: Optional[datetime] = None
-    scheduled: Optional[datetime] = None
-    started: Optional[datetime] = None
-    exited: Optional[datetime] = None
-    failed: Optional[datetime] = None
-    finalized: Optional[datetime] = None
-    canceled: Optional[datetime] = None
-    idle_since: Optional[datetime] = None
-    exit_code: Optional[int] = None
-    message: Optional[str] = None
-
-    @validator(
-        "created", "scheduled", "started", "exited", "failed", "finalized", "canceled", "idle_since"
-    )
-    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
-        if v is not None and v.year == 1:
-            return None
-        return v
-
-    @property
-    def current(self) -> CurrentJobStatus:
-        """
-        Get the :class:`CurrentJobStatus`.
-
-        :raises ValueError: If status can't be determined.
-        """
-        if self.finalized is not None:
-            return CurrentJobStatus.FINALIZED
-        elif self.exited is not None:
-            return CurrentJobStatus.EXITED
-        elif self.idle_since is not None:
-            return CurrentJobStatus.IDLE
-        elif self.started is not None:
-            return CurrentJobStatus.RUNNING
-        elif self.scheduled is not None:
-            return CurrentJobStatus.SCHEDULED
-        else:
-            raise ValueError(f"Invalid status {self}")
-
-
-class ExecutionResult(BaseModel):
-    beaker: str
-
-
-class JobRequests(BaseModel):
-    gpu_count: Optional[int] = None
-    cpu_count: Optional[float] = None
-    memory: Optional[str] = None
-    sharedMemory: Optional[str] = None
-
-
-class JobLimits(BaseModel):
-    cpu_count: Optional[float] = None
-    memory: Optional[str] = None
-    gpus: List[str] = Field(default_factory=list)
-
-
-class JobExecution(BaseModel):
-    task: str
-    experiment: str
-    spec: Dict[str, Any]
-    result: ExecutionResult
-
-
-class Job(BaseModel):
-    id: str
-    kind: str
-    name: str
-    author: Account
-    workspace: str
-    cluster: str
-    status: JobStatus
-    execution: JobExecution
-    node: Optional[str] = None
-    requests: Optional[JobRequests] = None
-    limits: Optional[JobLimits] = None
-
-
-class Experiment(BaseModel):
-    id: str
-    name: str
-    full_name: str
-    owner: Account
-    author: Account
-    created: datetime
-    workspace_ref: WorkspaceRef
-    jobs: List[Job] = Field(default_factory=list)
-
-
-class DatasetStorage(BaseModel):
-    id: str
-    address: str
-    token: str
-    token_expires: datetime
-
-
-class DatasetSize(BaseModel):
-    final: bool
-    files: int
-    bytes: int
-    bytes_human: str
-
-
-class Dataset(BaseModel):
-    id: str
-    owner: Account
-    author: Account
-    created: datetime
-    workspace_ref: WorkspaceRef
-    committed: Optional[datetime] = None
-    name: Optional[str] = None
-    full_name: Optional[str] = None
-    storage: Optional[DatasetStorage] = None
-
-    @validator("committed")
-    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
-        if v is not None and v.year == 1:
-            return None
-        return v
-
-
-class DatasetStorageInfo(BaseModel):
-    id: str
-    created: Optional[datetime] = None
-    size: Optional[DatasetSize] = None
-    readonly: bool = True
-
-    @validator("created")
-    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
-        if v is not None and v.year == 1:
-            return None
-        return v
-
-
-class FileInfo(BaseModel):
-    path: str
-    size: int
-    digest: str
-    updated: datetime
-    url: str
-
-
-class DatasetManifest(BaseModel):
-    files: List[FileInfo]
-    cursor: Optional[str] = None
-
-
-class Image(BaseModel):
-    id: str
-    name: str
-    full_name: str
-    original_tag: str
-    owner: Account
-    author: Account
-    created: datetime
-    workspace_ref: WorkspaceRef
-    committed: Optional[datetime] = None
-
-    @validator("committed")
-    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
-        if v is not None and v.year == 1:
-            return None
-        return v
-
-
-SPEC_VERSION = "v2-alpha"
 
 
 class ImageSource(BaseModel):
@@ -646,4 +376,274 @@ class ExperimentSpec(BaseModel):
     def _validate_version(cls, v: str) -> str:
         if v != SPEC_VERSION:
             raise ValueError(f"Only version '{SPEC_VERSION}' is currently supported")
+        return v
+
+
+class WorkspaceSize(BaseModel):
+    datasets: int
+    experiments: int
+    groups: int
+    images: int
+
+
+class Account(BaseModel):
+    id: str
+    name: str
+    display_name: str
+    institution: Optional[str] = None
+
+
+class Organization(BaseModel):
+    id: str
+    name: str
+    description: str
+    created: datetime
+    display_name: str
+
+
+class OrganizationMember(BaseModel):
+    role: str
+    organization: Organization
+    user: Account
+
+
+class NodeSpec(BaseModel):
+    cpu_count: Optional[float] = None
+    memory: Optional[str] = None
+    gpu_count: Optional[int] = None
+    gpu_type: Optional[str] = None
+
+
+class NodeShape(BaseModel):
+    cpu_count: Optional[float] = None
+    memory: Optional[str] = None
+    gpu_count: Optional[int] = None
+    gpu_type: Optional[str] = None
+
+
+class Cluster(BaseModel):
+    id: str
+    name: str
+    full_name: str
+    created: datetime
+    autoscale: bool
+    capacity: int
+    preemptible: bool
+    status: str
+    node_spec: NodeSpec
+    node_shape: Optional[NodeShape] = None
+    nodeCost: Optional[str] = None
+    validated: Optional[datetime] = None
+
+    @validator("validated")
+    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
+        if v is not None and v.year == 1:
+            return None
+        return v
+
+
+class Node(BaseModel):
+    id: str
+    hostname: str
+    created: datetime
+    expiry: datetime
+    limits: NodeSpec
+
+
+class Workspace(BaseModel):
+    id: str
+    name: str
+    size: WorkspaceSize
+    owner: Account
+    author: Account
+    created: datetime
+    modified: datetime
+    archived: bool = False
+    full_name: str
+
+
+class WorkspaceRef(BaseModel):
+    id: str
+    name: str
+    full_name: str
+
+
+@unique
+class CurrentJobStatus(Enum):
+    SCHEDULED = auto()
+    RUNNING = auto()
+    IDLE = auto()
+    EXITED = auto()
+    FINALIZED = auto()
+
+    def __str__(self):
+        return self.value
+
+    def _generate_next_value_(name, start, count, last_values):
+        return name
+
+
+class JobStatus(BaseModel):
+    created: Optional[datetime] = None
+    scheduled: Optional[datetime] = None
+    started: Optional[datetime] = None
+    exited: Optional[datetime] = None
+    failed: Optional[datetime] = None
+    finalized: Optional[datetime] = None
+    canceled: Optional[datetime] = None
+    idle_since: Optional[datetime] = None
+    exit_code: Optional[int] = None
+    message: Optional[str] = None
+
+    @validator(
+        "created", "scheduled", "started", "exited", "failed", "finalized", "canceled", "idle_since"
+    )
+    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
+        if v is not None and v.year == 1:
+            return None
+        return v
+
+    @property
+    def current(self) -> CurrentJobStatus:
+        """
+        Get the :class:`CurrentJobStatus`.
+
+        :raises ValueError: If status can't be determined.
+        """
+        if self.finalized is not None:
+            return CurrentJobStatus.FINALIZED
+        elif self.exited is not None:
+            return CurrentJobStatus.EXITED
+        elif self.idle_since is not None:
+            return CurrentJobStatus.IDLE
+        elif self.started is not None:
+            return CurrentJobStatus.RUNNING
+        elif self.scheduled is not None:
+            return CurrentJobStatus.SCHEDULED
+        else:
+            raise ValueError(f"Invalid status {self}")
+
+
+class ExecutionResult(BaseModel):
+    beaker: str
+
+
+class JobRequests(BaseModel):
+    gpu_count: Optional[int] = None
+    cpu_count: Optional[float] = None
+    memory: Optional[str] = None
+    sharedMemory: Optional[str] = None
+
+
+class JobLimits(BaseModel):
+    cpu_count: Optional[float] = None
+    memory: Optional[str] = None
+    gpus: List[str] = Field(default_factory=list)
+
+
+class JobExecution(BaseModel):
+    task: str
+    experiment: str
+    spec: TaskSpec
+    result: ExecutionResult
+
+
+class Job(BaseModel):
+    id: str
+    kind: str
+    name: str
+    author: Account
+    workspace: str
+    cluster: str
+    status: JobStatus
+    execution: JobExecution
+    node: Optional[str] = None
+    requests: Optional[JobRequests] = None
+    limits: Optional[JobLimits] = None
+
+
+class Experiment(BaseModel):
+    id: str
+    name: str
+    full_name: str
+    owner: Account
+    author: Account
+    created: datetime
+    workspace_ref: WorkspaceRef
+    jobs: List[Job] = Field(default_factory=list)
+
+
+class DatasetStorage(BaseModel):
+    id: str
+    address: str
+    token: str
+    token_expires: datetime
+
+
+class DatasetSize(BaseModel):
+    final: bool
+    files: int
+    bytes: int
+    bytes_human: str
+
+
+class Dataset(BaseModel):
+    id: str
+    owner: Account
+    author: Account
+    created: datetime
+    workspace_ref: WorkspaceRef
+    committed: Optional[datetime] = None
+    name: Optional[str] = None
+    full_name: Optional[str] = None
+    storage: Optional[DatasetStorage] = None
+
+    @validator("committed")
+    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
+        if v is not None and v.year == 1:
+            return None
+        return v
+
+
+class DatasetStorageInfo(BaseModel):
+    id: str
+    created: Optional[datetime] = None
+    size: Optional[DatasetSize] = None
+    readonly: bool = True
+
+    @validator("created")
+    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
+        if v is not None and v.year == 1:
+            return None
+        return v
+
+
+class FileInfo(BaseModel):
+    path: str
+    size: int
+    digest: str
+    updated: datetime
+    url: str
+
+
+class DatasetManifest(BaseModel):
+    files: List[FileInfo]
+    cursor: Optional[str] = None
+
+
+class Image(BaseModel):
+    id: str
+    name: str
+    full_name: str
+    original_tag: str
+    owner: Account
+    author: Account
+    created: datetime
+    workspace_ref: WorkspaceRef
+    committed: Optional[datetime] = None
+
+    @validator("committed")
+    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
+        if v is not None and v.year == 1:
+            return None
         return v
