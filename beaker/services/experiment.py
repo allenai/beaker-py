@@ -68,6 +68,22 @@ class ExperimentClient(ServiceClient):
             ).json()
         )
 
+    def stop(self, experiment: Union[str, Experiment]):
+        """
+        Stop an experiment.
+
+        :param experiment: The experiment ID, full name, or object.
+
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        experiment_id = experiment if isinstance(experiment, str) else experiment.id
+        self.request(
+            f"experiments/{self._url_quote(experiment_id)}/stop",
+            method="PUT",
+            exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment_id))},
+        )
+
     def delete(self, experiment: Union[str, Experiment]):
         """
         Delete an experiment.
@@ -153,6 +169,7 @@ class ExperimentClient(ServiceClient):
         :raises TimeoutError: If the ``timeout`` expires.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
+        exp_id = experiment if isinstance(experiment, str) else experiment.id
         start = time.time()
         with Progress(
             "[progress.description]{task.description}",
@@ -160,13 +177,13 @@ class ExperimentClient(ServiceClient):
             TimeElapsedColumn(),
             disable=quiet,
         ) as progress:
-            task_id = progress.add_task(f"Waiting on {experiment}:")
+            task_id = progress.add_task(f"Waiting on {exp_id}:")
             polls = 0
             while True:
-                exp = self.get(experiment if isinstance(experiment, str) else experiment.id)
+                exp = self.get(exp_id)
                 if exp.jobs:
                     for job in exp.jobs:
-                        if job.status.current == CurrentJobStatus.finalized:
+                        if job.status.current != CurrentJobStatus.finalized:
                             break
                     else:
                         return exp
