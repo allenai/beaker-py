@@ -62,7 +62,7 @@ class Beaker:
             )
             if response.ok:
                 latest_version = packaging.version.parse(response.json()["tag_name"])
-                if latest_version >= packaging.version.parse(VERSION):
+                if latest_version > packaging.version.parse(VERSION):
                     warnings.warn(
                         f"You're using beaker-py v{VERSION}, "
                         f"but a newer version (v{latest_version}) is available. "

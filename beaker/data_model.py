@@ -473,6 +473,7 @@ class CurrentJobStatus(Enum):
     def _generate_next_value_(name, start, count, last_values):
         return name
 
+    CREATED = auto()
     SCHEDULED = auto()
     RUNNING = auto()
     IDLE = auto()
@@ -520,6 +521,8 @@ class JobStatus(BaseModel):
             return CurrentJobStatus.RUNNING
         elif self.scheduled is not None:
             return CurrentJobStatus.SCHEDULED
+        elif self.created is not None:
+            return CurrentJobStatus.CREATED
         else:
             raise ValueError(f"Invalid status {self}")
 
