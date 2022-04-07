@@ -153,6 +153,50 @@ class ClusterClient(ServiceClient):
             ).json()["data"]
         ]
 
+    def utilization(self, cluster: Union[str, Cluster]) -> List[NodeUtilization]:
+        """
+        Get current utilization stats for each node in a cluster.
+
+        :param cluster: The cluster ID, full name, or object.
+
+        :raises ClusterNotFound: If the cluster doesn't exist.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        cluster: Cluster = cluster if isinstance(cluster, Cluster) else self.get(cluster)
+        nodes = self.nodes(cluster)
+        out: List[NodeUtilization] = []
+        for node in nodes:
+            gpus_used = 0
+            cpus_used = 0.0
+            for job in self.beaker.job.list(node=node, finalized=False):
+                if job.requests is not None:
+                    if job.requests.gpu_count is not None:
+                        gpus_used += job.requests.gpu_count
+                    if job.requests.cpu_count is not None:
+                        cpus_used += job.requests.cpu_count
+            used = NodeSpecUtil(
+                gpu_count=None if node.limits.gpu_count is None else gpus_used,
+                cpu_count=None if node.limits.cpu_count is None else cpus_used,
+            )
+            free = NodeSpecUtil(
+                gpu_count=None
+                if node.limits.gpu_count is None
+                else node.limits.gpu_count - gpus_used,
+                cpu_count=None
+                if node.limits.cpu_count is None
+                else node.limits.cpu_count - cpus_used,
+            )
+            out.append(
+                NodeUtilization(
+                    id=node.id,
+                    hostname=node.hostname,
+                    limits=node.limits,
+                    used=used,
+                    free=free,
+                )
+            )
+        return out
+
     def _not_found_err_msg(self, cluster: str) -> str:
         return (
             f"'{cluster}': Make sure you're using the *full* name of the cluster "

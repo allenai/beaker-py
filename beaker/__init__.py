@@ -45,6 +45,23 @@ For example, you can get information about a cluster with
 >>> beaker.cluster.get(beaker_cluster_name).autoscale
 True
 
+Or you could check how many GPUs are free on an on-premise cluster with:
+
+>>> free_gpus = 0
+>>> for node_util in beaker.cluster.utilization(beaker_on_prem_cluster_name):
+...     free_gpus += node_util.free.gpu_count
+
+Nodes
+-----
+
+Manage Beaker nodes.
+
+For example, you can get information about a node with
+:meth:`Beaker.node.get() <services.NodeClient.get>`:
+
+>>> beaker.node.get(beaker_node_id).limits.gpu_count
+8
+
 Images
 ------
 

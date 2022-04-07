@@ -166,7 +166,7 @@ class ExperimentClient(ServiceClient):
                 exp = self.get(experiment if isinstance(experiment, str) else experiment.id)
                 if exp.jobs:
                     for job in exp.jobs:
-                        if job.status.current == CurrentJobStatus.FINALIZED:
+                        if job.status.current == CurrentJobStatus.finalized:
                             break
                     else:
                         return exp

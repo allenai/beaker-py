@@ -4,6 +4,7 @@ from .dataset import DatasetClient
 from .experiment import ExperimentClient
 from .image import ImageClient
 from .job import JobClient
+from .node import NodeClient
 from .organization import OrganizationClient
 from .service_client import ServiceClient
 from .workspace import WorkspaceClient

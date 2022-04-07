@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `Beaker.node` service client.
+- Added `Beaker.job.get()` and `Beaker.job.list()` methods.
+- Added `Beaker.cluster.utilization()`.
+
 ### Fixed
 
 - Fixed warning about newer version.
