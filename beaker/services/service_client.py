@@ -51,7 +51,7 @@ class ServiceClient:
         method: str = "GET",
         query: Optional[Dict[str, Any]] = None,
         data: Optional[Any] = None,
-        exceptions_for_status: Optional[Dict[int, BeakerError]] = None,
+        exceptions_for_status: Optional[Dict[int, Exception]] = None,
         headers: Optional[Dict[str, str]] = None,
         token: Optional[str] = None,
         base_url: Optional[str] = None,
