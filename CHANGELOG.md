@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `Beaker.dataset.size()`.
+
 ## [v0.5.3](https://github.com/allenai/beaker-py/releases/tag/v0.5.3) - 2022-04-08
 
 ### Added

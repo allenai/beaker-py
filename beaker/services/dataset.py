@@ -397,6 +397,21 @@ class DatasetClient(ServiceClient):
         for file_info in self._iter_files(dataset.storage):
             yield file_info
 
+    def size(self, dataset: Union[str, Dataset]) -> int:
+        """
+        Calculate the size of a dataset, in bytes.
+
+        :param dataset: The dataset ID, full name, or object.
+
+        :raises DatasetNotFound: If the dataset can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        total = 0
+        for file_info in self.ls(dataset):
+            assert file_info.size is not None
+            total += file_info.size
+        return total
+
     def _not_found_err_msg(self, dataset: str) -> str:
         return (
             f"'{dataset}': Make sure you're using a valid Beaker dataset ID or the "
