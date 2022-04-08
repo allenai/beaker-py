@@ -82,3 +82,7 @@ class WorkspaceNotSet(BeakerError):
 
 class NodeNotFound(BeakerError):
     pass
+
+
+class DatasetWriteError(BeakerError):
+    pass

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `Beaker.dataset.commit()`.
+
+### Changed
+
+- Changed behavior of `target` parameter in `Beaker.dataset.create()`. It now always represents the name of a directory.
+- Changed the signature of `Beaker.dataset.create()`. It now accepts a variable number of source files or directories.
+
 ## [v0.5.2](https://github.com/allenai/beaker-py/releases/tag/v0.5.2) - 2022-04-07
 
 ### Added
