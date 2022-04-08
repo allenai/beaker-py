@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Deque, Dict, Generator, List, Optional, Union
+from typing import Deque, Dict, Generator, List, Optional, Tuple, Union
 
 from rich.progress import (
     BarColumn,
@@ -32,7 +32,7 @@ class DatasetClient(ServiceClient):
     def create(
         self,
         name: str,
-        source: PathOrStr,
+        *sources: PathOrStr,
         target: Optional[PathOrStr] = None,
         workspace: Optional[str] = None,
         force: bool = False,
@@ -44,10 +44,9 @@ class DatasetClient(ServiceClient):
         Create a dataset with the source file(s).
 
         :param name: The name to assign to the new dataset.
-        :param source: The local source file or directory of the dataset.
-        :param target: If ``source`` is a file, you can change the name of the file in the dataset
-            by specifying ``target``. If ``source`` is a directory, you can set ``target`` to
-            specify a directory in the dataset to upload ``source`` under.
+        :param sources: Local source files or directories to upload to the dataset.
+        :param target: If specified, all source files/directories will be uploaded under
+            a directory of this name.
         :param workspace: The workspace to upload the dataset to. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param force: If ``True`` and a dataset by the given name already exists, it will be overwritten.
@@ -60,16 +59,11 @@ class DatasetClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
-        :raises UnexpectedEOFError: If ``source`` is a single empty file, or if ``source`` is a directory and
-            the contents of one of the directories files is changed while creating the dataset.
-        :raises FileNotFoundError: If the ``source`` doesn't exist.
+        :raises UnexpectedEOFError: If a source file is an empty file, or if a source is a directory and
+            the contents of one of the directory's files changes while creating the dataset.
+        :raises FileNotFoundError: If a source doesn't exist.
         """
         workspace_name = self._resolve_workspace(workspace)
-
-        # Ensure source exists.
-        source: Path = Path(source)
-        if not source.exists():
-            raise FileNotFoundError(str(source))
 
         # Create the dataset.
         def make_dataset() -> Dataset:
@@ -94,7 +88,7 @@ class DatasetClient(ServiceClient):
         assert dataset_info.storage is not None
 
         # Upload the file(s).
-        self._sync_source(dataset_info, source, target, quiet=quiet, max_workers=max_workers)
+        self.sync(dataset_info, *sources, target=target, quiet=quiet, max_workers=max_workers)
 
         # Commit the dataset.
         if commit:
@@ -103,7 +97,7 @@ class DatasetClient(ServiceClient):
         # Return info about the dataset.
         return self.get(dataset_info.id)
 
-    def commit(self, dataset: Union[str, Dataset]):
+    def commit(self, dataset: Union[str, Dataset]) -> Dataset:
         """
         Commit the dataset.
 
@@ -113,10 +107,12 @@ class DatasetClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         dataset_id = dataset if isinstance(dataset, str) else dataset.id
-        self.request(
-            f"datasets/{self._url_quote(dataset_id)}",
-            method="PATCH",
-            data={"commit": True},
+        return Dataset.from_json(
+            self.request(
+                f"datasets/{self._url_quote(dataset_id)}",
+                method="PATCH",
+                data={"commit": True},
+            ).json()
         )
 
     def fetch(
@@ -242,15 +238,34 @@ class DatasetClient(ServiceClient):
             f"*full* name of the dataset (with the account prefix, e.g. 'username/dataset_name')"
         )
 
-    def _sync_source(
+    def sync(
         self,
-        dataset: Dataset,
-        source: PathOrStr,
+        dataset: Union[str, Dataset],
+        *sources: PathOrStr,
         target: Optional[PathOrStr] = None,
         quiet: bool = False,
         max_workers: int = 8,
     ) -> None:
-        source: Path = Path(source)
+        """
+        Sync local files or directories to an uncommitted dataset.
+
+        :param dataset: The dataset ID, full name, or object.
+        :param sources: Local source files or directories to upload to the dataset.
+        :param target: If specified, all source files/directories will be uploaded under
+            a directory of this name.
+        :param max_workers: The maximum number of thread pool workers to use to upload files concurrently.
+        :param quiet: If ``True``, progress won't be displayed.
+
+        :raises DatasetNotFound: If the dataset can't be found.
+        :raises DatasetWriteError: If the dataset was already committed.
+        :raises FileNotFoundError: If a source doesn't exist.
+        :raises UnexpectedEOFError: If a source is an empty file, or if a source is a directory and
+            the contents of one of the directory's files changes while creating the dataset.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        dataset: Dataset = self.get(dataset.id if isinstance(dataset, Dataset) else dataset)
+        if dataset.committed is not None:
+            raise DatasetWriteError(dataset.id)
 
         with Progress(
             "[progress.description]{task.description}",
@@ -262,62 +277,65 @@ class DatasetClient(ServiceClient):
             disable=quiet,
         ) as progress:
             bytes_task = progress.add_task("Uploading dataset")
-            if source.is_file():
-                size = source.lstat().st_size
-                if size == 0:
-                    raise UnexpectedEOFError(str(source))
-                progress.update(bytes_task, total=size)
-                total_uploaded = self._upload_file(
-                    dataset, size, source, target or source.name, progress, bytes_task
-                )
-                progress.update(bytes_task, total=total_uploaded)
-            elif source.is_dir():
-                import concurrent.futures
-
-                # Gather all files to upload and count the total number of bytes.
-                total_bytes = 0
-                path_to_size: Dict[Path, int] = {}
-                for path in source.glob("**/*"):
-                    if path.is_dir():
-                        continue
-                    size = path.lstat().st_size
+            total_bytes = 0
+            # map source path to (target_path, size)
+            path_info: Dict[Path, Tuple[Path, int]] = {}
+            for name in sources:
+                source = Path(name)
+                if source.is_file():
+                    target_path = Path(source.name)
+                    if target is not None:
+                        target_path = Path(target) / target_path
+                    size = source.lstat().st_size
                     if size == 0:
-                        continue
-                    path_to_size[path] = size
+                        raise UnexpectedEOFError(str(source))
+                    path_info[source] = (target_path, size)
                     total_bytes += size
-                progress.update(bytes_task, total=total_bytes)
-
-                # Now upload.
-                with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    # Dispatch tasks to thread pool executor.
-                    future_to_path = {}
-                    for path, size in path_to_size.items():
+                elif source.is_dir():
+                    for path in source.glob("**/*"):
+                        if path.is_dir():
+                            continue
                         target_path = path.relative_to(source)
                         if target is not None:
                             target_path = Path(target) / target_path
-                        future = executor.submit(
-                            self._upload_file,
-                            dataset,
-                            size,
-                            path,
-                            target_path,
-                            progress,
-                            bytes_task,
-                            True,
-                        )
-                        future_to_path[future] = path
+                        size = path.lstat().st_size
+                        if size == 0:
+                            continue
+                        path_info[path] = (target_path, size)
+                        total_bytes += size
+                else:
+                    raise FileNotFoundError(source)
 
-                    # Collect completed tasks.
-                    for future in concurrent.futures.as_completed(future_to_path):
-                        path = future_to_path[future]
-                        original_size = path_to_size[path]
-                        actual_size = future.result()
-                        if actual_size != original_size:
-                            # If the size of the file has changed since we started, adjust total.
-                            total_bytes += actual_size - original_size
-                            progress.update(bytes_task, total=total_bytes)
-            else:
-                raise FileNotFoundError(source)
+            import concurrent.futures
+
+            progress.update(bytes_task, total=total_bytes)
+
+            # Now upload.
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                # Dispatch tasks to thread pool executor.
+                future_to_path = {}
+                for path, (target_path, size) in path_info.items():
+                    future = executor.submit(
+                        self._upload_file,
+                        dataset,
+                        size,
+                        path,
+                        target_path,
+                        progress,
+                        bytes_task,
+                        True,
+                    )
+                    future_to_path[future] = path
+
+                # Collect completed tasks.
+                for future in concurrent.futures.as_completed(future_to_path):
+                    path = future_to_path[future]
+                    original_size = path_info[path][1]
+                    actual_size = future.result()
+                    if actual_size != original_size:
+                        # If the size of the file has changed since we started, adjust total.
+                        total_bytes += actual_size - original_size
+                        progress.update(bytes_task, total=total_bytes)
 
     def _upload_file(
         self,
