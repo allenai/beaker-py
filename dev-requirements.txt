@@ -25,6 +25,7 @@ codecov
 twine>=1.11.0
 setuptools
 wheel
+packaging
 
 # Building docs
 Sphinx==4.5.0

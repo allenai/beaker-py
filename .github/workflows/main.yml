@@ -114,7 +114,7 @@ jobs:
           ${{ matrix.task.run }}
 
       - name: Upload package distribution files
-        if: matrix.task.name == 'Build' && matrix.python == env.DEFAULT_PYTHON
+        if: matrix.task.name == 'Build'
         uses: actions/upload-artifact@v2
         with:
           name: package
@@ -142,7 +142,7 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install --upgrade pip setuptools wheel twine
+          pip install -r dev-requirements.txt
 
       - name: Prepare environment
         run: |
