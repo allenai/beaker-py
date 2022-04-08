@@ -412,6 +412,30 @@ class DatasetClient(ServiceClient):
             total += file_info.size
         return total
 
+    def rename(self, dataset: Union[str, Dataset], name: str) -> Dataset:
+        """
+        Rename a dataset.
+
+        :param dataset: The dataset ID, full name, or object.
+        :param name: The new name of the dataset.
+
+        :raises DatasetNotFound: If the dataset can't be found.
+        :raises DatasetConflict: If a dataset by that name already exists.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        dataset_id = dataset if isinstance(dataset, str) else dataset.id
+        return Dataset.from_json(
+            self.request(
+                f"datasets/{self._url_quote(dataset_id)}",
+                method="PATCH",
+                data={"name": name},
+                exceptions_for_status={
+                    409: DatasetConflict(name),
+                    404: DatasetNotFound(dataset_id),
+                },
+            ).json()
+        )
+
     def _not_found_err_msg(self, dataset: str) -> str:
         return (
             f"'{dataset}': Make sure you're using a valid Beaker dataset ID or the "

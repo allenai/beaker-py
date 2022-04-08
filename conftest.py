@@ -81,6 +81,16 @@ def dataset_name(client: Beaker) -> Generator[str, None, None]:
 
 
 @pytest.fixture()
+def alternate_dataset_name(client: Beaker) -> Generator[str, None, None]:
+    name = petname.generate() + "-" + str(uuid.uuid4())[:8]
+    yield name
+    try:
+        client.dataset.delete(f"{client.account.whoami().name}/{name}")
+    except DatasetNotFound:
+        pass
+
+
+@pytest.fixture()
 def download_path(dataset_name, tmp_path) -> Path:
     path = tmp_path / dataset_name
     return path
