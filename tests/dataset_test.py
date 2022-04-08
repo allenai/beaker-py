@@ -90,6 +90,14 @@ class TestManyFilesDataset:
         # Create the dataset.
         dataset = client.dataset.create(dataset_name, dir_to_upload, file_to_upload, target=target)
 
+        # List files in the dataset.
+        files = list(client.dataset.ls(dataset))
+        assert len(files) == 101
+        for file_info in files:
+            if target is not None:
+                assert file_info.path.startswith(target)
+            assert file_info.path.endswith(".txt")
+
         # Download the dataset.
         download_dir = tmp_path / "download"
         client.dataset.fetch(dataset, target=download_dir)

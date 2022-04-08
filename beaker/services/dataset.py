@@ -232,12 +232,6 @@ class DatasetClient(ServiceClient):
             exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset_id))},
         )
 
-    def _not_found_err_msg(self, dataset: str) -> str:
-        return (
-            f"'{dataset}': Make sure you're using a valid Beaker dataset ID or the "
-            f"*full* name of the dataset (with the account prefix, e.g. 'username/dataset_name')"
-        )
-
     def sync(
         self,
         dataset: Union[str, Dataset],
@@ -336,6 +330,27 @@ class DatasetClient(ServiceClient):
                         # If the size of the file has changed since we started, adjust total.
                         total_bytes += actual_size - original_size
                         progress.update(bytes_task, total=total_bytes)
+
+    def ls(self, dataset: Union[str, Dataset]) -> Generator[FileInfo, None, None]:
+        """
+        List files in a dataset.
+
+        :param dataset: The dataset ID, full name, or object.
+
+        :raises DatasetNotFound: If the dataset can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        if not isinstance(dataset, Dataset) or dataset.storage is None:
+            dataset = self.get(dataset.id if isinstance(dataset, Dataset) else dataset)
+            assert dataset.storage is not None
+        for file_info in self._iter_files(dataset.storage):
+            yield file_info
+
+    def _not_found_err_msg(self, dataset: str) -> str:
+        return (
+            f"'{dataset}': Make sure you're using a valid Beaker dataset ID or the "
+            f"*full* name of the dataset (with the account prefix, e.g. 'username/dataset_name')"
+        )
 
     def _upload_file(
         self,
