@@ -9,6 +9,11 @@ For example, you can check who you are logged in as with
 
 >>> username = beaker.account.whoami().name
 
+.. important::
+    In this example - and all other examples - ``beaker`` is an instance of the
+    :class:`Beaker` client class, not the :mod:`beaker` module.
+    See `Quick start </quickstart.html>`_ to learn how to instantiate the client.
+
 Organizations
 -------------
 

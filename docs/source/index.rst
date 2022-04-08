@@ -6,6 +6,8 @@
 **beaker-py**
 ===============
 
+A Python client for `Beaker <https://beaker.org>`_.
+
 Contents
 --------
 

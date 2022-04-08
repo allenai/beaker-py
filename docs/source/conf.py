@@ -69,6 +69,8 @@ autodoc_member_order = "groupwise"
 # Include default values when documenting parameter types.
 typehints_defaults = "comma"
 
+copybutton_prompt_text = r">>> |\.\.\. "
+copybutton_prompt_is_regexp = True
 
 # -- Options for HTML output -------------------------------------------------
 
