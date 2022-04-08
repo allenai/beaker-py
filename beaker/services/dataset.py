@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Deque, Dict, Generator, List, Optional, Tuple, Union
 
@@ -24,6 +25,7 @@ class DatasetClient(ServiceClient):
     HEADER_UPLOAD_LENGTH = "Upload-Length"
     HEADER_UPLOAD_OFFSET = "Upload-Offset"
     HEADER_DIGEST = "Digest"
+    HEADER_LAST_MODIFIED = "Last-Modified"
 
     SHA256 = "SHA256"
 
@@ -183,13 +185,19 @@ class DatasetClient(ServiceClient):
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                 download_futures = []
                 for file_info in self._iter_files(dataset.storage):
+                    assert file_info.size is not None
                     if total_bytes_to_download is None:
                         progress.update(bytes_task, total=total_downloaded + file_info.size + 1)
                     target_path = target / Path(file_info.path)
                     if not force and target_path.exists():
                         raise FileExistsError(file_info.path)
                     future = executor.submit(
-                        self._download_file, file_info, target_path, progress, bytes_task
+                        self._download_file,
+                        dataset.storage,
+                        file_info,
+                        target_path,
+                        progress,
+                        bytes_task,
                     )
                     download_futures.append(future)
 
@@ -198,6 +206,49 @@ class DatasetClient(ServiceClient):
 
             if total_bytes_to_download is None:
                 progress.update(bytes_task, total=total_downloaded, completed=total_downloaded)
+
+    def stream_file(
+        self,
+        dataset: Union[str, Dataset],
+        file_name: str,
+        offset: int = 0,
+        length: int = -1,
+        max_retries: int = 5,
+    ) -> Generator[bytes, None, None]:
+        """
+        Stream download the contents of a single file from a dataset.
+
+        :param dataset: The dataset ID, full name, or object.
+        :param file_name: The path of the file within the dataset.
+        :param offset: Offset to start from, in bytes.
+        :param length: Number of bytes to read.
+        :param max_retries: Number of times to restart the download when HTTP errors occur.
+            Errors can be expected for very large files.
+
+        :raises DatasetNotFound: If the dataset can't be found.
+        :raises FileNotFoundError: If the file doesn't exist in the dataset.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        if not isinstance(dataset, Dataset) or dataset.storage is None:
+            dataset = self.get(dataset.id if isinstance(dataset, Dataset) else dataset)
+            assert dataset.storage is not None
+        response = self.request(
+            f"datasets/{dataset.storage.id}/files/{file_name}",
+            method="HEAD",
+            token=dataset.storage.token,
+            base_url=dataset.storage.address,
+            exceptions_for_status={404: FileNotFoundError(file_name)},
+        )
+        file_info = FileInfo(
+            path=file_name,
+            digest=response.headers[self.HEADER_DIGEST],
+            updated=datetime.strptime(
+                response.headers[self.HEADER_LAST_MODIFIED], "%a, %d %b %Y %H:%M:%S %Z"
+            ),
+        )
+        yield from self._stream_file(
+            dataset.storage, file_info, offset=offset, length=length, max_retries=max_retries
+        )
 
     def get(self, dataset: str) -> Dataset:
         """
@@ -456,28 +507,67 @@ class DatasetClient(ServiceClient):
                 if not cursor:
                     last_request = True
 
+    def _stream_file(
+        self,
+        storage: DatasetStorage,
+        file_info: FileInfo,
+        chunk_size: int = 1,
+        offset: int = 0,
+        length: int = -1,
+        max_retries: int = 5,
+    ) -> Generator[bytes, None, None]:
+        def stream_file(offset: int, length: int) -> Generator[bytes, None, None]:
+            headers = {}
+            if offset > 0 and length > 0:
+                headers["Range"] = f"bytes={offset}-{offset + length - 1}"
+            elif offset > 0:
+                headers["Range"] = f"bytes={offset}-"
+            response = self.request(
+                f"datasets/{storage.id}/files/{file_info.path}",
+                method="GET",
+                stream=True,
+                headers=headers,
+                token=storage.token,
+                base_url=storage.address,
+                exceptions_for_status={404: FileNotFoundError(file_info.path)},
+            )
+            for chunk in response.iter_content(chunk_size=chunk_size):
+                yield chunk
+
+        retries = 0
+        while True:
+            try:
+                for chunk in stream_file(offset, length):
+                    offset += len(chunk)
+                    yield chunk
+                break
+            except HTTPError:
+                if retries >= max_retries:
+                    raise
+                retries += 1
+
     def _download_file(
-        self, file_info: FileInfo, target_path: Path, progress: Progress, task_id: TaskID
+        self,
+        storage: DatasetStorage,
+        file_info: FileInfo,
+        target_path: Path,
+        progress: Progress,
+        task_id: TaskID,
     ) -> int:
         import tempfile
 
         total_bytes = 0
         target_dir = target_path.parent
         target_dir.mkdir(exist_ok=True, parents=True)
-        with self._session_with_backoff() as session:
-            response = session.get(file_info.url, stream=True)
-            response.raise_for_status()
-            tmp_target = tempfile.NamedTemporaryFile(
-                "w+b", dir=target_dir, delete=False, suffix=".tmp"
-            )
-            try:
-                for chunk in response.iter_content(chunk_size=1024):
-                    total_bytes += len(chunk)
-                    tmp_target.write(chunk)
-                    progress.update(task_id, advance=len(chunk))
-                os.replace(tmp_target.name, target_path)
-            finally:
-                tmp_target.close()
-                if os.path.exists(tmp_target.name):
-                    os.remove(tmp_target.name)
+        tmp_target = tempfile.NamedTemporaryFile("w+b", dir=target_dir, delete=False, suffix=".tmp")
+        try:
+            for chunk in self._stream_file(storage, file_info):
+                total_bytes += len(chunk)
+                tmp_target.write(chunk)
+                progress.update(task_id, advance=len(chunk))
+            os.replace(tmp_target.name, target_path)
+        finally:
+            tmp_target.close()
+            if os.path.exists(tmp_target.name):
+                os.remove(tmp_target.name)
         return total_bytes

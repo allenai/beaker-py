@@ -654,10 +654,18 @@ class DatasetStorageInfo(BaseModel):
 
 class FileInfo(BaseModel):
     path: str
-    size: int
     digest: str
     updated: datetime
-    url: str
+
+    size: Optional[int] = None
+    """
+    The size of the file, if known.
+    """
+
+    url: Optional[str] = None
+    """
+    A URL that can be used to directly download the file.
+    """
 
 
 class DatasetManifest(BaseModel):

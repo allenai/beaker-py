@@ -30,6 +30,19 @@ class TestDataset:
         with pytest.raises(DatasetWriteError):
             client.dataset.sync(dataset, self.file_b.name)
 
+    def test_stream_file(self, client: Beaker, dataset_name: str):
+        dataset = client.dataset.create(dataset_name, self.file_a.name, commit=True)
+
+        # Stream the whole thing at once.
+        contents = b"".join(list(client.dataset.stream_file(dataset, Path(self.file_a.name).name)))
+        assert contents == self.file_a_contents
+
+        # Stream just part of the file.
+        contents = b"".join(
+            list(client.dataset.stream_file(dataset, Path(self.file_a.name).name, offset=5))
+        )
+        assert contents == self.file_a_contents[5:]
+
 
 class TestLargeFileDataset:
     def setup_method(self):

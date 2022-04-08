@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `Beaker.dataset.commit()`.
 - Added `Beaker.dataset.ls()`.
+- Added `Beaker.dataset.stream_file()`.
 
 ### Changed
 
