@@ -197,6 +197,48 @@ class ClusterClient(ServiceClient):
             )
         return out
 
+    def filter_available(
+        self, resources: TaskResources, *clusters: Union[str, Cluster]
+    ) -> List[Cluster]:
+        """
+        Filter clusters with enough free resources to run a job with the requested resources.
+
+        :param resources: The requested task resources.
+        :param clusters: Clusters to inspect and filter.
+
+        :raises ClusterNotFound: If one of the clusters doesn't exist.
+        """
+
+        def is_compat(node_spec: Union[NodeSpec, NodeShape, NodeSpecUtil]) -> bool:
+            if resources.gpu_count and (
+                node_spec.gpu_count is None or node_spec.gpu_count < resources.gpu_count
+            ):
+                return False
+            if resources.cpu_count and (
+                node_spec.cpu_count is None or node_spec.cpu_count < resources.cpu_count
+            ):
+                return False
+            # TODO: check memory too
+            return True
+
+        available: List[Cluster] = []
+        for cluster_ in clusters:
+            cluster: Cluster = cluster_ if isinstance(cluster_, Cluster) else self.get(cluster_)
+
+            if cluster.node_shape is not None and not is_compat(cluster.node_shape):
+                continue
+
+            node_utilization = self.utilization(cluster)
+            if cluster.autoscale and len(node_utilization) < cluster.capacity:
+                available.append(cluster)
+            else:
+                for node_util in node_utilization:
+                    if is_compat(node_util.free):
+                        available.append(cluster)
+                        break
+
+        return available
+
     def _not_found_err_msg(self, cluster: str) -> str:
         return (
             f"'{cluster}': Make sure you're using the *full* name of the cluster "
