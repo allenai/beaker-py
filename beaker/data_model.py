@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar
 from pydantic import BaseModel as _BaseModel
 from pydantic import Field, ValidationError, root_validator, validator
 
+from .aliases import PathOrStr
 from .util import to_lower_camel
 
 T = TypeVar("T")
@@ -391,6 +392,17 @@ class ExperimentSpec(BaseModel):
         if v != SPEC_VERSION:
             raise ValueError(f"Only version '{SPEC_VERSION}' is currently supported")
         return v
+
+    @classmethod
+    def from_file(cls, path: PathOrStr) -> "ExperimentSpec":
+        """
+        Load an :class:`ExperimentSpec` from a YAML file.
+        """
+        import yaml
+
+        with open(path) as spec_file:
+            raw_spec = yaml.load(spec_file, Loader=yaml.SafeLoader)
+            return cls.from_json(raw_spec)
 
 
 class WorkspaceSize(BaseModel):

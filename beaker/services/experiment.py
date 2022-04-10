@@ -33,12 +33,8 @@ class ExperimentClient(ServiceClient):
         if isinstance(spec, ExperimentSpec):
             json_spec = spec.to_json()
         else:
-            import yaml
-
-            with open(spec) as spec_file:
-                raw_spec = yaml.load(spec_file, Loader=yaml.SafeLoader)
-                spec = ExperimentSpec.from_json(raw_spec)
-                json_spec = spec.to_json()
+            spec = ExperimentSpec.from_file(spec)
+            json_spec = spec.to_json()
 
         workspace_name = self._resolve_workspace(workspace)
         experiment_data = self.request(

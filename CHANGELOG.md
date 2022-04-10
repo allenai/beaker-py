@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `Beaker.dataset.size()`.
 - Added `Beaker.dataset.rename()`.
+- Added `ExperimentSpec.from_file()`.
 
 ## [v0.5.3](https://github.com/allenai/beaker-py/releases/tag/v0.5.3) - 2022-04-08
 
