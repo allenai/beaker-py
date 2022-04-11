@@ -48,6 +48,15 @@ class WorkspaceClient(ServiceClient):
                 raise ValueError(f"Invalided workspace name '{workspace}'")
             self.request("workspaces", method="POST", data={"name": name, "org": org})
 
+    def list(self, match: Optional[str] = None) -> List[Workspace]:
+        """
+        List workspaces belonging to your account.
+
+        :param match: Only include workspaces matching the text.
+
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+
     def images(
         self,
         workspace: Optional[Union[str, Workspace]] = None,

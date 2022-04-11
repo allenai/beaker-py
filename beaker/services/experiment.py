@@ -140,25 +140,6 @@ class ExperimentClient(ServiceClient):
             ).json()
         )
 
-    def list(self, workspace: Optional[str] = None) -> List[Experiment]:
-        """
-        :param workspace: The workspace to upload the dataset to. If not specified,
-            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
-
-        :raises WorkspaceNotFound: If the workspace doesn't exist.
-        :raises WorkspaceNotSet: If neither ``workspace`` nor
-            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
-        :raises HTTPError: Any other HTTP exception that can occur.
-        """
-        workspace_name = self._resolve_workspace(workspace, ensure_exists=False)
-        return [
-            Experiment.from_json(d)
-            for d in self.request(
-                f"workspaces/{self._url_quote(workspace_name)}/experiments",
-                exceptions_for_status={404: WorkspaceNotFound(workspace_name)},
-            ).json()["data"]
-        ]
-
     def logs(
         self,
         experiment: Union[str, Experiment],
