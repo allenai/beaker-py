@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `Beaker.experiment.rename()`.
+
 ## [v0.5.5](https://github.com/allenai/beaker-py/releases/tag/v0.5.5) - 2022-04-10
 
 ### Added
@@ -20,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Beaker.dataset.size()`.
 - Added `Beaker.dataset.rename()`.
 - Added `ExperimentSpec.from_file()`.
-- Added `Beaker.cluster.filter_available()` method.
+- Added `Beaker.cluster.filter_available()`.
 
 ## [v0.5.3](https://github.com/allenai/beaker-py/releases/tag/v0.5.3) - 2022-04-08
 

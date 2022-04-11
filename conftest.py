@@ -71,6 +71,16 @@ def experiment_name(client: Beaker) -> Generator[str, None, None]:
 
 
 @pytest.fixture()
+def alternate_experiment_name(client: Beaker) -> Generator[str, None, None]:
+    name = petname.generate() + "-" + str(uuid.uuid4())[:8]
+    yield name
+    try:
+        client.experiment.delete(f"{client.account.whoami().name}/{name}")
+    except ExperimentNotFound:
+        pass
+
+
+@pytest.fixture()
 def dataset_name(client: Beaker) -> Generator[str, None, None]:
     name = petname.generate() + "-" + str(uuid.uuid4())[:8]
     yield name
