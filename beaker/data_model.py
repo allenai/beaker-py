@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 SPEC_VERSION = "v2-alpha"
+ALLOWED_SPEC_VERSIONS = {SPEC_VERSION, "v2"}
 
 
 class BaseModel(_BaseModel):
@@ -308,6 +309,8 @@ class TaskSpec(BaseModel):
     A Beaker experiment may contain multiple tasks.
     A task may also depend on the results of another task in its experiment,
     creating an execution graph.
+
+    A :class:`TaskSpec` defines a :class:`Task`.
     """
 
     image: ImageSource
@@ -369,7 +372,9 @@ class TaskSpec(BaseModel):
 
 class ExperimentSpec(BaseModel):
     """
-    An experiment is the main unit of execution in Beaker.
+    Experiments are the main unit of execution in Beaker.
+
+    An :class:`ExperimentSpec` defines an :class:`Experiment`.
     """
 
     tasks: List[TaskSpec]
@@ -389,8 +394,8 @@ class ExperimentSpec(BaseModel):
 
     @validator("version")
     def _validate_version(cls, v: str) -> str:
-        if v != SPEC_VERSION:
-            raise ValueError(f"Only version '{SPEC_VERSION}' is currently supported")
+        if v not in ALLOWED_SPEC_VERSIONS:
+            raise ValueError(f"Spec version '{v}' is not supported")
         return v
 
     @classmethod
@@ -590,6 +595,10 @@ class JobKind(BaseEnum):
 
 
 class Job(BaseModel):
+    """
+    A :class:`Job` is an execution of a :class:`Task`.
+    """
+
     id: str
     kind: JobKind
     author: Account
@@ -616,6 +625,17 @@ class Experiment(BaseModel):
     author: Account
     created: datetime
     workspace_ref: WorkspaceRef
+    jobs: List[Job] = Field(default_factory=list)
+
+
+class Task(BaseModel):
+    id: str
+    experiment_id: str
+    owner: Account
+    author: Account
+    created: datetime
+    name: Optional[str] = None
+    schedulable: bool = False
     jobs: List[Job] = Field(default_factory=list)
 
 

@@ -50,7 +50,8 @@ For example, you can get information about a cluster with
 >>> beaker.cluster.get(beaker_cluster_name).autoscale
 True
 
-Or you could check how many GPUs are free on an on-premise cluster with:
+Or you could check how many GPUs are free on an on-premise cluster with
+:meth:`Beaker.cluster.utilization() <services.ClusterClient.utilization>`:
 
 >>> free_gpus = 0
 >>> for node_util in beaker.cluster.utilization(beaker_on_prem_cluster_name):
@@ -59,7 +60,7 @@ Or you could check how many GPUs are free on an on-premise cluster with:
 Nodes
 -----
 
-Manage Beaker nodes.
+Manage Beaker nodes with :data:`Beaker.node`.
 
 For example, you can get information about a node with
 :meth:`Beaker.node.get() <services.NodeClient.get>`:
@@ -111,10 +112,11 @@ For example, create an experiment with :meth:`Beaker.experiment.create() <servic
 ...     workspace=workspace_name,
 ... )
 
-Wait for the experiment to complete:
+Wait for the experiment to complete with
+:meth:`Beaker.experiment.await_all() <services.ExperimentClient.await_all>`:
 
 >>> experiment = beaker.experiment.await_all(
-...     experiment.full_name,
+...     experiment,
 ...     timeout=60 * 3,
 ...     quiet=True,
 ... )
@@ -124,9 +126,14 @@ Get the logs from the experiment with :meth:`Beaker.experiment.logs() <services.
 
 >>> logs = "".join([
 ...    line.decode() for line in
-...    beaker.experiment.logs(experiment.full_name, quiet=True)
+...    beaker.experiment.logs(experiment, quiet=True)
 ... ])
 <BLANKLINE>
+
+Get the results from all tasks in an experiment with
+:meth:`Beaker.experiment.results <services.ExperimentClient.results>`:
+
+>>> task, results = beaker.experiment.results(experiment)[0]
 
 Datasets
 --------

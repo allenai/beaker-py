@@ -1,5 +1,5 @@
 import time
-from typing import Any, Callable, Dict, Generator, Union
+from typing import Any, Callable, Dict, Generator, Tuple, Union
 
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
 
@@ -63,6 +63,24 @@ class ExperimentClient(ServiceClient):
                 exceptions_for_status={
                     404: ExperimentNotFound(self._not_found_err_msg(experiment))
                 },
+            ).json()
+        )
+
+    def spec(self, experiment: Union[str, Experiment]) -> ExperimentSpec:
+        """
+        Get the :class:`spec <beaker.data_model.ExperimentSpec>` of an experiment.
+
+        :param experiment: The experiment ID, full name, or object.
+
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        experiment_id = experiment if isinstance(experiment, str) else experiment.id
+        return ExperimentSpec.from_json(
+            self.request(
+                f"experiments/{self._url_quote(experiment_id)}/spec",
+                query={"version": SPEC_VERSION},
+                headers={"Accept": "application/json"},
             ).json()
         )
 
@@ -161,7 +179,6 @@ class ExperimentClient(ServiceClient):
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises JobNotFound: If the job can't be found.
         :raises HTTPError: Any other HTTP exception that can occur.
-
         """
         exp = self.get(experiment if isinstance(experiment, str) else experiment.id)
         if job_id is None:
@@ -171,6 +188,49 @@ class ExperimentClient(ServiceClient):
                 )
             job_id = exp.jobs[0].id
         return self.beaker.job.logs(job_id, quiet=quiet)
+
+    def tasks(self, experiment: Union[str, Experiment]) -> List[Task]:
+        """
+        List the tasks in an experiment.
+
+        :param experiment: The experiment ID, full name, or object.
+
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        experiment_id = experiment if isinstance(experiment, str) else experiment.id
+        return [
+            Task.from_json(d)
+            for d in self.request(
+                f"experiments/{self._url_quote(experiment_id)}/tasks",
+                method="GET",
+                exceptions_for_status={
+                    404: ExperimentNotFound(self._not_found_err_msg(experiment_id))
+                },
+            ).json()
+        ]
+
+    def results(self, experiment: Union[str, Experiment]) -> List[Tuple[Task, Dataset]]:
+        """
+        Get the results for the latest job of each task in an experiment.
+
+        :param experiment: The experiment ID, full name, or object.
+
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        out: List[Tuple[Task, Dataset]] = []
+        for task in self.tasks(experiment):
+            jobs = [job for job in task.jobs if job.execution is not None]
+            if not jobs:
+                continue
+            latest_job = sorted(jobs, key=lambda job: (job.status.finalized, job.status.created))[
+                -1
+            ]
+            assert latest_job.execution is not None  # for mypy.
+            result_dataset = self.beaker.dataset.get(latest_job.execution.result.beaker)
+            out.append((task, result_dataset))
+        return out
 
     def await_all(
         self,

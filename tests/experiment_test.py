@@ -1,9 +1,11 @@
 from beaker import (
     Beaker,
     CurrentJobStatus,
+    Dataset,
     ExperimentSpec,
     ImageSource,
     ResultSpec,
+    Task,
     TaskContext,
     TaskSpec,
 )
@@ -14,6 +16,25 @@ def test_experiment_get(client: Beaker, hello_world_experiment_id: str):
     assert exp.id == hello_world_experiment_id
     assert exp.jobs
     assert exp.jobs[0].status.current == CurrentJobStatus.finalized
+
+
+def test_experiment_tasks(client: Beaker, hello_world_experiment_id: str):
+    tasks = client.experiment.tasks(hello_world_experiment_id)
+    assert len(tasks) == 1
+
+
+def test_experiment_results(client: Beaker, hello_world_experiment_id: str):
+    results = client.experiment.results(hello_world_experiment_id)
+    assert len(results) == 1
+    task, results = results[0]
+    assert isinstance(task, Task)
+    assert isinstance(results, Dataset)
+    assert client.dataset.size(results) == 0
+
+
+def test_experiment_spec(client: Beaker, hello_world_experiment_id: str):
+    spec = client.experiment.spec(hello_world_experiment_id)
+    assert isinstance(spec, ExperimentSpec)
 
 
 def test_experiment_create_await_rename(
