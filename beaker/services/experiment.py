@@ -66,6 +66,24 @@ class ExperimentClient(ServiceClient):
             ).json()
         )
 
+    def spec(self, experiment: Union[str, Experiment]) -> ExperimentSpec:
+        """
+        Get the :class:`spec <beaker.data_model.ExperimentSpec>` of an experiment.
+
+        :param experiment: The experiment ID, full name, or object.
+
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        experiment_id = experiment if isinstance(experiment, str) else experiment.id
+        return ExperimentSpec.from_json(
+            self.request(
+                f"experiments/{self._url_quote(experiment_id)}/spec",
+                query={"version": SPEC_VERSION},
+                headers={"Accept": "application/json"},
+            ).json()
+        )
+
     def stop(self, experiment: Union[str, Experiment]):
         """
         Stop an experiment.

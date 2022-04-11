@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 SPEC_VERSION = "v2-alpha"
+ALLOWED_SPEC_VERSIONS = {SPEC_VERSION, "v2"}
 
 
 class BaseModel(_BaseModel):
@@ -393,8 +394,8 @@ class ExperimentSpec(BaseModel):
 
     @validator("version")
     def _validate_version(cls, v: str) -> str:
-        if v != SPEC_VERSION:
-            raise ValueError(f"Only version '{SPEC_VERSION}' is currently supported")
+        if v not in ALLOWED_SPEC_VERSIONS:
+            raise ValueError(f"Spec version '{v}' is not supported")
         return v
 
     @classmethod
