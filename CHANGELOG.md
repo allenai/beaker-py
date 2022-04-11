@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `callback` parameter to `Beaker.experiment.await_all()`.
+
 ## [v0.5.4](https://github.com/allenai/beaker-py/releases/tag/v0.5.4) - 2022-04-10
 
 ### Added

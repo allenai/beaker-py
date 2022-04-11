@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict, Generator, Union
+from typing import Any, Callable, Dict, Generator, Union
 
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
 
@@ -152,6 +152,7 @@ class ExperimentClient(ServiceClient):
         timeout: Optional[int] = None,
         poll_interval: float = 2.0,
         quiet: bool = False,
+        callback: Optional[Callable[[float], None]] = None,
     ) -> Experiment:
         """
         Wait for all jobs in an experiment to complete.
@@ -160,6 +161,8 @@ class ExperimentClient(ServiceClient):
         :param timeout: Maximum amount of time to wait for (in seocnds).
         :param poll_interval: Time to wait between polling the experiment (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
+        :param callback: An optional user-provided callback function that takes a
+            single argument - the elapsed time.
 
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises TimeoutError: If the ``timeout`` expires.
@@ -183,8 +186,11 @@ class ExperimentClient(ServiceClient):
                             break
                     else:
                         return exp
-                if timeout is not None and time.time() - start >= timeout:
+                elapsed = time.time() - start
+                if timeout is not None and elapsed >= timeout:
                     raise TimeoutError
+                if callback is not None:
+                    callback(elapsed)
                 polls += 1
                 progress.update(task_id, total=polls + 1, advance=1)
                 time.sleep(poll_interval)
