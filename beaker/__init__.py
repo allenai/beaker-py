@@ -170,6 +170,16 @@ And download a dataset with :meth:`Beaker.dataset.fetch() <services.DatasetClien
 >>> beaker.dataset.fetch(dataset, target=download_path, quiet=True)
 <BLANKLINE>
 
+Secrets
+-------
+
+Manage Beaker secrets with :data:`Beaker.secret`.
+
+For example, you can read, write, or delete secrets with
+:meth:`Beaker.secret.read() <services.SecretClient.read>`,
+:meth:`Beaker.secret.write() <services.SecretClient.write>`, and
+:meth:`Beaker.secret.delete() <services.SecretClient.delete>`, respectively.
+
 """
 
 from .client import *

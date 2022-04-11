@@ -723,6 +723,12 @@ class Image(BaseModel):
         return v
 
 
+class Secret(BaseModel):
+    name: str
+    created: datetime
+    updated: datetime
+
+
 class ImagesPage(BaseModel):
     data: List[Image]
     next_cursor: Optional[str] = None

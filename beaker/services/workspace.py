@@ -263,6 +263,32 @@ class WorkspaceClient(ServiceClient):
 
         return datasets
 
+    def secrets(self, workspace: Union[str, Workspace] = None) -> List[Secret]:
+        """
+        List secrets in a workspace.
+
+        :param workspace: The Beaker workspace ID, full name, or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        workspace_id = (
+            workspace.id if isinstance(workspace, Workspace) else self._resolve_workspace(workspace)
+        )
+        return [
+            Secret.from_json(d)
+            for d in self.request(
+                f"workspaces/{self._url_quote(workspace_id)}/secrets",
+                method="GET",
+                exceptions_for_status={
+                    404: WorkspaceNotFound(self._not_found_err_msg(workspace_id))
+                },
+            ).json()["data"]
+        ]
+
     def _not_found_err_msg(self, workspace: str) -> str:
         return (
             f"'{workspace}': Make sure you're using the *full* name of the workspace "

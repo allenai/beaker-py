@@ -86,3 +86,7 @@ class NodeNotFound(BeakerError):
 
 class DatasetWriteError(BeakerError):
     pass
+
+
+class SecretNotFound(BeakerError):
+    pass

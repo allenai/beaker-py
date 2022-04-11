@@ -71,6 +71,12 @@ Experiment
    :members:
    :member-order: bysource
 
+Secret
+~~~~~~
+
+.. autoclass:: beaker.services.SecretClient
+   :members:
+   :member-order: bysource
 
 Data Models
 -----------

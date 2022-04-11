@@ -42,6 +42,7 @@ class Beaker:
         self._image = ImageClient(self)
         self._job = JobClient(self)
         self._experiment = ExperimentClient(self)
+        self._secret = SecretClient(self)
 
         # Ensure default workspace exists.
         if self._config.default_workspace is not None:
@@ -197,6 +198,18 @@ class Beaker:
             to see all of the available methods.
         """
         return self._experiment
+
+    @property
+    def secret(self) -> SecretClient:
+        """
+        Manage secrets.
+
+        .. tip::
+            See the `Secrets Overview <overview.html#secrets>`_ for a walk-through of the
+            main methods, or check out the `Secret API Docs <#secret>`_
+            to see all of the available methods.
+        """
+        return self._secret
 
     @property
     def docker(self) -> docker.DockerClient:
