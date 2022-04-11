@@ -44,6 +44,12 @@ You can list datasets in a workspace with
 
 >>> datasets = beaker.workspace.datasets(workspace_name, results=False)
 
+Similarly, you can list experiments or images with
+:meth:`Beaker.workspace.experiments() <services.WorkspaceClient.experiments>`
+or
+:meth:`Beaker.workspace.images() <services.WorkspaceClient.images>`,
+respectively.
+
 Clusters
 --------
 

@@ -48,6 +48,56 @@ class WorkspaceClient(ServiceClient):
                 raise ValueError(f"Invalided workspace name '{workspace}'")
             self.request("workspaces", method="POST", data={"name": name, "org": org})
 
+    def images(
+        self,
+        workspace: Optional[Union[str, Workspace]] = None,
+        match: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[Image]:
+        """
+        List the images in a workspace.
+
+        :param workspace: The Beaker workspace ID, full name, or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param match: Only include images matching the text.
+        :param limit: Limit the number of images returned.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        workspace_id = (
+            workspace.id if isinstance(workspace, Workspace) else self._resolve_workspace(workspace)
+        )
+        images: List[Image] = []
+        cursor: Optional[str] = None
+        query: Dict[str, str] = {}
+        if match is not None:
+            query["q"] = match
+
+        while True:
+            query["cursor"] = cursor or ""
+            page = ImagesPage.from_json(
+                self.request(
+                    f"workspaces/{self._url_quote(workspace_id)}/images",
+                    method="GET",
+                    query=query,
+                    exceptions_for_status={
+                        404: WorkspaceNotFound(self._not_found_err_msg(workspace_id))
+                    },
+                ).json()
+            )
+            images.extend(page.data)
+            cursor = page.next_cursor
+            if not cursor:
+                break
+            if limit is not None and len(images) >= limit:
+                images = images[:limit]
+                break
+
+        return images
+
     def experiments(
         self,
         workspace: Optional[Union[str, Workspace]] = None,

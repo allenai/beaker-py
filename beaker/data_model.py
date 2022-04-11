@@ -731,3 +731,8 @@ class Image(BaseModel):
         if v is not None and v.year == 1:
             return None
         return v
+
+
+class ImagesPage(BaseModel):
+    data: List[Image]
+    next_cursor: Optional[str] = None

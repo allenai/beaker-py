@@ -117,6 +117,11 @@ def hello_world_experiment_id() -> str:
 
 
 @pytest.fixture()
+def hello_world_image_name() -> str:
+    return "hello-world"
+
+
+@pytest.fixture()
 def hello_world_job_id() -> str:
     return "01G0062R1K182CGR5559GHT5ED"
 

@@ -26,3 +26,8 @@ def test_workspace_datasets(
 def test_workspace_experiments(client: Beaker, hello_world_experiment_name: str):
     experiments = client.workspace.experiments(match=hello_world_experiment_name)
     assert experiments
+
+
+def test_workspace_images(client: Beaker, hello_world_image_name: str):
+    images = client.workspace.images(match=hello_world_image_name)
+    assert images
