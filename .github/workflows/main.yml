@@ -127,13 +127,49 @@ jobs:
           . .venv/bin/activate
           pip uninstall -y beaker-py
 
+  docker:
+    name: Docker
+    runs-on: ubuntu-latest
+    env:
+      image: ghcr.io/allenai/beaker-py
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Log in to ghcr.io
+        run: |
+          echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USER }} --password-stdin
+
+      - name: Build image
+        run: |
+          docker build -t "${image}" .
+
+      - name: Test image
+        run: |
+          docker run \
+              --rm \
+              --entrypoint python \
+              -e BEAKER_TOKEN=${{ secrets.BEAKER_TOKEN }} \
+              "${image}" \
+              -c "from beaker import Beaker; beaker = Beaker.from_env(); print(beaker.account.whoami())"
+
+      - name: Publish image to container registry
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          docker tag "${image}" "${image}:${TAG}"
+          TAG=${GITHUB_REF#refs/tags/}
+          docker push "${image}:${TAG}"
+
   release:
     name: Release
     runs-on: ubuntu-latest
-    needs: [checks]
+    needs: [checks, docker]
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - uses: actions/checkout@v1
+
+      - name: Log in to ghcr.io
+        run: |
+          echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USER }} --password-stdin
 
       - name: Setup Python
         uses: actions/setup-python@v1
