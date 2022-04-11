@@ -155,8 +155,8 @@ jobs:
       - name: Publish image to container registry
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          docker tag "${image}" "${image}:${TAG}"
           TAG=${GITHUB_REF#refs/tags/}
+          docker tag "${image}" "${image}:${TAG}"
           docker push "${image}:${TAG}"
 
   release:
