@@ -22,6 +22,7 @@ class ExperimentClient(ServiceClient):
         :param workspace: The workspace to create the experiment under. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
 
+        :raises ValueError: If the name is invalid.
         :raises ExperimentConflict: If an experiment with the given name already exists.
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
@@ -29,6 +30,7 @@ class ExperimentClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
+        self._validate_name(name)
         json_spec: Dict[str, Any]
         if isinstance(spec, ExperimentSpec):
             json_spec = spec.to_json()
@@ -94,6 +96,30 @@ class ExperimentClient(ServiceClient):
             f"experiments/{self._url_quote(experiment_id)}",
             method="DELETE",
             exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment_id))},
+        )
+
+    def rename(self, experiment: Union[str, Experiment], name: str) -> Experiment:
+        """
+        Rename an experiment.
+
+        :param experiment: The experiment ID, full name, or object.
+        :param name: The new
+
+        :raises ValueError: If the new name is invalid.
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        self._validate_name(name)
+        experiment_id = experiment if isinstance(experiment, str) else experiment.id
+        return Experiment.from_json(
+            self.request(
+                f"experiments/{self._url_quote(experiment_id)}",
+                method="PATCH",
+                data={"name": name},
+                exceptions_for_status={
+                    404: ExperimentNotFound(self._not_found_err_msg(experiment_id))
+                },
+            ).json()
         )
 
     def list(self, workspace: Optional[str] = None) -> List[Experiment]:
@@ -200,3 +226,11 @@ class ExperimentClient(ServiceClient):
             f"'{experiment}': Make sure you're using a valid Beaker experiment ID or the "
             f"*full* name of the experiment (with the account prefix, e.g. 'username/experiment_name')"
         )
+
+    def _validate_name(self, name: str) -> None:
+        err_msg = (
+            f"Invalid name '{name}'. Experiment names can only consist of "
+            "letters, digits, dashes, and underscores"
+        )
+        if not name.replace("-", "").replace("_", "").isalnum():
+            raise ValueError(err_msg)
