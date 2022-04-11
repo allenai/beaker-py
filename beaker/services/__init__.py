@@ -6,5 +6,6 @@ from .image import ImageClient
 from .job import JobClient
 from .node import NodeClient
 from .organization import OrganizationClient
+from .secret import SecretClient
 from .service_client import ServiceClient
 from .workspace import WorkspaceClient

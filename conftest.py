@@ -129,3 +129,13 @@ def hello_world_job_id() -> str:
 @pytest.fixture()
 def beaker_node_id() -> str:
     return "01FXTYPFQ1QQ7XV4SH8VTCRZMG"
+
+
+@pytest.fixture()
+def secret_name(client: Beaker) -> Generator[str, None, None]:
+    name = petname.generate() + "-" + str(uuid.uuid4())[:8]
+    yield name
+    try:
+        client.secret.delete(name)
+    except SecretNotFound:
+        pass
