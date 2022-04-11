@@ -721,3 +721,23 @@ class Image(BaseModel):
         if v is not None and v.year == 1:
             return None
         return v
+
+
+class ImagesPage(BaseModel):
+    data: List[Image]
+    next_cursor: Optional[str] = None
+
+
+class DatasetsPage(BaseModel):
+    data: List[Dataset]
+    next_cursor: Optional[str] = None
+
+
+class ExperimentsPage(BaseModel):
+    data: List[Experiment]
+    next_cursor: Optional[str] = None
+
+
+class WorkspacePage(BaseModel):
+    data: List[Workspace]
+    next_cursor: Optional[str] = None

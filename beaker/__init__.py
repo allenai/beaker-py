@@ -34,10 +34,21 @@ For example, you can create a workspace with :meth:`Beaker.workspace.ensure() <s
 
 >>> beaker.workspace.ensure(workspace_name)
 
-And you can retreive metadata about a workspace with :meth:`Beaker.workspace.get() <services.WorkspaceClient.get>`:
+You can retreive metadata about a workspace with :meth:`Beaker.workspace.get() <services.WorkspaceClient.get>`:
 
 >>> beaker.workspace.get(workspace_name).id
 '01FPB5S64Y649S1948QHQHVCVE'
+
+You can list datasets in a workspace with
+:meth:`Beaker.workspace.datasets() <services.WorkspaceClient.datasets>`:
+
+>>> datasets = beaker.workspace.datasets(workspace_name, results=False)
+
+Similarly, you can list experiments or images with
+:meth:`Beaker.workspace.experiments() <services.WorkspaceClient.experiments>`
+or
+:meth:`Beaker.workspace.images() <services.WorkspaceClient.images>`,
+respectively.
 
 Clusters
 --------
