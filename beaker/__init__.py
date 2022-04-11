@@ -60,7 +60,7 @@ Or you could check how many GPUs are free on an on-premise cluster with
 Nodes
 -----
 
-Manage Beaker nodes.
+Manage Beaker nodes with :data:`Beaker.node`.
 
 For example, you can get information about a node with
 :meth:`Beaker.node.get() <services.NodeClient.get>`:
