@@ -671,16 +671,6 @@ class Dataset(BaseModel):
         return v
 
 
-class DatasetsPage(BaseModel):
-    data: List[Dataset]
-    next_cursor: Optional[str] = None
-
-
-class ExperimentsPage(BaseModel):
-    data: List[Experiment]
-    next_cursor: Optional[str] = None
-
-
 class DatasetStorageInfo(BaseModel):
     id: str
     created: Optional[datetime] = None
@@ -735,4 +725,19 @@ class Image(BaseModel):
 
 class ImagesPage(BaseModel):
     data: List[Image]
+    next_cursor: Optional[str] = None
+
+
+class DatasetsPage(BaseModel):
+    data: List[Dataset]
+    next_cursor: Optional[str] = None
+
+
+class ExperimentsPage(BaseModel):
+    data: List[Experiment]
+    next_cursor: Optional[str] = None
+
+
+class WorkspacePage(BaseModel):
+    data: List[Workspace]
     next_cursor: Optional[str] = None

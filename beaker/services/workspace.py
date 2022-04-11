@@ -48,14 +48,62 @@ class WorkspaceClient(ServiceClient):
                 raise ValueError(f"Invalided workspace name '{workspace}'")
             self.request("workspaces", method="POST", data={"name": name, "org": org})
 
-    def list(self, match: Optional[str] = None) -> List[Workspace]:
+    def list(
+        self,
+        org: Union[str, Organization],
+        author: Optional[Union[str, Account]] = None,
+        match: Optional[str] = None,
+        archived: Optional[bool] = None,
+        limit: Optional[int] = None,
+    ) -> List[Workspace]:
         """
-        List workspaces belonging to your account.
+        List workspaces belonging to an organization.
 
+        :param org: The organization name or object.
+        :param author: Only list workspaces authored by this account.
         :param match: Only include workspaces matching the text.
+        :param archived: Only include/exclude archived workspaces.
+        :param limit: Limit the number of workspaces returned.
 
+        :raises OrganizationNotFound: If the organization doesn't exist.
+        :raises AccountNotFound: If the author account doesn't exist.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
+        organization_id = (
+            org.id if isinstance(org, Organization) else self.beaker.organization.get(org).id
+        )
+        workspaces: List[Workspace] = []
+        cursor: Optional[str] = None
+        query: Dict[str, str] = {"org": organization_id}
+        if author is not None:
+            query["author"] = (
+                author.name if isinstance(author, Account) else self.beaker.account.get(author).name
+            )
+        if match is not None:
+            query["q"] = match
+        if archived is not None:
+            query["archived"] = str(archived).lower()
+        if limit:
+            query["limit"] = str(limit)
+
+        while True:
+            query["cursor"] = cursor or ""
+            page = WorkspacePage.from_json(
+                self.request(
+                    "workspaces",
+                    method="GET",
+                    query=query,
+                ).json()
+            )
+            workspaces.extend(page.data)
+            cursor = page.next_cursor
+            if not cursor:
+                break
+            if limit and len(workspaces) >= limit:
+                workspaces = workspaces[:limit]
+                break
+
+        return workspaces
 
     def images(
         self,

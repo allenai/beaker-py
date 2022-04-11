@@ -31,3 +31,8 @@ def test_workspace_experiments(client: Beaker, hello_world_experiment_name: str)
 def test_workspace_images(client: Beaker, hello_world_image_name: str):
     images = client.workspace.images(match=hello_world_image_name)
     assert images
+
+
+def test_workspace_list(client: Beaker, workspace_name: str):
+    workspaces = client.workspace.list("ai2", match=workspace_name.split("/")[1])
+    assert workspaces
