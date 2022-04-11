@@ -135,6 +135,10 @@ jobs:
     steps:
       - uses: actions/checkout@v1
 
+      - name: Log in to ghcr.io
+        run: |
+          echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USER }} --password-stdin
+
       - name: Setup Python
         uses: actions/setup-python@v1
         with:
@@ -159,6 +163,12 @@ jobs:
       - name: Generate release notes
         run: |
           python scripts/release_notes.py > ${{ github.workspace }}-RELEASE_NOTES.md
+
+      - name: Publish Docker image to container registry
+        run: |
+          image_name="ghcr.io/allenai/beaker-py:$TAG"
+          docker build -t $image_name .
+          docker push $image_name
 
       - name: Publish package to PyPI
         run: |
