@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Beaker.workspace.experiments()`.
 - Added `Beaker.workspace.images()`.
 - Added `Beaker.workspace.list()`.
+- Added `Beaker.account.get()`.
 
 ### Removed
 
