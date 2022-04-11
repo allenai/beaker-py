@@ -107,6 +107,11 @@ def download_path(dataset_name, tmp_path) -> Path:
 
 
 @pytest.fixture()
+def hello_world_experiment_name() -> str:
+    return "hello-world"
+
+
+@pytest.fixture()
 def hello_world_experiment_id() -> str:
     return "01FPB5WGRTM33P5AE6A28MT8QF"
 

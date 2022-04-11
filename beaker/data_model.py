@@ -676,6 +676,11 @@ class DatasetsPage(BaseModel):
     next_cursor: Optional[str] = None
 
 
+class ExperimentsPage(BaseModel):
+    data: List[Experiment]
+    next_cursor: Optional[str] = None
+
+
 class DatasetStorageInfo(BaseModel):
     id: str
     created: Optional[datetime] = None

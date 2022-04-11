@@ -21,3 +21,8 @@ def test_workspace_datasets(
     client: Beaker, match: Optional[str], results: Optional[bool], uncommitted: Optional[bool]
 ):
     client.workspace.datasets(match=match, results=results, uncommitted=uncommitted, limit=50)
+
+
+def test_workspace_experiments(client: Beaker, hello_world_experiment_name: str):
+    experiments = client.workspace.experiments(match=hello_world_experiment_name)
+    assert experiments

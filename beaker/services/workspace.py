@@ -48,6 +48,56 @@ class WorkspaceClient(ServiceClient):
                 raise ValueError(f"Invalided workspace name '{workspace}'")
             self.request("workspaces", method="POST", data={"name": name, "org": org})
 
+    def experiments(
+        self,
+        workspace: Optional[Union[str, Workspace]] = None,
+        match: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[Experiment]:
+        """
+        List the experiments in a workspace.
+
+        :param workspace: The Beaker workspace ID, full name, or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param match: Only include experiments matching the text.
+        :param limit: Limit the number of experiments returned.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        workspace_id = (
+            workspace.id if isinstance(workspace, Workspace) else self._resolve_workspace(workspace)
+        )
+        experiments: List[Experiment] = []
+        cursor: Optional[str] = None
+        query: Dict[str, str] = {}
+        if match is not None:
+            query["q"] = match
+
+        while True:
+            query["cursor"] = cursor or ""
+            page = ExperimentsPage.from_json(
+                self.request(
+                    f"workspaces/{self._url_quote(workspace_id)}/experiments",
+                    method="GET",
+                    query=query,
+                    exceptions_for_status={
+                        404: WorkspaceNotFound(self._not_found_err_msg(workspace_id))
+                    },
+                ).json()
+            )
+            experiments.extend(page.data)
+            cursor = page.next_cursor
+            if not cursor:
+                break
+            if limit is not None and len(experiments) >= limit:
+                experiments = experiments[:limit]
+                break
+
+        return experiments
+
     def datasets(
         self,
         workspace: Optional[Union[str, Workspace]] = None,
@@ -64,6 +114,7 @@ class WorkspaceClient(ServiceClient):
         :param match: Only include datasets matching the text.
         :param results: Only include/exclude experiment result datasets.
         :param uncommitted: Only include/exclude uncommitted datasets.
+        :param limit: Limit the number of datasets returned.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
@@ -102,6 +153,7 @@ class WorkspaceClient(ServiceClient):
             if limit is not None and len(datasets) >= limit:
                 datasets = datasets[:limit]
                 break
+
         return datasets
 
     def _not_found_err_msg(self, workspace: str) -> str:
