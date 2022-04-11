@@ -671,6 +671,11 @@ class Dataset(BaseModel):
         return v
 
 
+class DatasetsPage(BaseModel):
+    data: List[Dataset]
+    next_cursor: Optional[str] = None
+
+
 class DatasetStorageInfo(BaseModel):
     id: str
     created: Optional[datetime] = None
