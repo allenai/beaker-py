@@ -143,6 +143,15 @@ jobs:
         run: |
           docker build -t "${image}" .
 
+      - name: Test image
+        run: |
+          docker run \
+              --rm \
+              --entrypoint python \
+              -e BEAKER_TOKEN=${{ secrets.BEAKER_TOKEN }} \
+              "${image}" \
+              -c "from beaker import Beaker; beaker = Beaker.from_env(); print(beaker.account.whoami())"
+
       - name: Publish image to container registry
         if: startsWith(github.ref, 'refs/tags/')
         run: |
