@@ -1,8 +1,11 @@
+import pytest
+
 from beaker import (
     Beaker,
     CurrentJobStatus,
     Dataset,
     ExperimentSpec,
+    ImageNotFound,
     ImageSource,
     ResultSpec,
     Task,
@@ -57,3 +60,22 @@ def test_experiment_create_await_rename(
 
     experiment = client.experiment.rename(experiment, alternate_experiment_name)
     assert experiment.name == alternate_experiment_name
+
+
+def test_create_experiment_image_not_found(
+    client: Beaker,
+    experiment_name: str,
+    beaker_cluster_name: str,
+):
+    spec = ExperimentSpec(
+        tasks=[
+            TaskSpec(
+                name="main",
+                image=ImageSource(beaker="does-not-exist"),
+                context=TaskContext(cluster=beaker_cluster_name),
+                result=ResultSpec(path="/unused"),
+            ),
+        ],
+    )
+    with pytest.raises(ImageNotFound):
+        client.experiment.create(experiment_name, spec)

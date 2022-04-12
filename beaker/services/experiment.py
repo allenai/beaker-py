@@ -31,6 +31,7 @@ class ExperimentClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises ImageNotFound: If the image specified by the spec doesn't exist.
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
@@ -41,6 +42,7 @@ class ExperimentClient(ServiceClient):
         else:
             spec = ExperimentSpec.from_file(spec)
             json_spec = spec.to_json()
+        self._validate_spec(spec)
 
         workspace: Workspace = self._resolve_workspace(workspace)
         experiment_data = self.request(
@@ -301,3 +303,9 @@ class ExperimentClient(ServiceClient):
         )
         if not name.replace("-", "").replace("_", "").isalnum():
             raise ValueError(err_msg)
+
+    def _validate_spec(self, spec: ExperimentSpec) -> None:
+        for task in spec.tasks:
+            # Make sure image exists.
+            if task.image.beaker is not None:
+                self.beaker.image.get(task.image.beaker)

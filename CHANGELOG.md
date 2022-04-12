@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Beaker.experiment.await_all()` now takes a variable number of experiments and returns a list
   with the same length and order of the finished experiments.
 
+### Fixed
+
+- Fixed bug where `Beaker.experiment.create()` would fail with an `HTTPError` if the image
+  in the spec doesn't exist. Now this will fail with `ImageNotFound`.
+
 ## [v0.7.0](https://github.com/allenai/beaker-py/releases/tag/v0.7.0) - 2022-04-11
 
 ### Changed
