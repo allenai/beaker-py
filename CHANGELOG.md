@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Changed default spec version to `v2`.
 
+### Fixed
+
+- Improved experiment spec validation in `Beaker.experiment.create()` to raise more specific error types.
+
 ## [v0.8.0](https://github.com/allenai/beaker-py/releases/tag/v0.8.0) - 2022-04-12
 
 ### Changed

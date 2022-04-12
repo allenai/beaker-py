@@ -2,12 +2,17 @@ import pytest
 
 from beaker import (
     Beaker,
+    ClusterNotFound,
     CurrentJobStatus,
+    DataMount,
     Dataset,
+    DatasetNotFound,
+    DataSource,
     ExperimentSpec,
     ImageNotFound,
     ImageSource,
     ResultSpec,
+    SecretNotFound,
     Task,
     TaskContext,
     TaskSpec,
@@ -78,4 +83,88 @@ def test_create_experiment_image_not_found(
         ],
     )
     with pytest.raises(ImageNotFound):
+        client.experiment.create(experiment_name, spec)
+
+
+def test_create_experiment_dataset_not_found(
+    client: Beaker,
+    experiment_name: str,
+    beaker_cluster_name: str,
+):
+    spec = ExperimentSpec(
+        tasks=[
+            TaskSpec(
+                name="main",
+                image=ImageSource(docker="hello-world"),
+                context=TaskContext(cluster=beaker_cluster_name),
+                result=ResultSpec(path="/unused"),
+                datasets=[
+                    DataMount(source=DataSource(beaker="does-not-exist"), mount_path="/data")
+                ],
+            ),
+        ],
+    )
+    with pytest.raises(DatasetNotFound):
+        client.experiment.create(experiment_name, spec)
+
+
+def test_create_experiment_secret_not_found(
+    client: Beaker,
+    experiment_name: str,
+    beaker_cluster_name: str,
+):
+    spec = ExperimentSpec(
+        tasks=[
+            TaskSpec(
+                name="main",
+                image=ImageSource(docker="hello-world"),
+                context=TaskContext(cluster=beaker_cluster_name),
+                result=ResultSpec(path="/unused"),
+                datasets=[
+                    DataMount(source=DataSource(secret="does-not-exist"), mount_path="/data")
+                ],
+            ),
+        ],
+    )
+    with pytest.raises(SecretNotFound):
+        client.experiment.create(experiment_name, spec)
+
+
+def test_create_experiment_result_not_found(
+    client: Beaker,
+    experiment_name: str,
+    beaker_cluster_name: str,
+):
+    spec = ExperimentSpec(
+        tasks=[
+            TaskSpec(
+                name="main",
+                image=ImageSource(docker="hello-world"),
+                context=TaskContext(cluster=beaker_cluster_name),
+                result=ResultSpec(path="/unused"),
+                datasets=[
+                    DataMount(source=DataSource(result="does-not-exist"), mount_path="/data")
+                ],
+            ),
+        ],
+    )
+    with pytest.raises(ValueError, match="does-not-exist"):
+        client.experiment.create(experiment_name, spec)
+
+
+def test_create_experiment_cluster_not_found(
+    client: Beaker,
+    experiment_name: str,
+):
+    spec = ExperimentSpec(
+        tasks=[
+            TaskSpec(
+                name="main",
+                image=ImageSource(docker="hello-world"),
+                context=TaskContext(cluster="does-not-exist"),
+                result=ResultSpec(path="/unused"),
+            ),
+        ],
+    )
+    with pytest.raises(ClusterNotFound):
         client.experiment.create(experiment_name, spec)

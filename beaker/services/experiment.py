@@ -32,6 +32,9 @@ class ExperimentClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises ImageNotFound: If the image specified by the spec doesn't exist.
+        :raises DatasetNotFound: If a source dataset in the spec doesn't exist.
+        :raises SecretNotFound: If a source secret in the spec doesn't exist.
+        :raises ClusterNotFound: If the cluster in the spec doesn't exist.
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
@@ -42,9 +45,8 @@ class ExperimentClient(ServiceClient):
         else:
             spec = ExperimentSpec.from_file(spec)
             json_spec = spec.to_json()
-        self._validate_spec(spec)
-
         workspace: Workspace = self._resolve_workspace(workspace)
+        self._validate_spec(spec, workspace)
         experiment_data = self.request(
             f"workspaces/{workspace.id}/experiments",
             method="POST",
@@ -304,8 +306,26 @@ class ExperimentClient(ServiceClient):
         if not name.replace("-", "").replace("_", "").isalnum():
             raise ValueError(err_msg)
 
-    def _validate_spec(self, spec: ExperimentSpec) -> None:
+    def _validate_spec(self, spec: ExperimentSpec, workspace: Workspace) -> None:
         for task in spec.tasks:
             # Make sure image exists.
             if task.image.beaker is not None:
                 self.beaker.image.get(task.image.beaker)
+            # Make sure all beaker data sources exist.
+            for data_mount in task.datasets or []:
+                source = data_mount.source
+                if source.beaker is not None:
+                    self.beaker.dataset.get(source.beaker)
+                if source.secret is not None:
+                    self.beaker.secret.get(source.secret, workspace=workspace)
+                if source.result is not None:
+                    if source.result not in {t.name for t in spec.tasks}:
+                        raise ValueError(
+                            f"Data mount result source '{source.result}' not found in spec"
+                        )
+            # Make sure secrets in env variables exist.
+            for env_var in task.env_vars or []:
+                if env_var.secret is not None:
+                    self.beaker.secret.get(env_var.secret, workspace=workspace)
+            # Make sure cluster exists.
+            self.beaker.cluster.get(task.context.cluster)
