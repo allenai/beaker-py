@@ -256,6 +256,7 @@ class Beaker:
         ...     line.decode() for line in
         ...     beaker.experiment.logs("petew/hello-world", quiet=True)
         ... ])
+        <BLANKLINE>
 
         .. tip::
             See the `Experiments Overview <overview.html#experiments>`_ for a walk-through of the
