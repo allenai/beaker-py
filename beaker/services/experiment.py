@@ -1,7 +1,7 @@
 import time
 from typing import Any, Callable, Dict, Generator, Tuple, Union
 
-from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
+from rich.progress import Progress, TaskID, TimeElapsedColumn
 
 from ..aliases import PathOrStr
 from ..data_model import *
@@ -219,52 +219,74 @@ class ExperimentClient(ServiceClient):
 
     def await_all(
         self,
-        experiment: Union[str, Experiment],
+        *experiments: Union[str, Experiment],
         timeout: Optional[int] = None,
         poll_interval: float = 2.0,
         quiet: bool = False,
         callback: Optional[Callable[[float], None]] = None,
-    ) -> Experiment:
+    ) -> List[Experiment]:
         """
-        Wait for all jobs in an experiment to complete.
+        Wait for all jobs in the experiments to complete.
 
-        :param experiment: The experiment ID, full name, or object.
+        :param experiments: Experiment ID, full name, or object.
         :param timeout: Maximum amount of time to wait for (in seocnds).
         :param poll_interval: Time to wait between polling the experiment (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
         :param callback: An optional user-provided callback function that takes a
             single argument - the elapsed time.
 
-        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises ExperimentNotFound: If any experiment can't be found.
         :raises TimeoutError: If the ``timeout`` expires.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        exp_id = experiment if isinstance(experiment, str) else experiment.id
+        finished: Dict[str, Experiment] = {}
+        exp_ids: List[str] = [
+            experiment if isinstance(experiment, str) else experiment.id
+            for experiment in experiments
+        ]
         start = time.time()
         with Progress(
-            "[progress.description]{task.description}",
-            SpinnerColumn(),
-            TimeElapsedColumn(),
-            disable=quiet,
+            "[progress.description]{task.description}", TimeElapsedColumn(), disable=quiet
         ) as progress:
-            task_id = progress.add_task(f"Waiting on {exp_id}:")
+            exp_id_to_task: Dict[str, TaskID] = {}
+            for exp_id in exp_ids:
+                exp_id_to_task[exp_id] = progress.add_task(f"{exp_id} - waiting")
+
             polls = 0
             while True:
-                exp = self.get(exp_id)
-                if exp.jobs:
-                    for job in exp.jobs:
-                        if job.status.current != CurrentJobStatus.finalized:
-                            break
-                    else:
-                        return exp
+                if not exp_id_to_task:
+                    break
+
+                polls += 1
+
+                # Poll each experiment and update the progress line.
+                for exp_id in list(exp_id_to_task):
+                    task_id = exp_id_to_task[exp_id]
+                    exp = self.get(exp_id)
+                    if exp.jobs:
+                        for job in exp.jobs:
+                            if job.status.current != CurrentJobStatus.finalized:
+                                progress.update(task_id, total=polls + 1, advance=1)
+                                break
+                        else:
+                            finished[exp_id] = exp
+                            progress.update(
+                                task_id,
+                                total=polls + 1,
+                                complete=polls + 1,
+                                description=f"{exp_id} - completed",
+                            )
+                            progress.stop_task(task_id)
+                            del exp_id_to_task[exp_id]
+
                 elapsed = time.time() - start
                 if timeout is not None and elapsed >= timeout:
                     raise TimeoutError
                 if callback is not None:
                     callback(elapsed)
-                polls += 1
-                progress.update(task_id, total=polls + 1, advance=1)
                 time.sleep(poll_interval)
+
+        return [finished[exp_id] for exp_id in exp_ids]
 
     def _not_found_err_msg(self, experiment: str) -> str:
         return (

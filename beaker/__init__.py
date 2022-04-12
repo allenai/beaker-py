@@ -136,7 +136,7 @@ Wait for the experiment to complete with
 ...     experiment,
 ...     timeout=60 * 3,
 ...     quiet=True,
-... )
+... )[0]
 <BLANKLINE>
 
 Get the logs from the experiment with :meth:`Beaker.experiment.logs() <services.ExperimentClient.logs>`:
