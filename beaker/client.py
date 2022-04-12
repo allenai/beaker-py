@@ -21,7 +21,19 @@ class Beaker:
 
     :param config: The Beaker :class:`Config`.
 
-    The easiest way to initialize a Beaker client is with :meth:`.from_env()`.
+    The easiest way to initialize a Beaker client is with :meth:`.from_env()`:
+
+    >>> beaker = Beaker.from_env()
+
+    You can then interact with the various Beaker services through the corresponding
+    property. For example, to manage workspaces, use :data:`Beaker.workspace`:
+
+    >>> beaker.workspace.get(workspace_name).full_name
+    'ai2/petew-testing'
+
+    .. tip::
+        Use the right side nav to browse through the API docs for all of the different services.
+
     """
 
     def __init__(self, config: Config, check_for_upgrades: bool = True):
@@ -96,6 +108,11 @@ class Beaker:
         """
         Manage accounts.
 
+        :examples:
+
+        >>> beaker.account.name
+        'petew'
+
         .. tip::
             See the `Accounts Overview <overview.html#accounts>`_ for a walk-through of the
             main methods, or check out the `Account API Docs <#account>`_
@@ -107,6 +124,11 @@ class Beaker:
     def organization(self) -> OrganizationClient:
         """
         Manage organizations.
+
+        :examples:
+
+        >>> beaker.organization.get("ai2").display_name
+        'AI2'
 
         .. tip::
             See the `Organizations Overview <overview.html#organizations>`_ for a walk-through of the
@@ -120,6 +142,15 @@ class Beaker:
         """
         Manage workspaces.
 
+        :examples:
+
+        >>> beaker.workspace.datasets(
+        ...     match="squad",
+        ...     uncommitted=False,
+        ...     results=False,
+        ... )[0].full_name
+        'petew/squad-train'
+
         .. tip::
             See the `Workspaces Overview <overview.html#workspaces>`_ for a walk-through of the
             main methods, or check out the `Workspace API Docs <#workspace>`_
@@ -131,6 +162,11 @@ class Beaker:
     def cluster(self) -> ClusterClient:
         """
         Manage clusters.
+
+        :examples:
+
+        >>> beaker.cluster.get(beaker_cluster_name).autoscale
+        True
 
         .. tip::
             See the `Clusters Overview <overview.html#clusters>`_ for a walk-through of the
@@ -144,6 +180,11 @@ class Beaker:
         """
         Manage nodes.
 
+        :examples:
+
+        >>> beaker.node.get(beaker_node_id).limits.gpu_count
+        8
+
         .. tip::
             See the `Nodes Overview <overview.html#nodes>`_ for a walk-through of the
             main methods, or check out the `Node API Docs <#node>`_
@@ -155,6 +196,11 @@ class Beaker:
     def dataset(self) -> DatasetClient:
         """
         Manage datasets.
+
+        :examples:
+
+        >>> [file_info.path for file_info in beaker.dataset.ls("petew/squad-train")]
+        ['squad-train.arrow']
 
         .. tip::
             See the `Datasets Overview <overview.html#datasets>`_ for a walk-through of the
@@ -168,6 +214,11 @@ class Beaker:
         """
         Manage images.
 
+        :examples:
+
+        >>> beaker.image.get("petew/hello-world").original_tag
+        'hello-world'
+
         .. tip::
             See the `Images Overview <overview.html#images>`_ for a walk-through of the
             main methods, or check out the `Image API Docs <#image>`_
@@ -179,6 +230,13 @@ class Beaker:
     def job(self) -> JobClient:
         """
         Manage jobs.
+
+        :examples:
+
+        >>> running_jobs = beaker.job.list(
+        ...     beaker_on_prem_cluster_name,
+        ...     finalized=False,
+        ... )
 
         .. tip::
             See the `Jobs Overview <overview.html#jobs>`_ for a walk-through of the
@@ -192,6 +250,14 @@ class Beaker:
         """
         Manage experiments.
 
+        :examples:
+
+        >>> logs = "".join([
+        ...     line.decode() for line in
+        ...     beaker.experiment.logs("petew/hello-world", quiet=True)
+        ... ])
+        <BLANKLINE>
+
         .. tip::
             See the `Experiments Overview <overview.html#experiments>`_ for a walk-through of the
             main methods, or check out the `Experiment API Docs <#experiment>`_
@@ -203,6 +269,10 @@ class Beaker:
     def secret(self) -> SecretClient:
         """
         Manage secrets.
+
+        :examples:
+
+        >>> secret = beaker.secret.write(secret_name, "foo")
 
         .. tip::
             See the `Secrets Overview <overview.html#secrets>`_ for a walk-through of the

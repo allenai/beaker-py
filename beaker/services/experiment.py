@@ -10,6 +10,10 @@ from .service_client import ServiceClient
 
 
 class ExperimentClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.experiment <beaker.Beaker.experiment>`.
+    """
+
     def create(
         self, name: str, spec: Union[ExperimentSpec, PathOrStr], workspace: Optional[str] = None
     ) -> Experiment:
@@ -38,9 +42,9 @@ class ExperimentClient(ServiceClient):
             spec = ExperimentSpec.from_file(spec)
             json_spec = spec.to_json()
 
-        workspace_name = self._resolve_workspace(workspace)
+        workspace: Workspace = self._resolve_workspace(workspace)
         experiment_data = self.request(
-            f"workspaces/{self._url_quote(workspace_name)}/experiments",
+            f"workspaces/{workspace.id}/experiments",
             method="POST",
             query={"name": name},
             data=json_spec,

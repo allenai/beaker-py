@@ -18,7 +18,7 @@ def workspace_name() -> str:
 
 @pytest.fixture()
 def client(workspace_name):
-    beaker_client = Beaker.from_env(default_workspace=workspace_name)
+    beaker_client = Beaker.from_env(default_workspace=workspace_name, default_org="ai2")
     return beaker_client
 
 

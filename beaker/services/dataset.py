@@ -21,6 +21,10 @@ from .service_client import ServiceClient
 
 
 class DatasetClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.dataset <beaker.Beaker.dataset>`.
+    """
+
     HEADER_UPLOAD_ID = "Upload-ID"
     HEADER_UPLOAD_LENGTH = "Upload-Length"
     HEADER_UPLOAD_OFFSET = "Upload-Offset"
@@ -65,7 +69,7 @@ class DatasetClient(ServiceClient):
             the contents of one of the directory's files changes while creating the dataset.
         :raises FileNotFoundError: If a source doesn't exist.
         """
-        workspace_name = self._resolve_workspace(workspace)
+        workspace: Workspace = self._resolve_workspace(workspace)
 
         # Create the dataset.
         def make_dataset() -> Dataset:
@@ -74,7 +78,10 @@ class DatasetClient(ServiceClient):
                     "datasets",
                     method="POST",
                     query={"name": name},
-                    data={"workspace": workspace_name, "fileheap": True},
+                    data={
+                        "workspace": workspace.id,  # type: ignore
+                        "fileheap": True,
+                    },
                     exceptions_for_status={409: DatasetConflict(name)},
                 ).json()
             )

@@ -8,6 +8,10 @@ from .service_client import ServiceClient
 
 
 class AccountClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.account <beaker.Beaker.account>`.
+    """
+
     @property  # type: ignore[misc]
     @cached(cache=TTLCache(maxsize=10, ttl=5 * 60))
     def name(self):

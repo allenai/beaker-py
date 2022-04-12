@@ -1,7 +1,7 @@
 import json
 import urllib.parse
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional
+from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Union
 
 import docker
 import requests
@@ -79,14 +79,32 @@ class ServiceClient:
             response.raise_for_status()
             return response
 
-    def _resolve_workspace(self, workspace: Optional[str], ensure_exists: bool = True) -> str:
+    def _resolve_workspace_name(self, workspace: Optional[str]) -> str:
         workspace_name = workspace or self.config.default_workspace
         if workspace_name is None:
             raise WorkspaceNotSet("'workspace' argument required since default workspace not set")
         else:
-            if ensure_exists:
-                self.beaker.workspace.ensure(workspace_name)
             return workspace_name
+
+    def _resolve_workspace(self, workspace: Optional[Union[str, Workspace]]) -> Workspace:
+        if isinstance(workspace, Workspace):
+            return workspace
+        else:
+            workspace_name = self._resolve_workspace_name(workspace)
+            return self.beaker.workspace.get(workspace_name)
+
+    def _resolve_org_name(self, org: Optional[str]) -> str:
+        org_name = org or self.config.default_org
+        if org_name is None:
+            raise OrganizationNotSet("'org' argument required since default org name not set")
+        return org_name
+
+    def _resolve_org(self, org: Optional[Union[str, Organization]]) -> Organization:
+        if isinstance(org, Organization):
+            return org
+        else:
+            org_name = self._resolve_org_name(org)
+            return self.beaker.organization.get(org_name)
 
     def _url_quote(self, id: str) -> str:
         return urllib.parse.quote(id, safe="")

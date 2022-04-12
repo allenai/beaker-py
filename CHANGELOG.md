@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Made `org` parameter optional, defaulting to `Config.default_org`.
+
+### Fixed
+
+- Fixed the behavior of some methods that take a `workspace` parameter. Previously, if the workspace
+  didn't exist, it would be silently created. Now a `WorkspaceNotFound` error is raised.
+
 ## [v0.6.1](https://github.com/allenai/beaker-py/releases/tag/v0.6.1) - 2022-04-11
 
 ### Added

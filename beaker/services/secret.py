@@ -6,6 +6,10 @@ from .service_client import ServiceClient
 
 
 class SecretClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.secret <beaker.Beaker.secret>`.
+    """
+
     def get(self, secret: str, workspace: Optional[Union[str, Workspace]] = None) -> Secret:
         """
         Get metadata about a secret.
@@ -20,12 +24,10 @@ class SecretClient(ServiceClient):
         :raises SecretNotFound: If the secret doesn't exist.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace_id = (
-            workspace.id if isinstance(workspace, Workspace) else self._resolve_workspace(workspace)
-        )
+        workspace: Workspace = self._resolve_workspace(workspace)
         return Secret.from_json(
             self.request(
-                f"workspaces/{self._url_quote(workspace_id)}/secrets/{self._url_quote(secret)}",
+                f"workspaces/{workspace.id}/secrets/{self._url_quote(secret)}",
                 method="GET",
                 exceptions_for_status={404: SecretNotFound(secret)},
             ).json()
@@ -47,12 +49,10 @@ class SecretClient(ServiceClient):
         :raises SecretNotFound: If the secret doesn't exist.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace_id = (
-            workspace.id if isinstance(workspace, Workspace) else self._resolve_workspace(workspace)
-        )
+        workspace: Workspace = self._resolve_workspace(workspace)
         name = secret.name if isinstance(secret, Secret) else secret
         return self.request(
-            f"workspaces/{self._url_quote(workspace_id)}/secrets/{self._url_quote(name)}/value",
+            f"workspaces/{workspace.id}/secrets/{self._url_quote(name)}/value",
             method="GET",
         ).content.decode()
 
@@ -72,12 +72,10 @@ class SecretClient(ServiceClient):
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace_id = (
-            workspace.id if isinstance(workspace, Workspace) else self._resolve_workspace(workspace)
-        )
+        workspace: Workspace = self._resolve_workspace(workspace)
         return Secret.from_json(
             self.request(
-                f"workspaces/{self._url_quote(workspace_id)}/secrets/{self._url_quote(name)}/value",
+                f"workspaces/{workspace.id}/secrets/{self._url_quote(name)}/value",
                 method="PUT",
                 data=value.encode(),
             ).json()
@@ -97,12 +95,10 @@ class SecretClient(ServiceClient):
         :raises SecretNotFound: If the secret doesn't exist.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace_id = (
-            workspace.id if isinstance(workspace, Workspace) else self._resolve_workspace(workspace)
-        )
+        workspace: Workspace = self._resolve_workspace(workspace)
         name = secret.name if isinstance(secret, Secret) else secret
         return self.request(
-            f"workspaces/{self._url_quote(workspace_id)}/secrets/{self._url_quote(name)}",
+            f"workspaces/{workspace.id}/secrets/{self._url_quote(name)}",
             method="DELETE",
             exceptions_for_status={404: SecretNotFound(secret)},
         )

@@ -6,6 +6,10 @@ from .service_client import ServiceClient
 
 
 class ClusterClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.cluster <beaker.Beaker.cluster>`.
+    """
+
     def create(
         self,
         name: str,
@@ -115,22 +119,25 @@ class ClusterClient(ServiceClient):
             exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster_id))},
         )
 
-    def list(self, org: Union[str, Organization]) -> List[Cluster]:
+    def list(self, org: Optional[Union[str, Organization]] = None) -> List[Cluster]:
         """
         List clusters under an organization.
 
-        :param org: The organization name or object.
+        :param org: The organization name or object. If not specified,
+            :data:`Beaker.config.default_org <beaker.Config.default_org>` is used.
 
         :raises OrganizationNotFound: If the organization doesn't exist.
+        :raises OrganizationNotSet: If neither ``org`` nor
+            :data:`Beaker.config.default_org <beaker.Config.default_org>` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        org_name = org if isinstance(org, str) else org.name
+        org: Organization = self._resolve_org(org)
         return [
             Cluster.from_json(d)
             for d in self.request(
-                f"clusters/{self._url_quote(org_name)}",
+                f"clusters/{org.id}",
                 method="GET",
-                exceptions_for_status={404: OrganizationNotFound(org_name)},
+                exceptions_for_status={404: OrganizationNotFound(org.id)},
             ).json()["data"]
         ]
 

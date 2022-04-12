@@ -4,6 +4,10 @@ from .service_client import ServiceClient
 
 
 class NodeClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.node <beaker.Beaker.node>`.
+    """
+
     def get(self, node_id: str) -> Node:
         """
         Get information about a node.
