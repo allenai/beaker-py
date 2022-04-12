@@ -29,7 +29,7 @@ def test_data_source_validation():
 
 def test_experiment_spec_from_and_to_json(beaker_cluster_name):
     json_spec = {
-        "version": "v2-alpha",
+        "version": "v2",
         "tasks": [
             {
                 "name": "main",

@@ -14,8 +14,8 @@ T = TypeVar("T")
 logger = logging.getLogger(__name__)
 
 
-SPEC_VERSION = "v2-alpha"
-ALLOWED_SPEC_VERSIONS = {SPEC_VERSION, "v2"}
+SPEC_VERSION = "v2"
+ALLOWED_SPEC_VERSIONS = {SPEC_VERSION, "v2-alpha"}
 
 
 class BaseModel(_BaseModel):
@@ -384,7 +384,7 @@ class ExperimentSpec(BaseModel):
 
     version: str = SPEC_VERSION
     """
-    Must be 'v2-alpha' for now.
+    Must be 'v2' for now.
     """
 
     description: Optional[str] = None
