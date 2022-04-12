@@ -21,7 +21,16 @@ class Beaker:
 
     :param config: The Beaker :class:`Config`.
 
-    The easiest way to initialize a Beaker client is with :meth:`.from_env()`.
+    The easiest way to initialize a Beaker client is with :meth:`.from_env()`:
+
+    >>> beaker = Beaker.from_env()
+
+    You can then interact with the various Beaker services through the corresponding
+    property. For example, to manage workspaces, use :data:`Beaker.workspace`:
+
+    >>> beaker.workspace.get(workspace_name).full_name
+    'ai2/petew-testing'
+
     """
 
     def __init__(self, config: Config, check_for_upgrades: bool = True):
@@ -96,6 +105,11 @@ class Beaker:
         """
         Manage accounts.
 
+        :examples:
+
+        >>> beaker.account.name
+        'petew'
+
         .. tip::
             See the `Accounts Overview <overview.html#accounts>`_ for a walk-through of the
             main methods, or check out the `Account API Docs <#account>`_
@@ -107,6 +121,11 @@ class Beaker:
     def organization(self) -> OrganizationClient:
         """
         Manage organizations.
+
+        :examples:
+
+        >>> beaker.organization.get("ai2").display_name
+        'AI2'
 
         .. tip::
             See the `Organizations Overview <overview.html#organizations>`_ for a walk-through of the
@@ -120,6 +139,15 @@ class Beaker:
         """
         Manage workspaces.
 
+        :examples:
+
+        >>> beaker.workspace.datasets(
+        ...     match="squad",
+        ...     uncommitted=False,
+        ...     results=False,
+        ... )[0].full_name
+        'petew/squad-train'
+
         .. tip::
             See the `Workspaces Overview <overview.html#workspaces>`_ for a walk-through of the
             main methods, or check out the `Workspace API Docs <#workspace>`_
@@ -132,6 +160,11 @@ class Beaker:
         """
         Manage clusters.
 
+        :examples:
+
+        >>> beaker.cluster.get(beaker_cluster_name).autoscale
+        True
+
         .. tip::
             See the `Clusters Overview <overview.html#clusters>`_ for a walk-through of the
             main methods, or check out the `Cluster API Docs <#cluster>`_
@@ -143,6 +176,11 @@ class Beaker:
     def node(self) -> NodeClient:
         """
         Manage nodes.
+
+        :examples:
+
+        >>> beaker.node.get(beaker_node_id).limits.gpu_count
+        8
 
         .. tip::
             See the `Nodes Overview <overview.html#nodes>`_ for a walk-through of the

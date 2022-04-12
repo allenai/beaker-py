@@ -20,6 +20,10 @@ class OrganizationNotFound(BeakerError):
     pass
 
 
+class OrganizationNotSet(BeakerError):
+    pass
+
+
 class ConfigurationError(BeakerError):
     pass
 

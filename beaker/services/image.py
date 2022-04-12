@@ -32,7 +32,7 @@ class ImageClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
-        workspace_name = self._resolve_workspace(workspace)
+        workspace: Workspace = self._resolve_workspace(workspace)
 
         # Get local Docker image object.
         image = self.docker.images.get(image_tag)
@@ -41,7 +41,7 @@ class ImageClient(ServiceClient):
         image_data = self.request(
             "images",
             method="POST",
-            data={"Workspace": workspace_name, "ImageID": image.id, "ImageTag": image_tag},
+            data={"Workspace": workspace.id, "ImageID": image.id, "ImageTag": image_tag},
             query={"name": name},
             exceptions_for_status={409: ImageConflict(name)},
         ).json()

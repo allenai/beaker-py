@@ -20,10 +20,16 @@ Organizations
 Manage Beaker organizations with :data:`Beaker.organization`.
 
 For example, you can get information about an organization with
-:meth:`Beaker.organization.get() <services.OrganizationClient>`:
+:meth:`Beaker.organization.get() <services.OrganizationClient.get>`:
 
 >>> beaker.organization.get(beaker_org_name).display_name
 'AI2'
+
+You can also add, get, list, or remove members with
+:meth:`Beaker.organization.add_member() <services.OrganizationClient.add_member>`,
+:meth:`.get_member() <services.OrganizationClient.get_member>`,
+:meth:`.list_members() <services.OrganizationClient.list_members>`, or
+:meth:`.remove_member() <services.OrganizationClient.remove_member>`, respectively.
 
 Workspaces
 ----------
