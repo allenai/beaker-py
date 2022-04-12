@@ -38,7 +38,7 @@ Manage Beaker workspaces with :data:`Beaker.workspace`.
 
 For example, you can create a workspace with :meth:`Beaker.workspace.ensure() <services.WorkspaceClient.ensure>`:
 
->>> beaker.workspace.ensure(workspace_name)
+>>> workspace = beaker.workspace.ensure(workspace_name)
 
 You can retreive metadata about a workspace with :meth:`Beaker.workspace.get() <services.WorkspaceClient.get>`:
 
