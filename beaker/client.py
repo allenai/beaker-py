@@ -31,6 +31,9 @@ class Beaker:
     >>> beaker.workspace.get(workspace_name).full_name
     'ai2/petew-testing'
 
+    .. tip::
+        Use the right side nav to browse through the API docs for all of the different services.
+
     """
 
     def __init__(self, config: Config, check_for_upgrades: bool = True):
@@ -251,7 +254,7 @@ class Beaker:
 
         >>> logs = "".join([
         ...     line.decode() for line in
-        ...     beaker.experiment.logs("petew/hello-world")
+        ...     beaker.experiment.logs("petew/hello-world", quiet=True)
         ... ])
 
         .. tip::
