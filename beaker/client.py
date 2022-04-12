@@ -194,6 +194,11 @@ class Beaker:
         """
         Manage datasets.
 
+        :examples:
+
+        >>> [file_info.path for file_info in beaker.dataset.ls("petew/squad-train")]
+        ['squad-train.arrow']
+
         .. tip::
             See the `Datasets Overview <overview.html#datasets>`_ for a walk-through of the
             main methods, or check out the `Dataset API Docs <#dataset>`_
@@ -205,6 +210,11 @@ class Beaker:
     def image(self) -> ImageClient:
         """
         Manage images.
+
+        :examples:
+
+        >>> beaker.image.get("petew/hello-world").original_tag
+        'hello-world'
 
         .. tip::
             See the `Images Overview <overview.html#images>`_ for a walk-through of the
@@ -218,6 +228,13 @@ class Beaker:
         """
         Manage jobs.
 
+        :examples:
+
+        >>> running_jobs = beaker.job.list(
+        ...     beaker_on_prem_cluster_name,
+        ...     finalized=False,
+        ... )
+
         .. tip::
             See the `Jobs Overview <overview.html#jobs>`_ for a walk-through of the
             main methods, or check out the `Job API Docs <#job>`_
@@ -230,6 +247,13 @@ class Beaker:
         """
         Manage experiments.
 
+        :examples:
+
+        >>> logs = "".join([
+        ...     line.decode() for line in
+        ...     beaker.experiment.logs("petew/hello-world")
+        ... ])
+
         .. tip::
             See the `Experiments Overview <overview.html#experiments>`_ for a walk-through of the
             main methods, or check out the `Experiment API Docs <#experiment>`_
@@ -241,6 +265,10 @@ class Beaker:
     def secret(self) -> SecretClient:
         """
         Manage secrets.
+
+        :examples:
+
+        >>> secret = beaker.secret.write(secret_name, "foo")
 
         .. tip::
             See the `Secrets Overview <overview.html#secrets>`_ for a walk-through of the
