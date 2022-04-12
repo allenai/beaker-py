@@ -60,6 +60,15 @@ class Beaker:
         if self._config.default_workspace is not None:
             self.workspace.ensure(self._config.default_workspace)
 
+    def __str__(self) -> str:
+        return (
+            f"Beaker("
+            f"user='{self.account.name}', "
+            f"default_workspace='{self.config.default_workspace}', "
+            f"default_org='{self.config.default_org}'"
+            f")"
+        )
+
     @staticmethod
     @cached(cache=TTLCache(maxsize=10, ttl=5 * 60))
     def _check_for_upgrades():

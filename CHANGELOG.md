@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Implemented `__str__` method on `Beaker` client for debugging.
+
 ### Changed
 
 - Changed default spec version to `v2`.
