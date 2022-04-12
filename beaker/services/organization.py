@@ -6,6 +6,10 @@ from .service_client import ServiceClient
 
 
 class OrganizationClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.organization <beaker.Beaker.organization>`.
+    """
+
     def get(self, name: Optional[str] = None) -> Organization:
         """
         Get information about an organization.

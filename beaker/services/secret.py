@@ -6,6 +6,10 @@ from .service_client import ServiceClient
 
 
 class SecretClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.secret <beaker.Beaker.secret>`.
+    """
+
     def get(self, secret: str, workspace: Optional[Union[str, Workspace]] = None) -> Secret:
         """
         Get metadata about a secret.

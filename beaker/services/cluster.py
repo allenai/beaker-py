@@ -6,6 +6,10 @@ from .service_client import ServiceClient
 
 
 class ClusterClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.cluster <beaker.Beaker.cluster>`.
+    """
+
     def create(
         self,
         name: str,

@@ -10,6 +10,10 @@ from .service_client import ServiceClient
 
 
 class ExperimentClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.experiment <beaker.Beaker.experiment>`.
+    """
+
     def create(
         self, name: str, spec: Union[ExperimentSpec, PathOrStr], workspace: Optional[str] = None
     ) -> Experiment:

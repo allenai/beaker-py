@@ -6,6 +6,10 @@ from .service_client import ServiceClient
 
 
 class WorkspaceClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.workspace <beaker.Beaker.workspace>`.
+    """
+
     def get(self, workspace: Optional[str] = None) -> Workspace:
         """
         Get information about the workspace.

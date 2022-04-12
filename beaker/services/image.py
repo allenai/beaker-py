@@ -9,6 +9,10 @@ from .service_client import ServiceClient
 
 
 class ImageClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.image <beaker.Beaker.image>`.
+    """
+
     def create(
         self,
         name: str,

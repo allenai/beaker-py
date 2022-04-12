@@ -8,6 +8,10 @@ from .service_client import ServiceClient
 
 
 class JobClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.job <beaker.Beaker.job>`.
+    """
+
     def get(self, job_id: str) -> Job:
         """
         Get information about a job.

@@ -21,6 +21,10 @@ from .service_client import ServiceClient
 
 
 class DatasetClient(ServiceClient):
+    """
+    Accessed via :data:`Beaker.dataset <beaker.Beaker.dataset>`.
+    """
+
     HEADER_UPLOAD_ID = "Upload-ID"
     HEADER_UPLOAD_LENGTH = "Upload-Length"
     HEADER_UPLOAD_OFFSET = "Upload-Offset"
