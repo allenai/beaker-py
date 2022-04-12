@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- `Beaker.experiment.await_all()` now takes a variable number of experiments and returns a list
+  with the same length and order of the finished experiments.
+
 ## [v0.7.0](https://github.com/allenai/beaker-py/releases/tag/v0.7.0) - 2022-04-11
 
 ### Changed

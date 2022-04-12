@@ -51,7 +51,7 @@ def test_experiment_create_await_rename(
         ],
     )
     experiment = client.experiment.create(experiment_name, spec)
-    experiment = client.experiment.await_all(experiment, timeout=60 * 3)
+    experiment = client.experiment.await_all(experiment, timeout=60 * 3)[0]
     logs = "".join([line.decode() for line in client.experiment.logs(experiment)])
     assert logs
 
