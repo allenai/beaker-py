@@ -42,13 +42,9 @@ jobs:
             run: |
               pytest -v --color=yes tests/
 
-          - name: Doc tests (overview)
+          - name: Doc tests
             run: |
-              pytest -v --color=yes --doctest-modules beaker/__init__.py
-
-          - name: Doc tests (client)
-            run: |
-              pytest -v --color=yes --doctest-modules beaker/client.py
+              pytest -v --color=yes --doctest-modules beaker/
 
           - name: Build
             run: |
