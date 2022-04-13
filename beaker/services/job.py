@@ -101,7 +101,7 @@ class JobClient(ServiceClient):
 
         return jobs
 
-    def logs(self, job_id: str, quiet: bool = False) -> Generator[bytes, None, None]:
+    def logs(self, job: Union[str, Job], quiet: bool = False) -> Generator[bytes, None, None]:
         """
         Download the logs for a job.
 
@@ -111,13 +111,14 @@ class JobClient(ServiceClient):
         .. seealso::
             :meth:`Beaker.experiment.logs() <ExperimentClient.logs>`
 
-        :param job_id: The ID of the Beaker job.
+        :param job_id: The Beaker job ID or object.
         :param quiet: If ``True``, progress won't be displayed.
 
         :raises JobNotFound: If the job can't be found.
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
+        job_id = job.id if isinstance(job, Job) else job
         response = self.request(
             f"jobs/{job_id}/logs",
             exceptions_for_status={404: JobNotFound(job_id)},
@@ -143,3 +144,41 @@ class JobClient(ServiceClient):
                     total += advance
                     progress.update(task_id, total=total + 1, advance=advance)
                     yield chunk
+
+    def finalize(self, job: Union[str, Job]) -> Job:
+        """
+        Finalize a job.
+
+        :param job: The Beaker job ID or object.
+
+        :raises JobNotFound: If the job can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        job_id = job.id if isinstance(job, Job) else job
+        return Job.from_json(
+            self.request(
+                f"jobs/{job_id}",
+                method="PATCH",
+                exceptions_for_status={404: JobNotFound(job_id)},
+                data={"status": {"finalized": True}},
+            ).json()
+        )
+
+    def stop(self, job: Union[str, Job]) -> Job:
+        """
+        Stop a job.
+
+        :param job: The Beaker job ID or object.
+
+        :raises JobNotFound: If the job can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        job_id = job.id if isinstance(job, Job) else job
+        return Job.from_json(
+            self.request(
+                f"jobs/{job_id}",
+                method="PATCH",
+                exceptions_for_status={404: JobNotFound(job_id)},
+                data={"status": {"canceled": True}},
+            ).json()
+        )
