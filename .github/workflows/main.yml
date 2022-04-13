@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: |
           . .venv/bin/activate
-          python -c 'from beaker import Beaker; Beaker.from_env().account.name'
+          python -c 'from beaker import Beaker; print(Beaker.from_env().account.name)'
 
       - name: Clean up
         if: always()
