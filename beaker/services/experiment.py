@@ -31,6 +31,7 @@ class ExperimentClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises WorkspaceWriteError: If the workspace has been archived.
         :raises ImageNotFound: If the image specified by the spec doesn't exist.
         :raises DatasetNotFound: If a source dataset in the spec doesn't exist.
         :raises SecretNotFound: If a source secret in the spec doesn't exist.

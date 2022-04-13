@@ -9,7 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Implemented `Beaker.workspace.archive()`, `.unarchive()`, and `.rename()` methods.
 - Implemented `Beaker.job.stop()` and `Beaker.job.finalize()` methods.
+- Added `WorkspaceWriteError` for when you attempt to write to an archived workspace. Before this
+  would just result in an `HTTPError` with a 403 status code.
+
+### Changed
+
+- Allowed using workspace name without organization when `Config.default_org` is set.
+  Otherwise `OrganizationNotSet` error is raised.
 
 ## [v0.8.1](https://github.com/allenai/beaker-py/releases/tag/v0.8.1) - 2022-04-12
 

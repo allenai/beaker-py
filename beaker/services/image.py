@@ -33,6 +33,7 @@ class ImageClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises WorkspaceWriteError: If the workspace has been archived.
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """

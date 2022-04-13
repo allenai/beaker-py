@@ -2,12 +2,12 @@ from typing import Optional
 
 import pytest
 
-from beaker.client import Beaker
+from beaker import Beaker, OrganizationNotSet, Workspace, WorkspaceWriteError
 
 
 def test_ensure_workspace_invalid_name(client: Beaker):
-    with pytest.raises(ValueError, match="Invalided workspace name"):
-        client.workspace.ensure("blah")
+    with pytest.raises(ValueError, match="Workspace name can only contain"):
+        client.workspace.ensure("blah&&")
 
 
 @pytest.mark.parametrize("match", [pytest.param(v, id=f"match={v}") for v in (None, "squad")])
@@ -36,3 +36,20 @@ def test_workspace_images(client: Beaker, hello_world_image_name: str):
 def test_workspace_list(client: Beaker, workspace_name: str):
     workspaces = client.workspace.list("ai2", match=workspace_name.split("/")[1])
     assert workspaces
+
+
+def test_archived_workspace_write_error(client: Beaker, archived_workspace: Workspace):
+    with pytest.raises(WorkspaceWriteError):
+        client.workspace.archive(archived_workspace)
+    with pytest.raises(WorkspaceWriteError):
+        client.secret.write("foo", "bar", workspace=archived_workspace)
+
+
+def test_archived_workspace_read_ok(client: Beaker, archived_workspace: Workspace):
+    client.workspace.secrets(archived_workspace)
+
+
+def test_organization_not_set(client: Beaker, archived_workspace: Workspace):
+    client.config.default_org = None
+    with pytest.raises(OrganizationNotSet):
+        client.workspace.secrets(archived_workspace.name)

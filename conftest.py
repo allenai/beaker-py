@@ -139,3 +139,17 @@ def secret_name(client: Beaker) -> Generator[str, None, None]:
         client.secret.delete(name)
     except SecretNotFound:
         pass
+
+
+@pytest.fixture()
+def archived_workspace_name() -> str:
+    return "ai2/petew-testing-archived"
+
+
+@pytest.fixture()
+def archived_workspace(client: Beaker, archived_workspace_name: str) -> Workspace:
+    workspace = client.workspace.ensure(archived_workspace_name)
+    if not workspace.archived:
+        return client.workspace.archive(archived_workspace_name)
+    else:
+        return workspace

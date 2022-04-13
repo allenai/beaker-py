@@ -42,6 +42,14 @@ class WorkspaceNotFound(BeakerError):
     pass
 
 
+class WorkspaceWriteError(BeakerError):
+    pass
+
+
+class WorkspaceConflict(BeakerError):
+    pass
+
+
 class ClusterNotFound(BeakerError):
     pass
 

@@ -20,8 +20,9 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
         :raises HTTPError: Any other HTTP exception that can occur.
-
         """
         workspace_name = self._resolve_workspace_name(workspace)
         return Workspace.from_json(
@@ -37,11 +38,14 @@ class WorkspaceClient(ServiceClient):
         """
         Ensure that the given workspace exists.
 
-        :param workspace: The full workspace name.
+        :param workspace: The workspace name.
 
         :raises HTTPError: Any other HTTP exception that can occur.
         :raises ValueError: If the workspace name is invalid.
-
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
+        :raises OrganizationNotFound: If the workspace name starts with an organization
+            that doesn't exist.
         """
         try:
             return self.get(workspace)
@@ -49,10 +53,113 @@ class WorkspaceClient(ServiceClient):
             try:
                 org, name = workspace.split("/")
             except ValueError:
-                raise ValueError(f"Invalided workspace name '{workspace}'")
+                name = workspace
+                if self.config.default_org is None:
+                    raise OrganizationNotSet(
+                        f"No default organization set and workspace name doesn't include "
+                        f"an organization ('{workspace}')"
+                    )
+                else:
+                    org = self.config.default_org
+            self._validate_workspace_name(name)
+            self._resolve_org(org)
             return Workspace.from_json(
                 self.request("workspaces", method="POST", data={"name": name, "org": org}).json()
             )
+
+    def archive(self, workspace: Union[str, Workspace]) -> Workspace:
+        """
+        Archive a workspace, making it read-only.
+
+        :param workspace: The workspace to archive.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceWriteError: If the workspace is already archived or you don't
+            have the permissions to archive it.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        assert workspace is not None  # could accidentally archive default workspace if None
+        workspace_name = (
+            workspace.full_name
+            if isinstance(workspace, Workspace)
+            else self._resolve_workspace_name(workspace)
+        )
+        return Workspace.from_json(
+            self.request(
+                f"workspaces/{self._url_quote(workspace_name)}",
+                method="PATCH",
+                data={"archive": True},
+                exceptions_for_status={
+                    403: WorkspaceWriteError(workspace_name),
+                    404: WorkspaceNotFound(self._not_found_err_msg(workspace_name)),
+                },
+            ).json()
+        )
+
+    def unarchive(self, workspace: Union[str, Workspace]) -> Workspace:
+        """
+        Unarchive a workspace.
+
+        :param workspace: The workspace to unarchive.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        assert workspace is not None  # could accidentally unarchive default workspace if None
+        workspace_name = (
+            workspace.full_name
+            if isinstance(workspace, Workspace)
+            else self._resolve_workspace_name(workspace)
+        )
+        return Workspace.from_json(
+            self.request(
+                f"workspaces/{self._url_quote(workspace_name)}",
+                method="PATCH",
+                data={"archive": False},
+                exceptions_for_status={
+                    404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
+                },
+            ).json()
+        )
+
+    def rename(self, workspace: Union[str, Workspace], new_name: str) -> Workspace:
+        """
+        Rename a workspace.
+
+        :param workspace: The workspace to rename.
+        :param new_name: The new name to assign to the workspace.
+            This should only *not* include the organization.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceWriteError: If the workspace has been archived.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
+        :raises ValueError: If the new name is invalid.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        self._validate_workspace_name(new_name)
+        assert workspace is not None  # could accidentally rename default workspace if None
+        workspace_name = (
+            workspace.full_name
+            if isinstance(workspace, Workspace)
+            else self._resolve_workspace_name(workspace)
+        )
+        return Workspace.from_json(
+            self.request(
+                f"workspaces/{self._url_quote(workspace_name)}",
+                method="PATCH",
+                data={"name": new_name},
+                exceptions_for_status={
+                    403: WorkspaceWriteError(workspace_name),
+                    404: WorkspaceNotFound(self._not_found_err_msg(workspace_name)),
+                    409: WorkspaceConflict(new_name),
+                },
+            ).json()
+        )
 
     def list(
         self,
@@ -129,9 +236,11 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace: Workspace = self._resolve_workspace(workspace)
+        workspace: Workspace = self._resolve_workspace(workspace, read_only_ok=True)
         images: List[Image] = []
         cursor: Optional[str] = None
         query: Dict[str, str] = {}
@@ -177,9 +286,11 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace: Workspace = self._resolve_workspace(workspace)
+        workspace: Workspace = self._resolve_workspace(workspace, read_only_ok=True)
         experiments: List[Experiment] = []
         cursor: Optional[str] = None
         query: Dict[str, str] = {}
@@ -229,9 +340,11 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace: Workspace = self._resolve_workspace(workspace)
+        workspace: Workspace = self._resolve_workspace(workspace, read_only_ok=True)
         datasets: List[Dataset] = []
         cursor: Optional[str] = None
         query: Dict[str, str] = {}
@@ -274,9 +387,11 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace: Workspace = self._resolve_workspace(workspace)
+        workspace: Workspace = self._resolve_workspace(workspace, read_only_ok=True)
         return [
             Secret.from_json(d)
             for d in self.request(
@@ -293,3 +408,9 @@ class WorkspaceClient(ServiceClient):
             f"'{workspace}': Make sure you're using the workspace ID or *full* name "
             f"(with the organization prefix, e.g. 'org/workspace_name')"
         )
+
+    def _validate_workspace_name(self, name: str):
+        if not name.replace("-", "").replace("_", "").isalnum():
+            raise ValueError(
+                f"Workspace name can only contain letters, digits, dashes, and underscores: '{name}'"
+            )

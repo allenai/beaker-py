@@ -83,15 +83,29 @@ class ServiceClient:
         workspace_name = workspace or self.config.default_workspace
         if workspace_name is None:
             raise WorkspaceNotSet("'workspace' argument required since default workspace not set")
+        elif "/" not in workspace_name:
+            if self.config.default_org is not None:
+                return f"{self.config.default_org}/{workspace_name}"
+            else:
+                raise OrganizationNotSet(
+                    f"No default organization set and workspace name doesn't include "
+                    f"an organization ('{workspace_name}')"
+                )
         else:
             return workspace_name
 
-    def _resolve_workspace(self, workspace: Optional[Union[str, Workspace]]) -> Workspace:
+    def _resolve_workspace(
+        self, workspace: Optional[Union[str, Workspace]], read_only_ok: bool = False
+    ) -> Workspace:
+        out: Workspace
         if isinstance(workspace, Workspace):
-            return workspace
+            out = workspace
         else:
             workspace_name = self._resolve_workspace_name(workspace)
-            return self.beaker.workspace.get(workspace_name)
+            out = self.beaker.workspace.get(workspace_name)
+        if not read_only_ok and out.archived:
+            raise WorkspaceWriteError(f"Workspace {out.full_name} has been archived")
+        return out
 
     def _resolve_org_name(self, org: Optional[str]) -> str:
         org_name = org or self.config.default_org

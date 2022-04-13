@@ -64,6 +64,7 @@ class DatasetClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises WorkspaceWriteError: If the workspace has been archived.
         :raises HTTPError: Any other HTTP exception that can occur.
         :raises UnexpectedEOFError: If a source file is an empty file, or if a source is a directory and
             the contents of one of the directory's files changes while creating the dataset.
