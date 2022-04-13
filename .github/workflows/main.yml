@@ -17,8 +17,41 @@ on:
 env:
   CACHE_PREFIX: v0  # Change this to invalidate existing cache.
   DEFAULT_PYTHON: 3.7
+  BEAKER_WORKSPACE: ai2/petew-testing
 
 jobs:
+  compatibility:
+    name: Compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-venv
+        with:
+          python-version: ${{ matrix.python }}
+          cache-prefix: ${{ env.CACHE_PREFIX }}
+
+      - name: Setup Beaker
+        uses: allenai/setup-beaker@v0.1.0
+        with:
+          token: ${{ secrets.BEAKER_TOKEN }}
+          workspace: ${{ env.BEAKER_WORKSPACE }}
+
+      - name: Check config compatibility
+        shell: bash
+        run: |
+          . .venv/bin/activate
+          python -c 'from beaker import Beaker; Beaker.from_env().account.name'
+
+      - name: Clean up
+        if: always()
+        shell: bash
+        run: |
+          . .venv/bin/activate
+          pip uninstall -y beaker-py
+
   checks:
     name: ${{ matrix.os }} - python ${{ matrix.python }} - ${{ matrix.task.name }}
     runs-on: ${{ matrix.os }}
