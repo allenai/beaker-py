@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Implemented `__str__` method on `Beaker` client for debugging.
+- Improved documentation for `ExperimentSpec`, `TaskSpec`, and other related data models,
+  and added new convenience constructors such as `TaskSpec.new()`.
 
 ### Changed
 
