@@ -17,13 +17,14 @@ on:
 env:
   CACHE_PREFIX: v0  # Change this to invalidate existing cache.
   DEFAULT_PYTHON: 3.7
-  BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
 
 jobs:
   checks:
     name: ${{ matrix.os }} - python ${{ matrix.python }} - ${{ matrix.task.name }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    env:
+      BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
     strategy:
       fail-fast: false
       matrix:
@@ -63,18 +64,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: ./.github/actions/setup-venv
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-venv
         with:
           python-version: ${{ matrix.python }}
           cache-prefix: ${{ env.CACHE_PREFIX }}
-
-      - name: Show environment info
-        shell: bash
-        run: |
-          . .venv/bin/activate
-          which python
-          python --version
-          pip freeze
 
       - name: ${{ matrix.task.name }}
         shell: bash
