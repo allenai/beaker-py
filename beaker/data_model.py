@@ -939,3 +939,12 @@ class ExperimentsPage(BaseModel):
 class WorkspacePage(BaseModel):
     data: List[Workspace]
     next_cursor: Optional[str] = None
+
+
+class WorkspacePermissions(BaseModel):
+    requesterAuth: str
+    public: bool
+    authorizations: Dict[str, str]
+    """
+    A dictionary of account IDs to authorizations.
+    """

@@ -169,3 +169,8 @@ def archived_workspace(client: Beaker, archived_workspace_name: str) -> Workspac
 @pytest.fixture()
 def squad_dataset_name(client: Beaker) -> str:
     return "petew/squad-train"
+
+
+@pytest.fixture()
+def alternate_user(client: Beaker) -> Account:
+    return client.account.get("epwalsh10")
