@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v0.8.3](https://github.com/allenai/beaker-py/releases/tag/v0.8.3) - 2022-04-14
+
 ### Added
 
 - Added `Beaker.workspace.(get|set|grant|revoke)_permissions()` and `.set_visibility()` methods.
