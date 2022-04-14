@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Optional, Union
 
 import pytest
 
-from beaker import Beaker, OrganizationNotSet, Workspace, WorkspaceWriteError
+from beaker import Beaker, Workspace, WorkspaceNotFound, WorkspaceWriteError
 
 
 def test_ensure_workspace_invalid_name(client: Beaker):
@@ -59,7 +59,7 @@ def test_archived_workspace_read_ok(client: Beaker, archived_workspace: Workspac
 
 def test_organization_not_set(client: Beaker, archived_workspace: Workspace):
     client.config.default_org = None
-    with pytest.raises(OrganizationNotSet):
+    with pytest.raises(WorkspaceNotFound):
         client.workspace.secrets(archived_workspace.name)
 
 
@@ -70,3 +70,30 @@ def test_workspace_move(
     assert dataset.workspace_ref.full_name == alternate_workspace_name
     client.workspace.move(dataset)
     assert client.dataset.get(dataset.id).workspace_ref.full_name == workspace_name
+
+
+def list_objects(client: Beaker, workspace: Optional[Union[str, Workspace]]):
+    client.workspace.secrets(workspace=workspace)
+    client.workspace.datasets(workspace=workspace, limit=2, results=False)
+    client.workspace.experiments(workspace=workspace, limit=2, match="hello-world")
+    client.workspace.images(workspace=workspace, limit=2, match="hello-world")
+
+
+def test_default_workspace_list_objects(client: Beaker):
+    list_objects(client, None)
+
+
+def test_workspace_list_objects_with_id(client: Beaker, alternate_workspace: Workspace):
+    list_objects(client, alternate_workspace.id)
+
+
+def test_workspace_list_objects_with_short_name(client: Beaker, alternate_workspace: Workspace):
+    list_objects(client, alternate_workspace.name)
+
+
+def test_workspace_list_objects_with_full_name(client: Beaker, alternate_workspace: Workspace):
+    list_objects(client, alternate_workspace.full_name)
+
+
+def test_workspace_list_objects_with_object(client: Beaker, alternate_workspace: Workspace):
+    list_objects(client, alternate_workspace)

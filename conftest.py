@@ -28,6 +28,11 @@ def client(workspace_name):
     return beaker_client
 
 
+@pytest.fixture()
+def alternate_workspace(client: Beaker, alternate_workspace_name: str) -> Workspace:
+    return client.workspace.get(alternate_workspace_name)
+
+
 @pytest.fixture
 def beaker_org_name() -> str:
     return "ai2"

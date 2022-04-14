@@ -130,5 +130,12 @@ class DatasetWriteError(BeakerError):
     """
 
 
+class DatasetReadError(BeakerError):
+    """
+    Raised when a read operation on a dataset fails because the dataset hasn't been committed yet,
+    or the :data:`~beaker.data_model.Dataset.storage` hasn't been set for some other reason.
+    """
+
+
 class SecretNotFound(BeakerError):
     pass

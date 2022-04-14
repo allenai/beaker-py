@@ -175,13 +175,18 @@ class DatasetClient(ServiceClient):
         :param quiet: If ``True``, progress won't be displayed.
 
         :raises DatasetNotFound: If the dataset can't be found.
+        :raises DatasetReadError: If the :data:`~beaker.data_model.Dataset.storage` hasn't been set.
         :raises FileExistsError: If ``force=False`` and an existing local file clashes with a file
             in the Beaker dataset.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         dataset: Dataset = self.resolve_dataset(dataset)
-        assert dataset.storage is not None
+        if dataset.storage is None:
+            # Might need to get dataset again if 'storage' hasn't been set yet.
+            dataset = self.get(dataset.id)
+        if dataset.storage is None:
+            raise DatasetReadError(dataset.id)
 
         storage_info = DatasetStorageInfo.from_json(
             self.request(
@@ -267,12 +272,17 @@ class DatasetClient(ServiceClient):
             Errors can be expected for very large files.
 
         :raises DatasetNotFound: If the dataset can't be found.
+        :raises DatasetReadError: If the :data:`~beaker.data_model.Dataset.storage` hasn't been set.
         :raises FileNotFoundError: If the file doesn't exist in the dataset.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         dataset: Dataset = self.resolve_dataset(dataset)
-        assert dataset.storage is not None
+        if dataset.storage is None:
+            # Might need to get dataset again if 'storage' hasn't been set yet.
+            dataset = self.get(dataset.id)
+        if dataset.storage is None:
+            raise DatasetReadError(dataset.id)
         response = self.request(
             f"datasets/{dataset.storage.id}/files/{file_name}",
             method="HEAD",
@@ -415,11 +425,16 @@ class DatasetClient(ServiceClient):
         :param dataset: The dataset ID, name, or object.
 
         :raises DatasetNotFound: If the dataset can't be found.
+        :raises DatasetReadError: If the :data:`~beaker.data_model.Dataset.storage` hasn't been set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         dataset: Dataset = self.resolve_dataset(dataset)
-        assert dataset.storage is not None
+        if dataset.storage is None:
+            # Might need to get dataset again if 'storage' hasn't been set yet.
+            dataset = self.get(dataset.id)
+        if dataset.storage is None:
+            raise DatasetReadError(dataset.id)
         for file_info in self._iter_files(dataset.storage):
             yield file_info
 

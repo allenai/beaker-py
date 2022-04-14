@@ -6,7 +6,7 @@ from typing import Optional
 import pytest
 
 from beaker.client import Beaker, DatasetClient
-from beaker.exceptions import DatasetWriteError
+from beaker.exceptions import DatasetReadError, DatasetWriteError
 
 
 def test_dataset_get(client: Beaker, squad_dataset_name: str):
