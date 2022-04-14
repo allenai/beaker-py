@@ -34,6 +34,8 @@ class ImageClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises WorkspaceWriteError: If the workspace has been archived.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """

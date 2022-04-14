@@ -21,6 +21,8 @@ class SecretClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
         :raises SecretNotFound: If the secret doesn't exist.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -46,6 +48,8 @@ class SecretClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
         :raises SecretNotFound: If the secret doesn't exist.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -70,6 +74,8 @@ class SecretClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
         :raises WorkspaceWriteError: If the workspace has been archived.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -94,6 +100,8 @@ class SecretClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises WorkspaceWriteError: If the workspace has been archived.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
         :raises SecretNotFound: If the secret doesn't exist.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
