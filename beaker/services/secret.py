@@ -21,10 +21,13 @@ class SecretClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises OrganizationNotFound: If the organization doesn't exist.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
         :raises SecretNotFound: If the secret doesn't exist.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace: Workspace = self._resolve_workspace(workspace)
+        workspace: Workspace = self._resolve_workspace(workspace, read_only_ok=True)
         return Secret.from_json(
             self.request(
                 f"workspaces/{workspace.id}/secrets/{self._url_quote(secret)}",
@@ -46,10 +49,12 @@ class SecretClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
         :raises SecretNotFound: If the secret doesn't exist.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace: Workspace = self._resolve_workspace(workspace)
+        workspace: Workspace = self._resolve_workspace(workspace, read_only_ok=True)
         name = secret.name if isinstance(secret, Secret) else secret
         return self.request(
             f"workspaces/{workspace.id}/secrets/{self._url_quote(name)}/value",
@@ -70,6 +75,9 @@ class SecretClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
+        :raises WorkspaceWriteError: If the workspace has been archived.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         workspace: Workspace = self._resolve_workspace(workspace)
@@ -92,6 +100,9 @@ class SecretClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises WorkspaceWriteError: If the workspace has been archived.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
         :raises SecretNotFound: If the secret doesn't exist.
         :raises HTTPError: Any other HTTP exception that can occur.
         """

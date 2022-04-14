@@ -686,13 +686,13 @@ class NodeUtilization(BaseModel):
 class Workspace(BaseModel):
     id: str
     name: str
+    full_name: str
     size: WorkspaceSize
     owner: Account
     author: Account
     created: datetime
     modified: datetime
     archived: bool = False
-    full_name: str
 
 
 class WorkspaceRef(BaseModel):
