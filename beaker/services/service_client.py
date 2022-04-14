@@ -92,6 +92,8 @@ class ServiceClient:
                     f"an organization ('{workspace_name}')"
                 )
         else:
+            org, name = workspace_name.split("/")
+            self.beaker.organization.get(org)
             return workspace_name
 
     def _resolve_workspace(

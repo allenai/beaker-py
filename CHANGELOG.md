@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Implemented `Beaker.workspace.archive()`, `.unarchive()`, and `.rename()`, and `.move()` methods.
+- Implemented `Beaker.workspace.archive()`, `.unarchive()`, `.rename()`, `.move()`, and `create()` methods.
 - Implemented `Beaker.job.stop()` and `Beaker.job.finalize()` methods.
 - Added `WorkspaceWriteError` for when you attempt to write to an archived workspace. Before this
   would just result in an `HTTPError` with a 403 status code.
