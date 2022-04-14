@@ -464,9 +464,3 @@ class WorkspaceClient(ServiceClient):
             f"'{workspace}': Make sure you're using the workspace *full* name "
             f"(with the organization prefix, e.g. 'org/workspace_name')"
         )
-
-    def _validate_workspace_name(self, name: str):
-        if not name.replace("-", "").replace("_", "").isalnum():
-            raise ValueError(
-                f"Workspace name can only contain letters, digits, dashes, and underscores: '{name}'"
-            )
