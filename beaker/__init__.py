@@ -152,6 +152,22 @@ Get the results from all tasks in an experiment with
 
 >>> task, results = beaker.experiment.results(experiment)[0]
 
+Jobs
+----
+
+Manage Beaker jobs with :data:`Beaker.job`.
+
+For example, get the logs from a job with :meth:`Beaker.job.logs() <services.JobClient.logs>`
+(equivalent to :meth:`Beaker.experiment.logs() <services.ExperimentClient.logs>` when there is
+only one job in the experiment):
+
+>>> job = experiment.jobs[0]
+>>> logs = "".join([
+...    line.decode() for line in
+...    beaker.job.logs(job, quiet=True)
+... ])
+<BLANKLINE>
+
 Datasets
 --------
 
