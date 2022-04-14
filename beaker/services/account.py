@@ -23,12 +23,16 @@ class AccountClient(ServiceClient):
     def whoami(self) -> Account:
         """
         Check who you are authenticated as.
+
+        :raises HTTPError: Any unexpected HTTP exception that can occur.
         """
         return Account.from_json(self.request("user").json())
 
     def list_organizations(self) -> List[Organization]:
         """
         List all organizations you are a member of.
+
+        :raises HTTPError: Any unexpected HTTP exception that can occur.
         """
         return [Organization.from_json(d) for d in self.request("user/orgs").json()["data"]]
 
@@ -39,10 +43,11 @@ class AccountClient(ServiceClient):
         :param account: The account name or ID.
 
         :raises AccountNotFound: If the account doesn't exist.
+        :raises HTTPError: Any unexpected HTTP exception that can occur.
         """
         return Account.from_json(
             self.request(
-                f"users/{self._url_quote(account)}",
+                f"users/{self.url_quote(account)}",
                 method="GET",
                 exceptions_for_status={404: AccountNotFound(account)},
             ).json()

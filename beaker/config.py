@@ -82,7 +82,7 @@ class Config:
             if hasattr(config, name):
                 setattr(config, name, value)
             else:
-                raise AttributeError(f"'{cls.__name__}' has to attribute '{name}'")
+                raise ConfigurationError(f"Beaker config has no attribute '{name}'")
 
         return config
 

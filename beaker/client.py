@@ -59,6 +59,9 @@ class Beaker:
         # Ensure default workspace exists.
         if self._config.default_workspace is not None:
             self.workspace.ensure(self._config.default_workspace)
+        # Validate default org.
+        if self._config.default_org is not None:
+            self.organization.get(self._config.default_org)
 
     def __str__(self) -> str:
         return (

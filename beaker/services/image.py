@@ -13,6 +13,36 @@ class ImageClient(ServiceClient):
     Accessed via :data:`Beaker.image <beaker.Beaker.image>`.
     """
 
+    def get(self, image: str) -> Image:
+        """
+        Get info about an image on Beaker.
+
+        :param image: The Beaker image ID or name.
+
+        :raises ImageNotFound: If the image can't be found on Beaker.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+
+        def _get(id: str) -> Image:
+            return Image.from_json(
+                self.request(
+                    f"images/{self.url_quote(id)}",
+                    exceptions_for_status={404: ImageNotFound(self._not_found_err_msg(id))},
+                ).json()
+            )
+
+        try:
+            # Could be an ID or full name, so we try that first.
+            return _get(image)
+        except ImageNotFound:
+            if "/" not in image:
+                # Now try with adding the account name.
+                try:
+                    return _get(f"{self.beaker.account.name}/{image}")
+                except ImageNotFound:
+                    pass
+            raise
+
     def create(
         self,
         name: str,
@@ -29,18 +59,16 @@ class ImageClient(ServiceClient):
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param quiet: If ``True``, progress won't be displayed.
 
+        :raises ValueError: If the image name is invalid.
         :raises ImageConflict: If an image with the given name already exists.
-        :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
-        :raises WorkspaceWriteError: If the workspace has been archived.
-        :raises OrganizationNotFound: If the organization doesn't exist.
-        :raises OrganizationNotSet: If the workspace name doesn't start with
-            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
-        workspace: Workspace = self._resolve_workspace(workspace)
+        self.validate_beaker_name(name)
+        workspace: Workspace = self.resolve_workspace(workspace)
 
         # Get local Docker image object.
         image = self.docker.images.get(image_tag)
@@ -122,36 +150,19 @@ class ImageClient(ServiceClient):
         # Return info about the Beaker image.
         return self.get(image_data["id"])
 
-    def get(self, image: str) -> Image:
-        """
-        Get info about an image on Beaker.
-
-        :param image: The Beaker image ID or full name.
-
-        :raises ImageNotFound: If the image can't be found on Beaker.
-        :raises HTTPError: Any other HTTP exception that can occur.
-
-        """
-        return Image.from_json(
-            self.request(
-                f"images/{self._url_quote(image)}",
-                exceptions_for_status={404: ImageNotFound(self._not_found_err_msg(image))},
-            ).json()
-        )
-
     def delete(self, image: Union[str, Image]):
         """
         Delete an image on Beaker.
 
-        :param image: The Beaker image ID, full name, or object.
+        :param image: The Beaker image ID, name, or object.
 
         :raises ImageNotFound: If the image can't be found on Beaker.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
-
         """
-        image_id = image if isinstance(image, str) else image.id
+        image_id = self.resolve_image(image).id
         self.request(
-            f"images/{self._url_quote(image_id)}",
+            f"images/{self.url_quote(image_id)}",
             method="DELETE",
             exceptions_for_status={404: ImageNotFound(self._not_found_err_msg(image_id))},
         )

@@ -2,7 +2,10 @@ from beaker import Beaker
 
 
 def test_organization_get(client: Beaker, beaker_org_name: str):
-    assert client.organization.get(beaker_org_name).name == beaker_org_name
+    org = client.organization.get(beaker_org_name)
+    assert org.name == beaker_org_name
+    # Now get by ID.
+    client.organization.get(org.id)
 
 
 def test_organization_list_members(client: Beaker, beaker_org_name: str):

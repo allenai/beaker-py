@@ -2,7 +2,12 @@ from beaker import Beaker, Organization
 
 
 def test_cluster_get_cloud(client: Beaker, beaker_cluster_name: str):
-    assert client.cluster.get(beaker_cluster_name).autoscale is True
+    cluster = client.cluster.get(beaker_cluster_name)
+    assert cluster.autoscale is True
+    # Get by ID.
+    client.cluster.get(cluster.id)
+    # Get by name without org.
+    client.cluster.get(cluster.name)
 
 
 def test_cluster_get_on_prem(client: Beaker, beaker_on_prem_cluster_name: str):

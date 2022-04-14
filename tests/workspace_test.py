@@ -1,13 +1,21 @@
-from typing import Optional
+from typing import Optional, Union
 
 import pytest
 
-from beaker import Beaker, OrganizationNotSet, Workspace, WorkspaceWriteError
+from beaker import Beaker, Workspace, WorkspaceNotFound, WorkspaceWriteError
 
 
 def test_ensure_workspace_invalid_name(client: Beaker):
-    with pytest.raises(ValueError, match="Workspace name can only contain"):
+    with pytest.raises(ValueError, match="Invalid name"):
         client.workspace.ensure("blah&&")
+
+
+def test_workspace_get(client: Beaker, workspace_name: str):
+    workspace = client.workspace.get(workspace_name)
+    # Now get by ID.
+    client.workspace.get(workspace.id)
+    # Now get by name without the org prefix.
+    client.workspace.get(workspace.name)
 
 
 @pytest.mark.parametrize("match", [pytest.param(v, id=f"match={v}") for v in (None, "squad")])
@@ -28,8 +36,8 @@ def test_workspace_experiments(client: Beaker, hello_world_experiment_name: str)
     assert experiments
 
 
-def test_workspace_images(client: Beaker, hello_world_image_name: str):
-    images = client.workspace.images(match=hello_world_image_name)
+def test_workspace_images(client: Beaker):
+    images = client.workspace.images(match="hello-world")
     assert images
 
 
@@ -51,7 +59,7 @@ def test_archived_workspace_read_ok(client: Beaker, archived_workspace: Workspac
 
 def test_organization_not_set(client: Beaker, archived_workspace: Workspace):
     client.config.default_org = None
-    with pytest.raises(OrganizationNotSet):
+    with pytest.raises(WorkspaceNotFound):
         client.workspace.secrets(archived_workspace.name)
 
 
@@ -62,3 +70,30 @@ def test_workspace_move(
     assert dataset.workspace_ref.full_name == alternate_workspace_name
     client.workspace.move(dataset)
     assert client.dataset.get(dataset.id).workspace_ref.full_name == workspace_name
+
+
+def list_objects(client: Beaker, workspace: Optional[Union[str, Workspace]]):
+    client.workspace.secrets(workspace=workspace)
+    client.workspace.datasets(workspace=workspace, limit=2, results=False)
+    client.workspace.experiments(workspace=workspace, limit=2, match="hello-world")
+    client.workspace.images(workspace=workspace, limit=2, match="hello-world")
+
+
+def test_default_workspace_list_objects(client: Beaker):
+    list_objects(client, None)
+
+
+def test_workspace_list_objects_with_id(client: Beaker, alternate_workspace: Workspace):
+    list_objects(client, alternate_workspace.id)
+
+
+def test_workspace_list_objects_with_short_name(client: Beaker, alternate_workspace: Workspace):
+    list_objects(client, alternate_workspace.name)
+
+
+def test_workspace_list_objects_with_full_name(client: Beaker, alternate_workspace: Workspace):
+    list_objects(client, alternate_workspace.full_name)
+
+
+def test_workspace_list_objects_with_object(client: Beaker, alternate_workspace: Workspace):
+    list_objects(client, alternate_workspace)
