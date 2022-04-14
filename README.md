@@ -28,6 +28,15 @@
 - [Contributing](https://github.com/allenai/beaker-py/blob/main/CONTRIBUTING.md)
 - [License](https://github.com/allenai/beaker-py/blob/main/LICENSE)
 
+## See also
+
+- [Beaker Dashboard](https://beaker.org)
+- [Beaker command-line client](https://github.com/allenai/beaker)
+- *GitHub Actions:*
+  - [setup-beaker](https://github.com/marketplace/actions/setup-beaker)
+  - [beaker-command](https://github.com/marketplace/actions/beaker-command)
+  - [beaker-run](https://github.com/marketplace/actions/beaker-run)
+
 ## Installing
 
 ### Installing with `pip`
