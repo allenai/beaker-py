@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 import pytest
 
-from beaker import Beaker, Workspace, WorkspaceNotFound, WorkspaceWriteError
+from beaker import Account, Beaker, Workspace, WorkspaceNotFound, WorkspaceWriteError
 
 
 def test_ensure_workspace_invalid_name(client: Beaker):
@@ -97,3 +97,20 @@ def test_workspace_list_objects_with_full_name(client: Beaker, alternate_workspa
 
 def test_workspace_list_objects_with_object(client: Beaker, alternate_workspace: Workspace):
     list_objects(client, alternate_workspace)
+
+
+def test_workspace_get_permissions(client: Beaker):
+    client.workspace.get_permissions()
+
+
+def test_workspace_grant_and_revoke_permissions(client: Beaker, alternate_user: Account):
+    client.workspace.grant_permissions("read", alternate_user)
+    client.workspace.revoke_permissions(alternate_user)
+
+
+def test_workspace_set_visibility(client: Beaker):
+    client.workspace.set_visibility(public=False)
+
+
+def test_workspace_set_visibility_archived(client: Beaker, archived_workspace_name: str):
+    client.workspace.set_visibility(public=False, workspace=archived_workspace_name)

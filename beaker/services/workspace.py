@@ -434,6 +434,124 @@ class WorkspaceClient(ServiceClient):
             ).json()["data"]
         ]
 
+    def get_permissions(
+        self, workspace: Optional[Union[str, Workspace]] = None
+    ) -> WorkspacePermissions:
+        """
+        Get workspace permissions.
+
+        :param workspace: The Beaker workspace name, or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
+        return WorkspacePermissions.from_json(
+            self.request(
+                f"workspaces/{self.url_quote(workspace_name)}/auth",
+                method="GET",
+                exceptions_for_status={
+                    404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
+                },
+            ).json()
+        )
+
+    def grant_permissions(
+        self,
+        auth: str,
+        *accounts: Union[str, Account],
+        workspace: Optional[Union[str, Workspace]] = None,
+    ) -> WorkspacePermissions:
+        """
+        Grant workspace permissions to accounts.
+
+        :param auth: The authorization level to grant (e.g. "read", "write", "all").
+        :param accounts: The accounts to grant permissions to.
+        :param workspace: The Beaker workspace name, or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+
+        :raises ValueError: If ``auth`` is invalid.
+        :raises AccountNotFound: If an account doesn't exist.
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        if auth not in {"read", "write", "all"}:
+            raise ValueError(f"Authorization '{auth}' is invalid")
+        account_ids = [
+            account.id if isinstance(account, Account) else self.beaker.account.get(account).id
+            for account in accounts
+        ]
+        workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
+        self.request(
+            f"workspaces/{self.url_quote(workspace_name)}/auth",
+            method="PATCH",
+            data={"authorizations": {account_id: auth for account_id in account_ids}},
+            exceptions_for_status={404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))},
+        )
+        return self.get_permissions(workspace=workspace_name)
+
+    def set_visibility(
+        self, public: bool = False, workspace: Optional[Union[str, Workspace]] = None
+    ) -> WorkspacePermissions:
+        """
+        Set workspace visibility to public or private.
+
+        :param public: Public visibility.
+        :param workspace: The Beaker workspace name, or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
+        self.request(
+            f"workspaces/{self.url_quote(workspace_name)}/auth",
+            method="PATCH",
+            data={"public": public},
+            exceptions_for_status={404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))},
+        )
+        return self.get_permissions(workspace=workspace_name)
+
+    def revoke_permissions(
+        self, *accounts: Union[str, Account], workspace: Optional[Union[str, Workspace]] = None
+    ) -> WorkspacePermissions:
+        """
+        Revoke workspace permissions to accounts.
+
+        :param accounts: The accounts to revoke permissions for.
+        :param workspace: The Beaker workspace name, or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+
+        :raises AccountNotFound: If an account doesn't exist.
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        account_ids = [
+            account.id if isinstance(account, Account) else self.beaker.account.get(account).id
+            for account in accounts
+        ]
+        workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
+        self.request(
+            f"workspaces/{self.url_quote(workspace_name)}/auth",
+            method="PATCH",
+            data={"authorizations": {account_id: "none" for account_id in account_ids}},
+            exceptions_for_status={404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))},
+        )
+        return self.get_permissions(workspace=workspace_name)
+
     def _not_found_err_msg(self, workspace: str) -> str:
         return (
             f"'{workspace}': Make sure you're using the workspace ID or *full* name "

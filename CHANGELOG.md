@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `Beaker.workspace.(get|set|grant|revoke)_permissions()` and `.set_visibility()` methods.
+
 ### Changed
 
 - Added better support for referencing Beaker items (images, experiments, datasets, etc)
