@@ -6,8 +6,16 @@ from beaker import Beaker, OrganizationNotSet, Workspace, WorkspaceWriteError
 
 
 def test_ensure_workspace_invalid_name(client: Beaker):
-    with pytest.raises(ValueError, match="Workspace name can only contain"):
+    with pytest.raises(ValueError, match="Invalid name"):
         client.workspace.ensure("blah&&")
+
+
+def test_workspace_get(client: Beaker, workspace_name: str):
+    workspace = client.workspace.get(workspace_name)
+    # Now get by ID.
+    client.workspace.get(workspace.id)
+    # Now get by name without the org prefix.
+    client.workspace.get(workspace.name)
 
 
 @pytest.mark.parametrize("match", [pytest.param(v, id=f"match={v}") for v in (None, "squad")])
@@ -28,8 +36,8 @@ def test_workspace_experiments(client: Beaker, hello_world_experiment_name: str)
     assert experiments
 
 
-def test_workspace_images(client: Beaker, hello_world_image_name: str):
-    images = client.workspace.images(match=hello_world_image_name)
+def test_workspace_images(client: Beaker):
+    images = client.workspace.images(match="hello-world")
     assert images
 
 

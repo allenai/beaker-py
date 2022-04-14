@@ -24,6 +24,10 @@ def test_experiment_get(client: Beaker, hello_world_experiment_id: str):
     assert exp.id == hello_world_experiment_id
     assert exp.jobs
     assert exp.jobs[0].status.current == CurrentJobStatus.finalized
+    # Get with name.
+    client.experiment.get(exp.name)
+    # Get with full name.
+    client.experiment.get(exp.full_name)
 
 
 def test_experiment_tasks(client: Beaker, hello_world_experiment_id: str):

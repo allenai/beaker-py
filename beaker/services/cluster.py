@@ -10,6 +10,37 @@ class ClusterClient(ServiceClient):
     Accessed via :data:`Beaker.cluster <beaker.Beaker.cluster>`.
     """
 
+    def get(self, cluster: str) -> Cluster:
+        """
+        Get information about the cluster.
+
+        :param cluster: The cluster name or ID.
+
+        :raises ClusterNotFound: If the cluster doesn't exist.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+
+        def _get(id: str) -> Cluster:
+            return Cluster.from_json(
+                self.request(
+                    f"clusters/{id}",
+                    exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(id))},
+                ).json()
+            )
+
+        try:
+            # Could be a cluster ID, so we try that first before trying to resolve the name.
+            return _get(cluster)
+        except ClusterNotFound:
+            try:
+                cluster_name = self.resolve_cluster_name(cluster)
+                return _get(cluster_name)
+            except (ValueError, OrganizationNotSet, ClusterNotFound):
+                # If the name was invalid, we'll just raise the original error.
+                pass
+            raise
+
     def create(
         self,
         name: str,
@@ -27,7 +58,9 @@ class ClusterClient(ServiceClient):
             For creating on-premise clusters you should still use the `Beaker CLI
             <https://github.com/allenai/beaker>`_.
 
-        :param name: The full name to assign to the new cluster. This should be in the form of
+        :param name: The name to assign to the new cluster.
+            If :data:`Config.default_org <beaker.Config.default_org>` is not set,
+            the name should start with the name of an organization:
             "{organization}/{cluster_name}", e.g. "ai2/my-new-cluster".
         :param max_size: The maximum number of nodes the cluster can scale up to.
         :param preemptible: Use preemptible cloud machines for the nodes.
@@ -39,22 +72,17 @@ class ClusterClient(ServiceClient):
 
         :raises ValueError: If the cluster name or requested resources are invalid.
         :raises ClusterConflict: If a cluster by that name already exists.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        try:
-            organization, cluster_name = name.split("/")
-        except ValueError:
-            raise ValueError(
-                f"Invalid cluster name '{name}'. "
-                "Cluster names must be of the form '{organization}/{name}'."
-            )
+        organization, cluster_name = self.resolve_cluster_name(name).split("/", 1)
 
         if not cpus and not gpus and not gpu_type and not memory:
             raise ValueError("Cloud clusters must specify at least 1 resource")
 
         return Cluster.from_json(
             self.request(
-                f"clusters/{self._url_quote(organization)}",
+                f"clusters/{self.url_quote(organization)}",
                 method="POST",
                 data={
                     "name": cluster_name,
@@ -76,30 +104,16 @@ class ClusterClient(ServiceClient):
         :param max_size: The maximum number of nodes.
 
         :raises ClusterNotFound: If the cluster doesn't exist.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        cluster_id = cluster if isinstance(cluster, str) else cluster.id
-        self.request(
-            f"clusters/{cluster_id}",
-            method="PATCH",
-            data={"capacity": max_size},
-            exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster_id))},
-        )
-        return self.get(cluster_id)
-
-    def get(self, cluster: str) -> Cluster:
-        """
-        Get information about the cluster.
-
-        :param cluster: The cluster ID or full name.
-
-        :raises ClusterNotFound: If the cluster doesn't exist.
-        :raises HTTPError: Any other HTTP exception that can occur.
-        """
+        cluster_name = self.resolve_cluster(cluster).full_name
         return Cluster.from_json(
             self.request(
-                f"clusters/{cluster}",
-                exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster))},
+                f"clusters/{cluster_name}",
+                method="PATCH",
+                data={"capacity": max_size},
+                exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster_name))},
             ).json()
         )
 
@@ -110,13 +124,14 @@ class ClusterClient(ServiceClient):
         :param cluster: The cluster ID, full name, or object.
 
         :raises ClusterNotFound: If the cluster doesn't exist.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        cluster_id = cluster if isinstance(cluster, str) else cluster.id
+        cluster_name = self.resolve_cluster(cluster).full_name
         self.request(
-            f"clusters/{cluster_id}",
+            f"clusters/{cluster_name}",
             method="DELETE",
-            exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster_id))},
+            exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster_name))},
         )
 
     def list(self, org: Optional[Union[str, Organization]] = None) -> List[Cluster]:
@@ -129,9 +144,10 @@ class ClusterClient(ServiceClient):
         :raises OrganizationNotFound: If the organization doesn't exist.
         :raises OrganizationNotSet: If neither ``org`` nor
             :data:`Beaker.config.default_org <beaker.Config.default_org>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        org: Organization = self._resolve_org(org)
+        org: Organization = self.resolve_org(org)
         return [
             Cluster.from_json(d)
             for d in self.request(
@@ -148,15 +164,16 @@ class ClusterClient(ServiceClient):
         :param cluster: The cluster ID, full name, or object.
 
         :raises ClusterNotFound: If the cluster doesn't exist.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        cluster_id = cluster if isinstance(cluster, str) else cluster.id
+        cluster_name = self.resolve_cluster(cluster).full_name
         return [
             Node.from_json(d)
             for d in self.request(
-                f"clusters/{cluster_id}/nodes",
+                f"clusters/{cluster_name}/nodes",
                 method="GET",
-                exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster_id))},
+                exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster_name))},
             ).json()["data"]
         ]
 
@@ -167,9 +184,10 @@ class ClusterClient(ServiceClient):
         :param cluster: The cluster ID, full name, or object.
 
         :raises ClusterNotFound: If the cluster doesn't exist.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        cluster: Cluster = cluster if isinstance(cluster, Cluster) else self.get(cluster)
+        cluster: Cluster = self.resolve_cluster(cluster)
         nodes = self.nodes(cluster)
         out: List[NodeUtilization] = []
         for node in nodes:
@@ -214,6 +232,8 @@ class ClusterClient(ServiceClient):
         :param clusters: Clusters to inspect and filter.
 
         :raises ClusterNotFound: If one of the clusters doesn't exist.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
         """
 
         def is_compat(node_spec: Union[NodeSpec, NodeShape, NodeSpecUtil]) -> bool:
@@ -230,7 +250,7 @@ class ClusterClient(ServiceClient):
 
         available: List[Cluster] = []
         for cluster_ in clusters:
-            cluster: Cluster = cluster_ if isinstance(cluster_, Cluster) else self.get(cluster_)
+            cluster: Cluster = self.resolve_cluster(cluster_)
 
             if cluster.node_shape is not None and not is_compat(cluster.node_shape):
                 continue
@@ -248,6 +268,6 @@ class ClusterClient(ServiceClient):
 
     def _not_found_err_msg(self, cluster: str) -> str:
         return (
-            f"'{cluster}': Make sure you're using the *full* name of the cluster "
+            f"'{cluster}': Make sure you're using a valid ID or *full* name of the cluster "
             f"(with the organization prefix, e.g. 'org/cluster_name')"
         )

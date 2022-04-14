@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Added better support for referencing Beaker items (images, experiments, datasets, etc)
+  by their short name (without workspace, org, or account prefix) when the full name
+  or ID can be assumed.
+- Improved error documentation.
+
 ## [v0.8.2](https://github.com/allenai/beaker-py/releases/tag/v0.8.2) - 2022-04-13
 
 ### Added

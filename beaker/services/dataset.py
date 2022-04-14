@@ -35,6 +35,37 @@ class DatasetClient(ServiceClient):
 
     REQUEST_SIZE_LIMIT = 32 * 1024 * 1024
 
+    def get(self, dataset: str) -> Dataset:
+        """
+        Get info about a dataset.
+
+        :param dataset: The dataset ID or name.
+
+        :raises DatasetNotFound: If the dataset can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+
+        """
+
+        def _get(id: str) -> Dataset:
+            return Dataset.from_json(
+                self.request(
+                    f"datasets/{self.url_quote(id)}",
+                    exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(id))},
+                ).json()
+            )
+
+        try:
+            # Could be a dataset ID or full name, so we try that first.
+            return _get(dataset)
+        except DatasetNotFound:
+            if "/" not in dataset:
+                # Now try with adding the account name.
+                try:
+                    return _get(f"{self.beaker.account.name}/{dataset}")
+                except DatasetNotFound:
+                    pass
+            raise
+
     def create(
         self,
         name: str,
@@ -60,20 +91,16 @@ class DatasetClient(ServiceClient):
         :param quiet: If ``True``, progress won't be displayed.
         :param commit: Whether to commit the dataset after successful upload.
 
+        :raises ValueError: If the name is invalid.
         :raises DatasetConflict: If a dataset by that name already exists and ``force=False``.
-        :raises WorkspaceNotFound: If the workspace doesn't exist.
-        :raises WorkspaceNotSet: If neither ``workspace`` nor
-            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
-        :raises WorkspaceWriteError: If the workspace has been archived.
-        :raises OrganizationNotFound: If the organization doesn't exist.
-        :raises OrganizationNotSet: If the workspace name doesn't start with
-            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
-        :raises HTTPError: Any other HTTP exception that can occur.
         :raises UnexpectedEOFError: If a source file is an empty file, or if a source is a directory and
             the contents of one of the directory's files changes while creating the dataset.
         :raises FileNotFoundError: If a source doesn't exist.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace: Workspace = self._resolve_workspace(workspace)
+        self.validate_beaker_name(name)
+        workspace: Workspace = self.resolve_workspace(workspace)
 
         # Create the dataset.
         def make_dataset() -> Dataset:
@@ -114,17 +141,19 @@ class DatasetClient(ServiceClient):
         """
         Commit the dataset.
 
-        :param dataset: The dataset ID, full name, or object.
+        :param dataset: The dataset ID, name, or object.
 
         :raises DatasetNotFound: If the dataset can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        dataset_id = dataset if isinstance(dataset, str) else dataset.id
+        dataset_id = self.resolve_dataset(dataset).id
         return Dataset.from_json(
             self.request(
-                f"datasets/{self._url_quote(dataset_id)}",
+                f"datasets/{self.url_quote(dataset_id)}",
                 method="PATCH",
                 data={"commit": True},
+                exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset_id))},
             ).json()
         )
 
@@ -139,7 +168,7 @@ class DatasetClient(ServiceClient):
         """
         Download a dataset.
 
-        :param dataset: The dataset ID, full name, or object.
+        :param dataset: The dataset ID, name, or object.
         :param target: The target path to fetched data. Defaults to ``Path(.)``.
         :param max_workers: The maximum number of thread pool workers to use to download files concurrently.
         :param force: If ``True``, existing local files will be overwritten.
@@ -148,9 +177,10 @@ class DatasetClient(ServiceClient):
         :raises DatasetNotFound: If the dataset can't be found.
         :raises FileExistsError: If ``force=False`` and an existing local file clashes with a file
             in the Beaker dataset.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        dataset: Dataset = self.get(dataset.id if isinstance(dataset, Dataset) else dataset)
+        dataset: Dataset = self.resolve_dataset(dataset)
         assert dataset.storage is not None
 
         storage_info = DatasetStorageInfo.from_json(
@@ -229,7 +259,7 @@ class DatasetClient(ServiceClient):
         """
         Stream download the contents of a single file from a dataset.
 
-        :param dataset: The dataset ID, full name, or object.
+        :param dataset: The dataset ID, name, or object.
         :param file_name: The path of the file within the dataset.
         :param offset: Offset to start from, in bytes.
         :param length: Number of bytes to read.
@@ -238,11 +268,11 @@ class DatasetClient(ServiceClient):
 
         :raises DatasetNotFound: If the dataset can't be found.
         :raises FileNotFoundError: If the file doesn't exist in the dataset.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        if not isinstance(dataset, Dataset) or dataset.storage is None:
-            dataset = self.get(dataset.id if isinstance(dataset, Dataset) else dataset)
-            assert dataset.storage is not None
+        dataset: Dataset = self.resolve_dataset(dataset)
+        assert dataset.storage is not None
         response = self.request(
             f"datasets/{dataset.storage.id}/files/{file_name}",
             method="HEAD",
@@ -261,35 +291,19 @@ class DatasetClient(ServiceClient):
             dataset.storage, file_info, offset=offset, length=length, max_retries=max_retries
         )
 
-    def get(self, dataset: str) -> Dataset:
-        """
-        Get info about a dataset.
-
-        :param dataset: The dataset ID or full name.
-
-        :raises DatasetNotFound: If the dataset can't be found.
-        :raises HTTPError: Any other HTTP exception that can occur.
-
-        """
-        return Dataset.from_json(
-            self.request(
-                f"datasets/{self._url_quote(dataset)}",
-                exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset))},
-            ).json()
-        )
-
     def delete(self, dataset: Union[str, Dataset]):
         """
         Delete a dataset.
 
-        :param dataset: The dataset ID, full name, or object.
+        :param dataset: The dataset ID, name, or object.
 
         :raises DatasetNotFound: If the dataset can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        dataset_id = dataset if isinstance(dataset, str) else dataset.id
+        dataset_id = self.resolve_dataset(dataset).id
         self.request(
-            f"datasets/{self._url_quote(dataset_id)}",
+            f"datasets/{self.url_quote(dataset_id)}",
             method="DELETE",
             exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset_id))},
         )
@@ -305,7 +319,7 @@ class DatasetClient(ServiceClient):
         """
         Sync local files or directories to an uncommitted dataset.
 
-        :param dataset: The dataset ID, full name, or object.
+        :param dataset: The dataset ID, name, or object.
         :param sources: Local source files or directories to upload to the dataset.
         :param target: If specified, all source files/directories will be uploaded under
             a directory of this name.
@@ -317,9 +331,10 @@ class DatasetClient(ServiceClient):
         :raises FileNotFoundError: If a source doesn't exist.
         :raises UnexpectedEOFError: If a source is an empty file, or if a source is a directory and
             the contents of one of the directory's files changes while creating the dataset.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        dataset: Dataset = self.get(dataset.id if isinstance(dataset, Dataset) else dataset)
+        dataset: Dataset = self.resolve_dataset(dataset)
         if dataset.committed is not None:
             raise DatasetWriteError(dataset.id)
 
@@ -397,14 +412,14 @@ class DatasetClient(ServiceClient):
         """
         List files in a dataset.
 
-        :param dataset: The dataset ID, full name, or object.
+        :param dataset: The dataset ID, name, or object.
 
         :raises DatasetNotFound: If the dataset can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        if not isinstance(dataset, Dataset) or dataset.storage is None:
-            dataset = self.get(dataset.id if isinstance(dataset, Dataset) else dataset)
-            assert dataset.storage is not None
+        dataset: Dataset = self.resolve_dataset(dataset)
+        assert dataset.storage is not None
         for file_info in self._iter_files(dataset.storage):
             yield file_info
 
@@ -412,9 +427,10 @@ class DatasetClient(ServiceClient):
         """
         Calculate the size of a dataset, in bytes.
 
-        :param dataset: The dataset ID, full name, or object.
+        :param dataset: The dataset ID, name, or object.
 
         :raises DatasetNotFound: If the dataset can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         total = 0
@@ -423,25 +439,28 @@ class DatasetClient(ServiceClient):
             total += file_info.size
         return total
 
-    def rename(self, dataset: Union[str, Dataset], name: str) -> Dataset:
+    def rename(self, dataset: Union[str, Dataset], new_name: str) -> Dataset:
         """
         Rename a dataset.
 
-        :param dataset: The dataset ID, full name, or object.
+        :param dataset: The dataset ID, name, or object.
         :param name: The new name of the dataset.
 
+        :raises ValueError: If the new name is invalid.
         :raises DatasetNotFound: If the dataset can't be found.
         :raises DatasetConflict: If a dataset by that name already exists.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        dataset_id = dataset if isinstance(dataset, str) else dataset.id
+        self.validate_beaker_name(new_name)
+        dataset_id = self.resolve_dataset(dataset).id
         return Dataset.from_json(
             self.request(
-                f"datasets/{self._url_quote(dataset_id)}",
+                f"datasets/{self.url_quote(dataset_id)}",
                 method="PATCH",
-                data={"name": name},
+                data={"name": new_name},
                 exceptions_for_status={
-                    409: DatasetConflict(name),
+                    409: DatasetConflict(new_name),
                     404: DatasetNotFound(dataset_id),
                 },
             ).json()

@@ -124,7 +124,7 @@ def hello_world_experiment_id() -> str:
 
 @pytest.fixture()
 def hello_world_image_name() -> str:
-    return "hello-world"
+    return "petew/hello-world"
 
 
 @pytest.fixture()
@@ -159,3 +159,8 @@ def archived_workspace(client: Beaker, archived_workspace_name: str) -> Workspac
         return client.workspace.archive(archived_workspace_name)
     else:
         return workspace
+
+
+@pytest.fixture()
+def squad_dataset_name(client: Beaker) -> str:
+    return "petew/squad-train"

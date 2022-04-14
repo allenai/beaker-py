@@ -19,6 +19,10 @@ ALLOWED_SPEC_VERSIONS = {SPEC_VERSION, "v2-alpha"}
 
 
 class BaseModel(_BaseModel):
+    """
+    The base class for all Beaker data models.
+    """
+
     class Config:
         validate_assignment = True
         alias_generator = to_lower_camel

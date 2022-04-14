@@ -1,7 +1,20 @@
+"""
+Exceptions that can be raised by the :class:`~beaker.Beaker` client.
+
+.. tip::
+    All exceptions inherit from :class:`BeakerError` other than :exc:`HTTPError`,
+    which is re-exported from :exc:`requests.exceptions.HTTPError`,
+    and :exc:`ValidationError`, which is re-exported from `pydantic <https://pydantic-docs.helpmanual.io/>`_.
+"""
+
 from pydantic import ValidationError  # noqa: F401, re-imported here for convenience
 from requests.exceptions import (  # noqa: F401, re-imported here for convenience
     HTTPError,
 )
+
+ValidationError.__doc__ = """
+Raised when data passed into a :mod:`DataModel <beaker.data_model>` is invalid.
+"""
 
 
 class BeakerError(Exception):
@@ -17,15 +30,22 @@ class AccountNotFound(BeakerError):
 
 
 class OrganizationNotFound(BeakerError):
-    pass
+    """
+    Raised when a specified organization doesn't exist.
+    """
 
 
 class OrganizationNotSet(BeakerError):
-    pass
+    """
+    Raised when an identifying doesn't start with an organization name and
+    :data:`Config.default_org <beaker.Config.default_org>` is not set.
+    """
 
 
 class ConfigurationError(BeakerError):
-    pass
+    """
+    Raised when the :class:`~beaker.Config` fails to instantiate.
+    """
 
 
 class ImageNotFound(BeakerError):
@@ -34,7 +54,7 @@ class ImageNotFound(BeakerError):
 
 class ImageConflict(BeakerError):
     """
-    Raised when attempting to create an image if an image by that name already exists.
+    Raised when attempting to create/rename an image if an image by that name already exists.
     """
 
 
@@ -43,11 +63,15 @@ class WorkspaceNotFound(BeakerError):
 
 
 class WorkspaceWriteError(BeakerError):
-    pass
+    """
+    Raised when attempting to modify or add to a workspace that's been archived.
+    """
 
 
 class WorkspaceConflict(BeakerError):
-    pass
+    """
+    Raised when attempting to create/rename a workspace if a workspace by that name already exists.
+    """
 
 
 class ClusterNotFound(BeakerError):
@@ -55,7 +79,9 @@ class ClusterNotFound(BeakerError):
 
 
 class ClusterConflict(BeakerError):
-    pass
+    """
+    Raised when attempting to create a cluster if a cluster by that name already exists.
+    """
 
 
 class ExperimentNotFound(BeakerError):
@@ -64,13 +90,13 @@ class ExperimentNotFound(BeakerError):
 
 class ExperimentConflict(BeakerError):
     """
-    Raised when attempting to create an experiment if an experiment by that name already exists.
+    Raised when attempting to create/rename an experiment if an experiment by that name already exists.
     """
 
 
 class DatasetConflict(BeakerError):
     """
-    Raised when attempting to create a dataset if a dataset by that name already exists.
+    Raised when attempting to create/rename a dataset if a dataset by that name already exists.
     """
 
 
@@ -79,7 +105,9 @@ class DatasetNotFound(BeakerError):
 
 
 class UnexpectedEOFError(BeakerError):
-    pass
+    """
+    Raised when creating a dataset when an empty source file is encountered.
+    """
 
 
 class JobNotFound(BeakerError):
@@ -97,7 +125,9 @@ class NodeNotFound(BeakerError):
 
 
 class DatasetWriteError(BeakerError):
-    pass
+    """
+    Raised when a write operation on a dataset fails because the dataset has already been committed.
+    """
 
 
 class SecretNotFound(BeakerError):

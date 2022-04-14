@@ -9,6 +9,14 @@ from beaker.client import Beaker, DatasetClient
 from beaker.exceptions import DatasetWriteError
 
 
+def test_dataset_get(client: Beaker, squad_dataset_name: str):
+    dataset = client.dataset.get(squad_dataset_name)
+    # Try with ID.
+    client.dataset.get(dataset.id)
+    # Try with just name (without account prefix).
+    client.dataset.get(dataset.name)
+
+
 class TestDataset:
     def setup_method(self):
         self.file_a = tempfile.NamedTemporaryFile(delete=False)

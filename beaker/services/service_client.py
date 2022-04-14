@@ -79,56 +79,93 @@ class ServiceClient:
             response.raise_for_status()
             return response
 
-    def _resolve_workspace_name(self, workspace: Optional[str]) -> str:
-        workspace_name = workspace or self.config.default_workspace
-        if workspace_name is None:
-            raise WorkspaceNotSet("'workspace' argument required since default workspace not set")
-        elif "/" not in workspace_name:
+    def resolve_cluster_name(self, cluster_name: str) -> str:
+        if "/" not in cluster_name:
             if self.config.default_org is not None:
-                self._validate_workspace_name(workspace_name)
+                self.validate_beaker_name(cluster_name)
+                return f"{self.config.default_org}/{cluster_name}"
+            else:
+                raise OrganizationNotSet(
+                    f"No default organization set and cluster name doesn't include "
+                    f"an organization ('{cluster_name}')"
+                )
+        else:
+            org, name = cluster_name.split("/", 1)
+            self.validate_beaker_name(name)
+            self.beaker.organization.get(org)
+            return cluster_name
+
+    def resolve_cluster(self, cluster: Union[str, Cluster]) -> Cluster:
+        if isinstance(cluster, Cluster):
+            return cluster
+        else:
+            return self.beaker.cluster.get(cluster)
+
+    def resolve_workspace_name(self, workspace_name: str) -> str:
+        """
+        Takes the name of a workspace (possibly non-existent) and returns a valid full name.
+        """
+        if "/" not in workspace_name:
+            if self.config.default_org is not None:
+                self.validate_beaker_name(workspace_name)
                 return f"{self.config.default_org}/{workspace_name}"
             else:
                 raise OrganizationNotSet(
                     f"No default organization set and workspace name doesn't include "
-                    f"an organization ('{workspace_name}')"
+                    f"an organization ('{workspace_name}'). Make sure you're using a valid "
+                    f"workspace full name or ID."
                 )
         else:
-            org, name = workspace_name.split("/")
-            self._validate_workspace_name(name)
+            org, name = workspace_name.split("/", 1)
+            self.validate_beaker_name(name)
             self.beaker.organization.get(org)
             return workspace_name
 
-    def _resolve_workspace(
-        self, workspace: Optional[Union[str, Workspace]], read_only_ok: bool = False
+    def resolve_workspace(
+        self,
+        workspace: Optional[Union[str, Workspace]],
+        read_only_ok: bool = False,
     ) -> Workspace:
         out: Workspace
         if isinstance(workspace, Workspace):
             out = workspace
         else:
-            workspace_name = self._resolve_workspace_name(workspace)
-            out = self.beaker.workspace.get(workspace_name)
+            out = self.beaker.workspace.get(workspace)
+
         if not read_only_ok and out.archived:
-            raise WorkspaceWriteError(f"Workspace {out.full_name} has been archived")
+            raise WorkspaceWriteError(f"Workspace '{out.full_name}' has been archived")
+
         return out
 
-    def _resolve_org_name(self, org: Optional[str]) -> str:
-        org_name = org or self.config.default_org
-        if org_name is None:
-            raise OrganizationNotSet("'org' argument required since default org name not set")
-        return org_name
+    def resolve_dataset(self, dataset: Union[str, Dataset]) -> Dataset:
+        if isinstance(dataset, Dataset):
+            return dataset
+        else:
+            return self.beaker.dataset.get(dataset)
 
-    def _resolve_org(self, org: Optional[Union[str, Organization]]) -> Organization:
+    def resolve_experiment(self, experiment: Union[str, Experiment]) -> Experiment:
+        if isinstance(experiment, Experiment):
+            return experiment
+        else:
+            return self.beaker.experiment.get(experiment)
+
+    def resolve_image(self, image: Union[str, Image]) -> Image:
+        if isinstance(image, Image):
+            return image
+        else:
+            return self.beaker.image.get(image)
+
+    def resolve_org(self, org: Optional[Union[str, Organization]]) -> Organization:
         if isinstance(org, Organization):
             return org
         else:
-            org_name = self._resolve_org_name(org)
-            return self.beaker.organization.get(org_name)
+            return self.beaker.organization.get(org)
 
-    def _url_quote(self, id: str) -> str:
+    def url_quote(self, id: str) -> str:
         return urllib.parse.quote(id, safe="")
 
-    def _validate_workspace_name(self, name: str):
+    def validate_beaker_name(self, name: str):
         if not name.replace("-", "").replace("_", "").isalnum():
             raise ValueError(
-                f"Workspace name can only contain letters, digits, dashes, and underscores: '{name}'"
+                f"Invalid name '{name}'. Beaker names can only contain letters, digits, dashes, and underscores."
             )

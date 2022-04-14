@@ -14,6 +14,37 @@ class ExperimentClient(ServiceClient):
     Accessed via :data:`Beaker.experiment <beaker.Beaker.experiment>`.
     """
 
+    def get(self, experiment: str) -> Experiment:
+        """
+        Get info about an experiment.
+
+        :param experiment: The experiment ID or name.
+
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+
+        def _get(id: str) -> Experiment:
+            return Experiment.from_json(
+                self.request(
+                    f"experiments/{self.url_quote(id)}",
+                    exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(id))},
+                ).json()
+            )
+
+        try:
+            # Could be an ID or full name, so we try that first.
+            return _get(experiment)
+        except ExperimentNotFound:
+            if "/" not in experiment:
+                # Now try with adding the account name.
+                try:
+                    return _get(f"{self.beaker.account.name}/{experiment}")
+                except ExperimentNotFound:
+                    pass
+            raise
+
     def create(
         self, name: str, spec: Union[ExperimentSpec, PathOrStr], workspace: Optional[str] = None
     ) -> Experiment:
@@ -28,28 +59,18 @@ class ExperimentClient(ServiceClient):
 
         :raises ValueError: If the name is invalid.
         :raises ExperimentConflict: If an experiment with the given name already exists.
-        :raises WorkspaceNotFound: If the workspace doesn't exist.
-        :raises WorkspaceNotSet: If neither ``workspace`` nor
-            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
-        :raises WorkspaceWriteError: If the workspace has been archived.
-        :raises OrganizationNotFound: If the organization doesn't exist.
-        :raises OrganizationNotSet: If the workspace name doesn't start with
-            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
-        :raises ImageNotFound: If the image specified by the spec doesn't exist.
-        :raises DatasetNotFound: If a source dataset in the spec doesn't exist.
-        :raises SecretNotFound: If a source secret in the spec doesn't exist.
-        :raises ClusterNotFound: If the cluster in the spec doesn't exist.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
 
         """
-        self._validate_name(name)
+        self.validate_beaker_name(name)
         json_spec: Dict[str, Any]
         if isinstance(spec, ExperimentSpec):
             json_spec = spec.to_json()
         else:
             spec = ExperimentSpec.from_file(spec)
             json_spec = spec.to_json()
-        workspace: Workspace = self._resolve_workspace(workspace)
+        workspace: Workspace = self.resolve_workspace(workspace)
         self._validate_spec(spec, workspace)
         experiment_data = self.request(
             f"workspaces/{workspace.id}/experiments",
@@ -60,37 +81,20 @@ class ExperimentClient(ServiceClient):
         ).json()
         return self.get(experiment_data["id"])
 
-    def get(self, experiment: str) -> Experiment:
-        """
-        Get info about an experiment.
-
-        :param experiment: The experiment ID or full name.
-
-        :raises ExperimentNotFound: If the experiment can't be found.
-        :raises HTTPError: Any other HTTP exception that can occur.
-        """
-        return Experiment.from_json(
-            self.request(
-                f"experiments/{self._url_quote(experiment)}",
-                exceptions_for_status={
-                    404: ExperimentNotFound(self._not_found_err_msg(experiment))
-                },
-            ).json()
-        )
-
     def spec(self, experiment: Union[str, Experiment]) -> ExperimentSpec:
         """
         Get the :class:`spec <beaker.data_model.ExperimentSpec>` of an experiment.
 
-        :param experiment: The experiment ID, full name, or object.
+        :param experiment: The experiment ID, name, or object.
 
         :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        experiment_id = experiment if isinstance(experiment, str) else experiment.id
+        experiment_id = self.resolve_experiment(experiment).id
         return ExperimentSpec.from_json(
             self.request(
-                f"experiments/{self._url_quote(experiment_id)}/spec",
+                f"experiments/{self.url_quote(experiment_id)}/spec",
                 query={"version": SPEC_VERSION},
                 headers={"Accept": "application/json"},
             ).json()
@@ -100,14 +104,15 @@ class ExperimentClient(ServiceClient):
         """
         Stop an experiment.
 
-        :param experiment: The experiment ID, full name, or object.
+        :param experiment: The experiment ID, name, or object.
 
         :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        experiment_id = experiment if isinstance(experiment, str) else experiment.id
+        experiment_id = self.resolve_experiment(experiment).id
         self.request(
-            f"experiments/{self._url_quote(experiment_id)}/stop",
+            f"experiments/{self.url_quote(experiment_id)}/stop",
             method="PUT",
             exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment_id))},
         )
@@ -116,14 +121,15 @@ class ExperimentClient(ServiceClient):
         """
         Delete an experiment.
 
-        :param experiment: The experiment ID, full name, or object.
+        :param experiment: The experiment ID, name, or object.
 
         :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        experiment_id = experiment if isinstance(experiment, str) else experiment.id
+        experiment_id = self.resolve_experiment(experiment).id
         self.request(
-            f"experiments/{self._url_quote(experiment_id)}",
+            f"experiments/{self.url_quote(experiment_id)}",
             method="DELETE",
             exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment_id))},
         )
@@ -132,18 +138,19 @@ class ExperimentClient(ServiceClient):
         """
         Rename an experiment.
 
-        :param experiment: The experiment ID, full name, or object.
+        :param experiment: The experiment ID, name, or object.
         :param name: The new
 
         :raises ValueError: If the new name is invalid.
         :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        self._validate_name(name)
-        experiment_id = experiment if isinstance(experiment, str) else experiment.id
+        self.validate_beaker_name(name)
+        experiment_id = self.resolve_experiment(experiment).id
         return Experiment.from_json(
             self.request(
-                f"experiments/{self._url_quote(experiment_id)}",
+                f"experiments/{self.url_quote(experiment_id)}",
                 method="PATCH",
                 data={"name": name},
                 exceptions_for_status={
@@ -164,16 +171,17 @@ class ExperimentClient(ServiceClient):
         Returns a generator with the streaming bytes from the download.
         The generator should be exhausted, otherwise the logs downloaded will be incomplete.
 
-        :param experiment: The experiment ID, full name, or object.
+        :param experiment: The experiment ID, name, or object.
         :param job_id: The ID of a specific job from the Beaker experiment to get the logs for.
             Required if there are more than one jobs in the experiment.
         :param quiet: If ``True``, progress won't be displayed.
 
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises JobNotFound: If the job can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        exp = self.get(experiment if isinstance(experiment, str) else experiment.id)
+        exp = self.resolve_experiment(experiment)
         if job_id is None:
             if len(exp.jobs) > 1:
                 raise ValueError(
@@ -186,16 +194,17 @@ class ExperimentClient(ServiceClient):
         """
         List the tasks in an experiment.
 
-        :param experiment: The experiment ID, full name, or object.
+        :param experiment: The experiment ID, name, or object.
 
         :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        experiment_id = experiment if isinstance(experiment, str) else experiment.id
+        experiment_id = self.resolve_experiment(experiment).id
         return [
             Task.from_json(d)
             for d in self.request(
-                f"experiments/{self._url_quote(experiment_id)}/tasks",
+                f"experiments/{self.url_quote(experiment_id)}/tasks",
                 method="GET",
                 exceptions_for_status={
                     404: ExperimentNotFound(self._not_found_err_msg(experiment_id))
@@ -207,9 +216,10 @@ class ExperimentClient(ServiceClient):
         """
         Get the results for the latest job of each task in an experiment.
 
-        :param experiment: The experiment ID, full name, or object.
+        :param experiment: The experiment ID, name, or object.
 
         :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         out: List[Tuple[Task, Dataset]] = []
@@ -236,7 +246,7 @@ class ExperimentClient(ServiceClient):
         """
         Wait for all jobs in the experiments to complete.
 
-        :param experiments: Experiment ID, full name, or object.
+        :param experiments: Experiment ID, name, or object.
         :param timeout: Maximum amount of time to wait for (in seocnds).
         :param poll_interval: Time to wait between polling the experiment (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
@@ -245,13 +255,11 @@ class ExperimentClient(ServiceClient):
 
         :raises ExperimentNotFound: If any experiment can't be found.
         :raises TimeoutError: If the ``timeout`` expires.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         finished: Dict[str, Experiment] = {}
-        exp_ids: List[str] = [
-            experiment if isinstance(experiment, str) else experiment.id
-            for experiment in experiments
-        ]
+        exp_ids: List[str] = [self.resolve_experiment(experiment).id for experiment in experiments]
         start = time.time()
         with Progress(
             "[progress.description]{task.description}", TimeElapsedColumn(), disable=quiet
@@ -301,14 +309,6 @@ class ExperimentClient(ServiceClient):
             f"'{experiment}': Make sure you're using a valid Beaker experiment ID or the "
             f"*full* name of the experiment (with the account prefix, e.g. 'username/experiment_name')"
         )
-
-    def _validate_name(self, name: str) -> None:
-        err_msg = (
-            f"Invalid name '{name}'. Experiment names can only consist of "
-            "letters, digits, dashes, and underscores"
-        )
-        if not name.replace("-", "").replace("_", "").isalnum():
-            raise ValueError(err_msg)
 
     def _validate_spec(self, spec: ExperimentSpec, workspace: Workspace) -> None:
         for task in spec.tasks:
