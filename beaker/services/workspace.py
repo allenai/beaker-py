@@ -94,8 +94,6 @@ class WorkspaceClient(ServiceClient):
         :param workspace: The workspace to archive.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
-        :raises WorkspaceNotSet: If neither ``workspace`` nor
-            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -121,8 +119,6 @@ class WorkspaceClient(ServiceClient):
         :param workspace: The workspace to unarchive.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
-        :raises WorkspaceNotSet: If neither ``workspace`` nor
-            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -149,8 +145,6 @@ class WorkspaceClient(ServiceClient):
             This should only *not* include the organization.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
-        :raises WorkspaceNotSet: If neither ``workspace`` nor
-            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
         :raises ValueError: If the new name is invalid.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
