@@ -85,6 +85,7 @@ class ServiceClient:
             raise WorkspaceNotSet("'workspace' argument required since default workspace not set")
         elif "/" not in workspace_name:
             if self.config.default_org is not None:
+                self._validate_workspace_name(workspace_name)
                 return f"{self.config.default_org}/{workspace_name}"
             else:
                 raise OrganizationNotSet(
@@ -93,6 +94,7 @@ class ServiceClient:
                 )
         else:
             org, name = workspace_name.split("/")
+            self._validate_workspace_name(name)
             self.beaker.organization.get(org)
             return workspace_name
 
@@ -124,3 +126,9 @@ class ServiceClient:
 
     def _url_quote(self, id: str) -> str:
         return urllib.parse.quote(id, safe="")
+
+    def _validate_workspace_name(self, name: str):
+        if not name.replace("-", "").replace("_", "").isalnum():
+            raise ValueError(
+                f"Workspace name can only contain letters, digits, dashes, and underscores: '{name}'"
+            )
