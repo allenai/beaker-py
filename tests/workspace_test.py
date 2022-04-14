@@ -53,3 +53,12 @@ def test_organization_not_set(client: Beaker, archived_workspace: Workspace):
     client.config.default_org = None
     with pytest.raises(OrganizationNotSet):
         client.workspace.secrets(archived_workspace.name)
+
+
+def test_workspace_move(
+    client: Beaker, workspace_name: str, alternate_workspace_name: str, dataset_name: str
+):
+    dataset = client.dataset.create(dataset_name, workspace=alternate_workspace_name)
+    assert dataset.workspace_ref.full_name == alternate_workspace_name
+    client.workspace.move(dataset)
+    assert client.dataset.get(dataset.id).workspace_ref.full_name == workspace_name

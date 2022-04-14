@@ -161,6 +161,37 @@ class WorkspaceClient(ServiceClient):
             ).json()
         )
 
+    def move(
+        self,
+        *items: Union[str, Image, Dataset, Experiment],
+        workspace: Optional[Union[str, Workspace]] = None,
+    ):
+        """
+        Move items into a workspace.
+
+        :param items: The items to move into the workspace.
+        :param workspace: The Beaker workspace name or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises WorkspaceWriteError: If the workspace has been archived.
+        :raises OrganizationNotSet: If the workspace name doesn't start with
+            an organization and :data:`Config.default_org <beaker.Config.default_org>` is not set.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        workspace: Workspace = self._resolve_workspace(workspace)
+        self.request(
+            f"workspaces/{self._url_quote(workspace.full_name)}/transfer",
+            method="POST",
+            data={"ids": [item if isinstance(item, str) else item.id for item in items]},
+            exceptions_for_status={
+                403: WorkspaceWriteError(workspace.full_name),
+                404: WorkspaceNotFound(self._not_found_err_msg(workspace.full_name)),
+            },
+        )
+
     def list(
         self,
         org: Optional[Union[str, Organization]] = None,
@@ -228,7 +259,7 @@ class WorkspaceClient(ServiceClient):
         """
         List the images in a workspace.
 
-        :param workspace: The Beaker workspace ID, full name, or object. If not specified,
+        :param workspace: The Beaker workspace name or object. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param match: Only include images matching the text.
         :param limit: Limit the number of images returned.
@@ -251,11 +282,11 @@ class WorkspaceClient(ServiceClient):
             query["cursor"] = cursor or ""
             page = ImagesPage.from_json(
                 self.request(
-                    f"workspaces/{self._url_quote(workspace.id)}/images",
+                    f"workspaces/{self._url_quote(workspace.full_name)}/images",
                     method="GET",
                     query=query,
                     exceptions_for_status={
-                        404: WorkspaceNotFound(self._not_found_err_msg(workspace.id))
+                        404: WorkspaceNotFound(self._not_found_err_msg(workspace.full_name))
                     },
                 ).json()
             )
@@ -278,7 +309,7 @@ class WorkspaceClient(ServiceClient):
         """
         List the experiments in a workspace.
 
-        :param workspace: The Beaker workspace ID, full name, or object. If not specified,
+        :param workspace: The Beaker workspace name or object. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param match: Only include experiments matching the text.
         :param limit: Limit the number of experiments returned.
@@ -301,11 +332,11 @@ class WorkspaceClient(ServiceClient):
             query["cursor"] = cursor or ""
             page = ExperimentsPage.from_json(
                 self.request(
-                    f"workspaces/{self._url_quote(workspace.id)}/experiments",
+                    f"workspaces/{self._url_quote(workspace.full_name)}/experiments",
                     method="GET",
                     query=query,
                     exceptions_for_status={
-                        404: WorkspaceNotFound(self._not_found_err_msg(workspace.id))
+                        404: WorkspaceNotFound(self._not_found_err_msg(workspace.full_name))
                     },
                 ).json()
             )
@@ -330,7 +361,7 @@ class WorkspaceClient(ServiceClient):
         """
         List the datasets in a workspace.
 
-        :param workspace: The Beaker workspace ID, full name, or object. If not specified,
+        :param workspace: The Beaker workspace name, or object. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param match: Only include datasets matching the text.
         :param results: Only include/exclude experiment result datasets.
@@ -359,11 +390,11 @@ class WorkspaceClient(ServiceClient):
             query["cursor"] = cursor or ""
             page = DatasetsPage.from_json(
                 self.request(
-                    f"workspaces/{self._url_quote(workspace.id)}/datasets",
+                    f"workspaces/{self._url_quote(workspace.full_name)}/datasets",
                     method="GET",
                     query=query,
                     exceptions_for_status={
-                        404: WorkspaceNotFound(self._not_found_err_msg(workspace.id))
+                        404: WorkspaceNotFound(self._not_found_err_msg(workspace.full_name))
                     },
                 ).json()
             )
@@ -381,7 +412,7 @@ class WorkspaceClient(ServiceClient):
         """
         List secrets in a workspace.
 
-        :param workspace: The Beaker workspace ID, full name, or object. If not specified,
+        :param workspace: The Beaker workspace name, or object. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
@@ -395,17 +426,17 @@ class WorkspaceClient(ServiceClient):
         return [
             Secret.from_json(d)
             for d in self.request(
-                f"workspaces/{self._url_quote(workspace.id)}/secrets",
+                f"workspaces/{self._url_quote(workspace.full_name)}/secrets",
                 method="GET",
                 exceptions_for_status={
-                    404: WorkspaceNotFound(self._not_found_err_msg(workspace.id))
+                    404: WorkspaceNotFound(self._not_found_err_msg(workspace.full_name))
                 },
             ).json()["data"]
         ]
 
     def _not_found_err_msg(self, workspace: str) -> str:
         return (
-            f"'{workspace}': Make sure you're using the workspace ID or *full* name "
+            f"'{workspace}': Make sure you're using the workspace *full* name "
             f"(with the organization prefix, e.g. 'org/workspace_name')"
         )
 

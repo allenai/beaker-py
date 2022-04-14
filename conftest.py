@@ -12,8 +12,14 @@ from beaker.exceptions import *
 
 @pytest.fixture()
 def workspace_name() -> str:
-    workspace = "ai2/petew-testing"
-    return workspace
+    name = "ai2/petew-testing"
+    return name
+
+
+@pytest.fixture()
+def alternate_workspace_name() -> str:
+    name = "ai2/petew-testing-alternate"
+    return name
 
 
 @pytest.fixture()
