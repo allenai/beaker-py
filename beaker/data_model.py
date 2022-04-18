@@ -811,12 +811,12 @@ class Jobs(BaseModel):
 
 class Experiment(BaseModel):
     id: str
-    name: str
-    full_name: str
     owner: Account
     author: Account
     created: datetime
     workspace_ref: WorkspaceRef
+    name: Optional[str] = None
+    full_name: Optional[str] = None
     jobs: List[Job] = Field(default_factory=list)
 
 

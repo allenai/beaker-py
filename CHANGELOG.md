@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Fixed issue in data model for `Experiment`. `name` and `full_name` are now optional.
+
 ## [v0.8.3](https://github.com/allenai/beaker-py/releases/tag/v0.8.3) - 2022-04-14
 
 ### Added
