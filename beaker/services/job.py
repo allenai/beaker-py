@@ -111,7 +111,7 @@ class JobClient(ServiceClient):
         .. seealso::
             :meth:`Beaker.experiment.logs() <ExperimentClient.logs>`
 
-        :param job_id: The Beaker job ID or object.
+        :param job: The Beaker job ID or object.
         :param quiet: If ``True``, progress won't be displayed.
 
         :raises JobNotFound: If the job can't be found.
@@ -121,6 +121,7 @@ class JobClient(ServiceClient):
         job_id = job.id if isinstance(job, Job) else job
         response = self.request(
             f"jobs/{job_id}/logs",
+            method="GET",
             exceptions_for_status={404: JobNotFound(job_id)},
             stream=True,
         )
@@ -144,6 +145,22 @@ class JobClient(ServiceClient):
                     total += advance
                     progress.update(task_id, total=total + 1, advance=advance)
                     yield chunk
+
+    def results(self, job: Union[str, Job]) -> Dict[str, Any]:
+        """
+        Get the results for a job.
+
+        :param job: The Beaker job ID or object.
+
+        :raises JobNotFound: If the job can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        job_id = job.id if isinstance(job, Job) else job
+        return self.request(
+            f"jobs/{job_id}/results",
+            method="GET",
+            exceptions_for_status={404: JobNotFound(job_id)},
+        ).json()["metrics"]
 
     def finalize(self, job: Union[str, Job]) -> Job:
         """
