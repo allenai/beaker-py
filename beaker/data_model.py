@@ -899,13 +899,13 @@ class DatasetManifest(BaseModel):
 
 class Image(BaseModel):
     id: str
-    name: str
-    full_name: str
     original_tag: str
     owner: Account
     author: Account
     created: datetime
     workspace_ref: WorkspaceRef
+    name: Optional[str] = None
+    full_name: Optional[str] = None
     committed: Optional[datetime] = None
 
     @validator("committed")
