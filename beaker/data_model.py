@@ -948,3 +948,14 @@ class WorkspacePermissions(BaseModel):
     """
     A dictionary of account IDs to authorizations.
     """
+
+
+class Group(BaseModel):
+    id: str
+    owner: Account
+    author: Account
+    created: datetime
+    modified: datetime
+    name: Optional[str] = None
+    full_name: Optional[str] = None
+    workspace_ref: Optional[WorkspaceRef] = None

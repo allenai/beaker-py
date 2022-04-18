@@ -202,6 +202,15 @@ For example, you can read, write, or delete secrets with
 :meth:`Beaker.secret.write() <services.SecretClient.write>`, and
 :meth:`Beaker.secret.delete() <services.SecretClient.delete>`, respectively.
 
+Groups
+------
+
+Manage Beaker groups with :data:`Beaker.group`.
+
+For example, create a group with :meth:`Beaker.group.create() <services.GroupClient.create>`:
+
+>>> group = beaker.group.create(group_name, experiment)
+
 """
 
 from .client import *

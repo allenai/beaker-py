@@ -55,6 +55,7 @@ class Beaker:
         self._job = JobClient(self)
         self._experiment = ExperimentClient(self)
         self._secret = SecretClient(self)
+        self._group = GroupClient(self)
 
         # Ensure default workspace exists.
         if self._config.default_workspace is not None:
@@ -300,6 +301,22 @@ class Beaker:
             to see all of the available methods.
         """
         return self._secret
+
+    @property
+    def group(self) -> GroupClient:
+        """
+        Manage groups.
+
+        :examples:
+
+        >>> experiments = beaker.group.experiments(group_name)
+
+        .. tip::
+            See the `Groups Overview <overview.html#groups>`_ for a walk-through of the
+            main methods, or check out the `Group API Docs <#group>`_
+            to see all of the available methods.
+        """
+        return self._group
 
     @property
     def docker(self) -> docker.DockerClient:

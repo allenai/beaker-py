@@ -16,6 +16,7 @@ def doctest_fixtures(
     beaker_org_name,
     beaker_node_id,
     secret_name,
+    group_name,
 ):
     doctest_namespace["beaker"] = client
     doctest_namespace["workspace_name"] = workspace_name
@@ -29,3 +30,4 @@ def doctest_fixtures(
     doctest_namespace["beaker_org_name"] = beaker_org_name
     doctest_namespace["beaker_node_id"] = beaker_node_id
     doctest_namespace["secret_name"] = secret_name
+    doctest_namespace["group_name"] = group_name

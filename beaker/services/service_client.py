@@ -155,6 +155,12 @@ class ServiceClient:
         else:
             return self.beaker.image.get(image)
 
+    def resolve_group(self, group: Union[str, Group]) -> Group:
+        if isinstance(group, Group):
+            return group
+        else:
+            return self.beaker.group.get(group)
+
     def resolve_org(self, org: Optional[Union[str, Organization]]) -> Organization:
         if isinstance(org, Organization):
             return org
