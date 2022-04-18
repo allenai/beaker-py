@@ -158,7 +158,7 @@ class ExperimentClient(ServiceClient):
         Rename an experiment.
 
         :param experiment: The experiment ID, name, or object.
-        :param name: The new
+        :param name: The new name for the experiment.
 
         :raises ValueError: If the new name is invalid.
         :raises ExperimentNotFound: If the experiment can't be found.
@@ -173,7 +173,8 @@ class ExperimentClient(ServiceClient):
                 method="PATCH",
                 data={"name": name},
                 exceptions_for_status={
-                    404: ExperimentNotFound(self._not_found_err_msg(experiment_id))
+                    404: ExperimentNotFound(self._not_found_err_msg(experiment_id)),
+                    409: ExperimentConflict(name),
                 },
             ).json()
         )
@@ -285,7 +286,8 @@ class ExperimentClient(ServiceClient):
         ) as progress:
             exp_id_to_task: Dict[str, TaskID] = {}
             for exp_id in exp_ids:
-                exp_id_to_task[exp_id] = progress.add_task(f"{exp_id} - waiting")
+                if exp_id not in exp_id_to_task:
+                    exp_id_to_task[exp_id] = progress.add_task(f"{exp_id} - waiting")
 
             polls = 0
             while True:

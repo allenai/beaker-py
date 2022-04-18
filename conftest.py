@@ -174,3 +174,23 @@ def squad_dataset_name(client: Beaker) -> str:
 @pytest.fixture()
 def alternate_user(client: Beaker) -> Account:
     return client.account.get("epwalsh10")
+
+
+@pytest.fixture()
+def group_name(client: Beaker) -> Generator[str, None, None]:
+    group = petname.generate() + "-" + str(uuid.uuid4())[:8]
+    yield group
+    try:
+        client.group.delete(f"{client.account.whoami().name}/{group}")
+    except GroupNotFound:
+        pass
+
+
+@pytest.fixture()
+def alternate_group_name(client: Beaker) -> Generator[str, None, None]:
+    group = petname.generate() + "-" + str(uuid.uuid4())[:8]
+    yield group
+    try:
+        client.group.delete(f"{client.account.whoami().name}/{group}")
+    except GroupNotFound:
+        pass

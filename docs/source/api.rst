@@ -78,6 +78,13 @@ Secret
    :members:
    :member-order: bysource
 
+Group
+~~~~~
+
+.. autoclass:: beaker.services.GroupClient
+   :members:
+   :member-order: bysource
+
 Data Models
 -----------
 

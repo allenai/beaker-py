@@ -139,3 +139,13 @@ class DatasetReadError(BeakerError):
 
 class SecretNotFound(BeakerError):
     pass
+
+
+class GroupConflict(BeakerError):
+    """
+    Raised when attempting to create/rename a group if a group by that name already exists.
+    """
+
+
+class GroupNotFound(BeakerError):
+    pass

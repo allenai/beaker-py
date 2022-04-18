@@ -434,6 +434,31 @@ class WorkspaceClient(ServiceClient):
             ).json()["data"]
         ]
 
+    def groups(self, workspace: Optional[Union[str, Workspace]] = None) -> List[Group]:
+        """
+        List groups in a workspace.
+
+        :param workspace: The Beaker workspace name, or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
+        return [
+            Group.from_json(d)
+            for d in self.request(
+                f"workspaces/{self.url_quote(workspace_name)}/groups",
+                method="GET",
+                exceptions_for_status={
+                    404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
+                },
+            ).json()["data"]
+        ]
+
     def get_permissions(
         self, workspace: Optional[Union[str, Workspace]] = None
     ) -> WorkspacePermissions:
