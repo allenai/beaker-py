@@ -66,8 +66,11 @@ pip install -e .
 
 <!-- start quickstart -->
 
-Set the environment variable `BEAKER_TOKEN` to your Beaker [user token](https://beaker.org/user).
-Then you can instantiate the Beaker client with `.from_env()`:
+If you've already configured the [Beaker command-line client](https://github.com/allenai/beaker/), **beaker-py** will 
+find and use the existing configuration file (usually located at `$HOME/.beaker/config.yml`).
+Otherwise just set the environment variable `BEAKER_TOKEN` to your Beaker [user token](https://beaker.org/user).
+
+Either way, you should then instantiate the Beaker client with `.from_env()`:
 
 ```python
 from beaker import Beaker
