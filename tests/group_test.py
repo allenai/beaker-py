@@ -29,3 +29,7 @@ def test_group_methods(
     # Test group conflict error.
     with pytest.raises(GroupConflict):
         client.group.create(alternate_group_name)
+
+    # List groups in the workspace.
+    group_names = [group.name for group in client.workspace.groups()]
+    assert alternate_group_name in group_names
