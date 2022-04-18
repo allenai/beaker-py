@@ -119,6 +119,23 @@ class ExperimentClient(ServiceClient):
             exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment_id))},
         )
 
+    def resume(self, experiment: Union[str, Experiment]):
+        """
+        Resume a preempted experiment.
+
+        :param experiment: The experiment ID, name, or object.
+
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        experiment_id = self.resolve_experiment(experiment).id
+        self.request(
+            f"experiments/{self.url_quote(experiment_id)}/resume",
+            method="POST",
+            exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment_id))},
+        )
+
     def delete(self, experiment: Union[str, Experiment]):
         """
         Delete an experiment.

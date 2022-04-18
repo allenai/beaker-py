@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `Beaker.experiment.resume()` method.
+
 ## [v0.8.4](https://github.com/allenai/beaker-py/releases/tag/v0.8.4) - 2022-04-18
 
 ### Fixed
