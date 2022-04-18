@@ -105,7 +105,8 @@ class Beaker:
         Initialize client from a config file and/or environment variables.
 
         .. note::
-            This will use the same config file that the `Beaker command-line client <https://github.com/allenai/beaker/>`_
+            This will use the same config file that the `Beaker command-line client
+            <https://github.com/allenai/beaker/>`_
             creates and uses, which is usually located at ``$HOME/.beaker/config.yml``.
 
             If you haven't configured the command-line client, then you can alternately just
