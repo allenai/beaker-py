@@ -150,6 +150,9 @@ class JobClient(ServiceClient):
         """
         Get the metrics from a job.
 
+        .. seealso::
+            :meth:`Beaker.experiment.metrics() <ExperimentClient.metrics>`
+
         :param job: The Beaker job ID or object.
 
         :raises JobNotFound: If the job can't be found.
@@ -165,6 +168,9 @@ class JobClient(ServiceClient):
     def results(self, job: Union[str, Job]) -> Optional[Dataset]:
         """
         Get the results from a job.
+
+        .. seealso::
+            :meth:`Beaker.experiment.results() <ExperimentClient.results>`
 
         :param job: The Beaker job ID or object.
 

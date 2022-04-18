@@ -250,6 +250,9 @@ class ExperimentClient(ServiceClient):
             When there are multiple jobs for the given experiment / task, the metrics for
             the latest finalized job will be returned.
 
+        .. seealso::
+            :meth:`Beaker.job.metrics() <JobClient.metrics>`
+
         :param experiment: The experiment ID, name, or object.
         :param task_name: The name of the task from the Beaker experiment.
             Required if there are multiple tasks in the experiment.
@@ -273,6 +276,9 @@ class ExperimentClient(ServiceClient):
         .. important::
             When there are multiple jobs for the given experiment / task, the metrics for
             the latest finalized job will be returned.
+
+        .. seealso::
+            :meth:`Beaker.job.results() <JobClient.results>`
 
         :param experiment: The experiment ID, name, or object.
         :param task_name: The name of the task from the Beaker experiment.

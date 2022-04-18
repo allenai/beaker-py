@@ -160,7 +160,7 @@ Manage Beaker jobs with :data:`Beaker.job`.
 
 For example, get the logs from a job with :meth:`Beaker.job.logs() <services.JobClient.logs>`
 (equivalent to :meth:`Beaker.experiment.logs() <services.ExperimentClient.logs>` when there is
-only one job in the experiment):
+only one task in the experiment):
 
 >>> job = experiment.jobs[0]
 >>> logs = "".join([
