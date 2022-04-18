@@ -309,7 +309,7 @@ class Beaker:
 
         :examples:
 
-        >>> experiments = beaker.group.experiments(group_name)
+        >>> group = beaker.group.create(group_name)
 
         .. tip::
             See the `Groups Overview <overview.html#groups>`_ for a walk-through of the
