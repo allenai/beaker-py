@@ -92,8 +92,10 @@ class Beaker:
                 if latest_version > packaging.version.parse(VERSION):
                     warnings.warn(
                         f"You're using beaker-py v{VERSION}, "
-                        f"but a newer version (v{latest_version}) is available. "
-                        f"Please upgrade with `pip install --upgrade beaker-py`.",
+                        f"but a newer version (v{latest_version}) is available.\n\n"
+                        f"Please upgrade with `pip install --upgrade beaker-py`.\n\n"
+                        f"You can find the release notes for v{latest_version} at "
+                        f"https://github.com/allenai/beaker-py/releases/tag/v{latest_version}\n",
                         UserWarning,
                     )
                     _UPGRADE_WARNING_ISSUED = True
