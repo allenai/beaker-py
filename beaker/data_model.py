@@ -570,6 +570,18 @@ class ExperimentSpec(BaseModel):
             raise ValueError(f"Spec version '{v}' is not supported")
         return v
 
+    @validator("tasks")
+    def _validate_tasks(cls, v: List[TaskSpec]) -> List[TaskSpec]:
+        task_names = set()
+        for task in v:
+            if task.name is None:
+                continue
+            if task.name in task_names:
+                raise ValueError(f"Duplicate task name '{task.name}'")
+            else:
+                task_names.add(task.name)
+        return v
+
     @classmethod
     def from_file(cls, path: PathOrStr) -> "ExperimentSpec":
         """
@@ -597,6 +609,10 @@ class ExperimentSpec(BaseModel):
         ...     )
         ... )
         """
+        if task.name is not None:
+            for other_task in self.tasks:
+                if task.name == other_task.name:
+                    raise ValueError(f"A task with the name '{task.name}' already exists")
         return self.copy(
             deep=True, update={"tasks": [d.copy(deep=True) for d in self.tasks or []] + [task]}
         )

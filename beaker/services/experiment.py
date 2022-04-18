@@ -1,5 +1,5 @@
 import time
-from typing import Any, Callable, Dict, Generator, Tuple, Union
+from typing import Any, Callable, Dict, Generator, Union
 
 from rich.progress import Progress, TaskID, TimeElapsedColumn
 
@@ -179,37 +179,6 @@ class ExperimentClient(ServiceClient):
             ).json()
         )
 
-    def logs(
-        self,
-        experiment: Union[str, Experiment],
-        job_id: Optional[str] = None,
-        quiet: bool = False,
-    ) -> Generator[bytes, None, None]:
-        """
-        Download the logs for an experiment.
-
-        Returns a generator with the streaming bytes from the download.
-        The generator should be exhausted, otherwise the logs downloaded will be incomplete.
-
-        :param experiment: The experiment ID, name, or object.
-        :param job_id: The ID of a specific job from the Beaker experiment to get the logs for.
-            Required if there are more than one jobs in the experiment.
-        :param quiet: If ``True``, progress won't be displayed.
-
-        :raises ExperimentNotFound: If the experiment can't be found.
-        :raises JobNotFound: If the job can't be found.
-        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
-        """
-        exp = self.resolve_experiment(experiment)
-        if job_id is None:
-            if len(exp.jobs) > 1:
-                raise ValueError(
-                    f"Experiment {exp.id} has more than 1 job. You need to specify the 'job_id'."
-                )
-            job_id = exp.jobs[0].id
-        return self.beaker.job.logs(job_id, quiet=quiet)
-
     def tasks(self, experiment: Union[str, Experiment]) -> List[Task]:
         """
         List the tasks in an experiment.
@@ -232,28 +201,96 @@ class ExperimentClient(ServiceClient):
             ).json()
         ]
 
-    def results(self, experiment: Union[str, Experiment]) -> List[Tuple[Task, Dataset]]:
+    def logs(
+        self,
+        experiment: Union[str, Experiment],
+        task_name: Optional[str] = None,
+        quiet: bool = False,
+    ) -> Generator[bytes, None, None]:
         """
-        Get the results for the latest job of each task in an experiment.
+        Download the logs for an experiment.
+
+        Returns a generator with the streaming bytes from the download.
+        The generator should be exhausted, otherwise the logs downloaded will be incomplete.
+
+        .. important::
+            When there are multiple jobs for the given experiment / task, the logs for the latest job
+            will be returned.
+
+        .. seealso::
+            :meth:`Beaker.job.logs() <JobClient.logs>`
 
         :param experiment: The experiment ID, name, or object.
+        :param task_name: The name of the task from the Beaker experiment.
+            Required if there are multiple tasks in the experiment.
+        :param quiet: If ``True``, progress won't be displayed.
 
+        :raises ValueError: The experiment has no tasks or jobs, or the experiment has multiple tasks but
+            ``task_name`` is not specified.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        out: List[Tuple[Task, Dataset]] = []
-        for task in self.tasks(experiment):
-            jobs = [job for job in task.jobs if job.execution is not None]
-            if not jobs:
-                continue
-            latest_job = sorted(jobs, key=lambda job: (job.status.finalized, job.status.created))[
-                -1
-            ]
-            assert latest_job.execution is not None  # for mypy.
-            result_dataset = self.beaker.dataset.get(latest_job.execution.result.beaker)
-            out.append((task, result_dataset))
-        return out
+        exp = self.resolve_experiment(experiment)
+        job = self._latest_job_for_task(exp, task_name=task_name, ensure_finalized=False)
+        if job is None:
+            if task_name is None:
+                raise ValueError(f"Experiment {exp.id} has no jobs")
+            else:
+                raise ValueError(f"Experiment {exp.id} has no jobs for task '{task_name}'")
+        return self.beaker.job.logs(job.id, quiet=quiet)
+
+    def metrics(
+        self, experiment: Union[str, Experiment], task_name: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get the metrics from a task in an experiment.
+
+        .. important::
+            When there are multiple jobs for the given experiment / task, the metrics for
+            the latest finalized job will be returned.
+
+        :param experiment: The experiment ID, name, or object.
+        :param task_name: The name of the task from the Beaker experiment.
+            Required if there are multiple tasks in the experiment.
+
+        :raises ValueError: The experiment has no tasks, or the experiment has multiple tasks but
+            ``task_name`` is not specified.
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        exp = self.resolve_experiment(experiment)
+        job = self._latest_job_for_task(exp, task_name=task_name, ensure_finalized=True)
+        return None if job is None else self.beaker.job.metrics(job.id)
+
+    def results(
+        self, experiment: Union[str, Experiment], task_name: Optional[str] = None
+    ) -> Optional[Dataset]:
+        """
+        Get the result dataset from a task in an experiment.
+
+        .. important::
+            When there are multiple jobs for the given experiment / task, the metrics for
+            the latest finalized job will be returned.
+
+        :param experiment: The experiment ID, name, or object.
+        :param task_name: The name of the task from the Beaker experiment.
+            Required if there are multiple tasks in the experiment.
+
+        :raises ValueError: The experiment has no tasks, or the experiment has multiple tasks but
+            ``task_name`` is not specified.
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        exp = self.resolve_experiment(experiment)
+        job = self._latest_job_for_task(exp, task_name=task_name, ensure_finalized=True)
+        if job is None:
+            return None
+        else:
+            assert job.execution is not None  # for mypy
+            return self.beaker.dataset.get(job.execution.result.beaker)
 
     def await_all(
         self,
@@ -354,3 +391,37 @@ class ExperimentClient(ServiceClient):
                     self.beaker.secret.get(env_var.secret, workspace=workspace)
             # Make sure cluster exists.
             self.beaker.cluster.get(task.context.cluster)
+
+    def _latest_job_for_task(
+        self,
+        experiment: Experiment,
+        task_name: Optional[str] = None,
+        ensure_finalized: bool = False,
+    ) -> Optional[Job]:
+        tasks = self.tasks(experiment)
+
+        if not tasks:
+            raise ValueError(f"Experiment '{experiment.id}' has no tasks")
+        elif len(tasks) > 1:
+            if not task_name:
+                raise ValueError(
+                    f"'task_name' required since experiment '{experiment.id}' has multiple tasks"
+                )
+            else:
+                tasks = [task for task in tasks if task.name == task_name]
+                if not tasks:
+                    raise ValueError(f"No task named '{task_name}' in experiment '{experiment.id}'")
+
+        task = tasks[0]
+        return self._latest_job(task.jobs, ensure_finalized=ensure_finalized)
+
+    def _latest_job(self, jobs: List[Job], ensure_finalized: bool = False) -> Optional[Job]:
+        if ensure_finalized:
+            jobs = [
+                job
+                for job in jobs
+                if job.status.current == CurrentJobStatus.finalized and job.execution is not None
+            ]
+        if not jobs:
+            return None
+        return sorted(jobs, key=lambda job: (job.status.finalized, job.status.created))[-1]

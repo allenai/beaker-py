@@ -139,7 +139,8 @@ Wait for the experiment to complete with
 ... )[0]
 <BLANKLINE>
 
-Get the logs from the experiment with :meth:`Beaker.experiment.logs() <services.ExperimentClient.logs>`:
+Get the logs from the execution of a task in an experiment with
+:meth:`Beaker.experiment.logs() <services.ExperimentClient.logs>`:
 
 >>> logs = "".join([
 ...    line.decode() for line in
@@ -147,10 +148,10 @@ Get the logs from the experiment with :meth:`Beaker.experiment.logs() <services.
 ... ])
 <BLANKLINE>
 
-Get the results from all tasks in an experiment with
+Get the results from a task in an experiment with
 :meth:`Beaker.experiment.results <services.ExperimentClient.results>`:
 
->>> task, results = beaker.experiment.results(experiment)[0]
+>>> results = beaker.experiment.results(experiment)
 
 Jobs
 ----

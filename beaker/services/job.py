@@ -146,9 +146,9 @@ class JobClient(ServiceClient):
                     progress.update(task_id, total=total + 1, advance=advance)
                     yield chunk
 
-    def results(self, job: Union[str, Job]) -> Dict[str, Any]:
+    def metrics(self, job: Union[str, Job]) -> Optional[Dict[str, Any]]:
         """
-        Get the results for a job.
+        Get the metrics from a job.
 
         :param job: The Beaker job ID or object.
 
@@ -161,6 +161,21 @@ class JobClient(ServiceClient):
             method="GET",
             exceptions_for_status={404: JobNotFound(job_id)},
         ).json()["metrics"]
+
+    def results(self, job: Union[str, Job]) -> Optional[Dataset]:
+        """
+        Get the results from a job.
+
+        :param job: The Beaker job ID or object.
+
+        :raises JobNotFound: If the job can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        job: Job = self.get(job.id if isinstance(job, Job) else job)
+        if job.execution is None:
+            return None
+        else:
+            return self.beaker.dataset.get(job.execution.result.beaker)
 
     def finalize(self, job: Union[str, Job]) -> Job:
         """

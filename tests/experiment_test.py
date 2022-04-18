@@ -5,7 +5,6 @@ from beaker import (
     ClusterNotFound,
     CurrentJobStatus,
     DataMount,
-    Dataset,
     DatasetNotFound,
     DataSource,
     ExperimentConflict,
@@ -15,7 +14,6 @@ from beaker import (
     ImageSource,
     ResultSpec,
     SecretNotFound,
-    Task,
     TaskContext,
     TaskSpec,
 )
@@ -37,12 +35,25 @@ def test_experiment_tasks(client: Beaker, hello_world_experiment_id: str):
     assert len(tasks) == 1
 
 
-def test_experiment_results(client: Beaker, hello_world_experiment_id: str):
+def test_experiment_metrics_none(client: Beaker, hello_world_experiment_id: str):
+    metrics = client.experiment.metrics(hello_world_experiment_id)
+    assert metrics is None
+
+
+def test_experiment_metrics(client: Beaker, experiment_id_with_metrics: str):
+    metrics = client.experiment.metrics(experiment_id_with_metrics)
+    assert metrics is not None
+
+
+def test_experiment_results(client, experiment_id_with_results: str):
+    results = client.experiment.results(experiment_id_with_results)
+    assert results is not None
+    assert client.dataset.size(results) > 0
+
+
+def test_experiment_empty_results(client: Beaker, hello_world_experiment_id: str):
     results = client.experiment.results(hello_world_experiment_id)
-    assert len(results) == 1
-    task, results = results[0]
-    assert isinstance(task, Task)
-    assert isinstance(results, Dataset)
+    assert results is not None
     assert client.dataset.size(results) == 0
 
 
