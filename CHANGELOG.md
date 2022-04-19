@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Beaker.job.wait_for()` method.
 - Added `Beaker.job.as_completed()` method.
 - Added `Beaker.experiment.as_completed()` method.
+- Added `Beaker.image.commit()` method.
+- Added `commit` parameter to `Beaker.image.create()`.
 
 ### Changed
 

@@ -993,6 +993,17 @@ class Group(BaseModel):
     workspace_ref: Optional[WorkspaceRef] = None
 
 
+class ImageRepoAuth(BaseModel):
+    user: str
+    password: str
+    server_address: str
+
+
+class ImageRepo(BaseModel):
+    image_tag: str
+    auth: ImageRepoAuth
+
+
 class DockerLayerUploadProgress(BaseModel):
     current: Optional[int] = None
     total: Optional[int] = None

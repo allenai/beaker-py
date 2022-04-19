@@ -49,6 +49,7 @@ class ImageClient(ServiceClient):
         image_tag: str,
         workspace: Optional[str] = None,
         quiet: bool = False,
+        commit: bool = True,
     ) -> Image:
         """
         Upload a Docker image to Beaker.
@@ -58,6 +59,7 @@ class ImageClient(ServiceClient):
         :param workspace: The workspace to upload the image to. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param quiet: If ``True``, progress won't be displayed.
+        :param commit: Whether to commit the image after successful upload.
 
         :raises ValueError: If the image name is invalid.
         :raises ImageConflict: If an image with the given name already exists.
@@ -74,22 +76,21 @@ class ImageClient(ServiceClient):
         image = self.docker.images.get(image_tag)
 
         # Create new image on Beaker.
-        image_data = self.request(
+        image_id = self.request(
             "images",
             method="POST",
             data={"Workspace": workspace.id, "ImageID": image.id, "ImageTag": image_tag},
             query={"name": name},
             exceptions_for_status={409: ImageConflict(name)},
-        ).json()
+        ).json()["id"]
 
         # Get the repo data for the Beaker image.
-        repo_data = self.request(
-            f"images/{image_data['id']}/repository", query={"upload": True}
-        ).json()
-        auth = repo_data["auth"]
+        repo = ImageRepo.from_json(
+            self.request(f"images/{image_id}/repository", query={"upload": True}).json()
+        )
 
         # Tag the local image with the new tag for the Beaker image.
-        image.tag(repo_data["imageTag"])
+        image.tag(repo.image_tag)
 
         # Push the image to Beaker.
         from ..progress import get_image_upload_progress
@@ -97,13 +98,13 @@ class ImageClient(ServiceClient):
         with get_image_upload_progress(quiet) as progress:
             layer_id_to_task: Dict[str, "TaskID"] = {}
             for layer_state_data in self.docker.api.push(
-                repo_data["imageTag"],
+                repo.image_tag,
                 stream=True,
                 decode=True,
                 auth_config={
-                    "username": auth["user"],
-                    "password": auth["password"],
-                    "server_address": auth["server_address"],
+                    "username": repo.auth.user,
+                    "password": repo.auth.password,
+                    "server_address": repo.auth.server_address,
                 },
             ):
                 if "id" not in layer_state_data or "status" not in layer_state_data:
@@ -157,11 +158,25 @@ class ImageClient(ServiceClient):
                 else:
                     raise ValueError(f"unhandled status '{layer_state.status}' (layer_state)")
 
-        # Commit changes to Beaker.
-        self.request(f"images/{image_data['id']}", method="PATCH", data={"Commit": True})
+        if commit:
+            return self.commit(image_id)
+        else:
+            return self.get(image_id)
 
-        # Return info about the Beaker image.
-        return self.get(image_data["id"])
+    def commit(self, image: Union[str, Image]) -> Image:
+        """
+        Commit an image.
+
+        :param image: The Beaker image ID, name, or object.
+
+        :raises ImageNotFound: If the image can't be found on Beaker.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        image_id = self.resolve_image(image).id
+        return Image.from_json(
+            self.request(f"images/{image_id}", method="PATCH", data={"Commit": True}).json()
+        )
 
     def delete(self, image: Union[str, Image]):
         """
