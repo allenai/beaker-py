@@ -991,3 +991,26 @@ class Group(BaseModel):
     name: Optional[str] = None
     full_name: Optional[str] = None
     workspace_ref: Optional[WorkspaceRef] = None
+
+
+class DockerLayerUploadProgress(BaseModel):
+    current: Optional[int] = None
+    total: Optional[int] = None
+
+
+class DockerLayerUploadStatus(str, Enum):
+    preparing = "preparing"
+    waiting = "waiting"
+    pushing = "pushing"
+    pushed = "pushed"
+    already_exists = "layer already exists"
+
+
+class DockerLayerUploadState(BaseModel):
+    id: str
+    status: DockerLayerUploadStatus
+    progress_detail: DockerLayerUploadProgress
+
+    @validator("status", pre=True)
+    def _validate_status(cls, v: str) -> str:
+        return v.lower()

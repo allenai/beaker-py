@@ -96,7 +96,7 @@ class ImageClient(ServiceClient):
 
         with get_image_upload_progress(quiet) as progress:
             layer_id_to_task: Dict[str, "TaskID"] = {}
-            for line in self.docker.api.push(
+            for layer_state_data in self.docker.api.push(
                 repo_data["imageTag"],
                 stream=True,
                 decode=True,
@@ -106,38 +106,56 @@ class ImageClient(ServiceClient):
                     "server_address": auth["server_address"],
                 },
             ):
-                if "id" not in line or "status" not in line:
+                if "id" not in layer_state_data or "status" not in layer_state_data:
                     continue
-                layer_id = line["id"]
-                status = line["status"].lower()
-                progress_detail = line.get("progressDetail")
+
+                layer_state = DockerLayerUploadState.from_json(layer_state_data)
+
+                # Get progress task ID for layer, initializing if it doesn't already exist.
                 task_id: "TaskID"
-                if layer_id not in layer_id_to_task:
-                    task_id = progress.add_task(layer_id, start=True, total=1)
-                    layer_id_to_task[layer_id] = task_id
+                if layer_state.id not in layer_id_to_task:
+                    task_id = progress.add_task(layer_state.id, start=True, total=1)
+                    layer_id_to_task[layer_state.id] = task_id
                 else:
-                    task_id = layer_id_to_task[layer_id]
-                if status in {"preparing", "waiting"}:
-                    progress.update(
-                        task_id, total=1, completed=0, description=f"{layer_id}: {status.title()}"
-                    )
-                elif status == "pushing" and progress_detail:
+                    task_id = layer_id_to_task[layer_state.id]
+
+                if layer_state.status in {
+                    DockerLayerUploadStatus.preparing,
+                    DockerLayerUploadStatus.waiting,
+                }:
                     progress.update(
                         task_id,
-                        total=progress_detail["total"],
-                        completed=progress_detail["current"],
-                        description=f"{layer_id}: Pushing",
+                        total=1,
+                        completed=0,
+                        description=f"{layer_state.id}: {layer_state.status.title()}",
                     )
-                elif status == "pushed":
+                elif layer_state.status == DockerLayerUploadStatus.pushing:
                     progress.update(
-                        task_id, total=1, completed=1, description=f"{layer_id}: Push complete"
+                        task_id,
+                        description=f"{layer_state.id}: Pushing",
                     )
-                elif status == "layer already exists":
+                    if layer_state.progress_detail.total and layer_state.progress_detail.current:
+                        progress.update(
+                            task_id,
+                            total=layer_state.progress_detail.total,
+                            completed=layer_state.progress_detail.current,
+                        )
+                elif layer_state.status == DockerLayerUploadStatus.pushed:
                     progress.update(
-                        task_id, total=1, completed=1, description=f"{layer_id}: Already exists"
+                        task_id,
+                        total=1,
+                        completed=1,
+                        description=f"{layer_state.id}: Push complete",
+                    )
+                elif layer_state.status == "layer already exists":
+                    progress.update(
+                        task_id,
+                        total=1,
+                        completed=1,
+                        description=f"{layer_state.id}: Already exists",
                     )
                 else:
-                    raise ValueError(f"unhandled status '{status}' ({line})")
+                    raise ValueError(f"unhandled status '{layer_state.status}' (layer_state)")
 
         # Commit changes to Beaker.
         self.request(f"images/{image_data['id']}", method="PATCH", data={"Commit": True})
