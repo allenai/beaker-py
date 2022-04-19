@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and added the `task_name` parameter.
 - Deprecated `Beaker.experiment.await_all()`. Use `Beaker.experiment.wait_for()` instead.
 
+### Fixed
+
+- Fixed bug with `Beaker.image.create()`.
+
 ## [v0.8.4](https://github.com/allenai/beaker-py/releases/tag/v0.8.4) - 2022-04-18
 
 ### Fixed
