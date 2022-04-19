@@ -12,9 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Beaker.group` client and methods.
 - Added `Beaker.workspace.groups()` method.
 - Added `Beaker.experiment.resume()` method.
+- Added `Beaker.experiment.metrics()` method.
 - Added `Beaker.job.metrics()` method.
 - Added `Beaker.job.results()` method.
-- Added `Beaker.experiment.metrics()` method.
+- Added `Beaker.job.await_all()` method.
 
 ### Changed
 

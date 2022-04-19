@@ -1,8 +1,6 @@
 import time
 from typing import Any, Callable, Dict, Generator, Union
 
-from rich.progress import Progress, TaskID, TimeElapsedColumn
-
 from ..aliases import PathOrStr
 from ..data_model import *
 from ..exceptions import *
@@ -301,7 +299,7 @@ class ExperimentClient(ServiceClient):
     def await_all(
         self,
         *experiments: Union[str, Experiment],
-        timeout: Optional[int] = None,
+        timeout: Optional[float] = None,
         poll_interval: float = 2.0,
         quiet: bool = False,
         callback: Optional[Callable[[float], None]] = None,
@@ -321,52 +319,53 @@ class ExperimentClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        finished: Dict[str, Experiment] = {}
-        exp_ids: List[str] = [self.resolve_experiment(experiment).id for experiment in experiments]
+        if timeout is not None and timeout <= 0:
+            raise ValueError("'timeout' must be a positive number")
+
         start = time.time()
-        with Progress(
-            "[progress.description]{task.description}", TimeElapsedColumn(), disable=quiet
-        ) as progress:
-            exp_id_to_task: Dict[str, TaskID] = {}
-            for exp_id in exp_ids:
-                if exp_id not in exp_id_to_task:
-                    exp_id_to_task[exp_id] = progress.add_task(f"{exp_id} - waiting")
+        job_await_timeout = timeout
 
-            polls = 0
-            while True:
-                if not exp_id_to_task:
-                    break
+        def get_unfinished():
+            exps = []
+            jobs = []
+            for exp_ in experiments:
+                experiment = self.get(exp_.id if isinstance(exp_, Experiment) else exp_)
+                if experiment.jobs:
+                    has_unfinished_jobs = False
+                    for job in experiment.jobs:
+                        if job.status.current != CurrentJobStatus.finalized:
+                            jobs.append(job)
+                            has_unfinished_jobs = True
+                    if has_unfinished_jobs:
+                        exps.append(experiment)
+                else:
+                    exps.append(experiment)
+            return exps, jobs
 
-                polls += 1
+        exps_to_wait_on, jobs_to_wait_on = get_unfinished()
+        while exps_to_wait_on or jobs_to_wait_on:
+            elapsed = time.time() - start
+            if timeout is not None and elapsed >= timeout:
+                raise TimeoutError
+            if callback is not None:
+                callback(elapsed)
 
-                # Poll each experiment and update the progress line.
-                for exp_id in list(exp_id_to_task):
-                    task_id = exp_id_to_task[exp_id]
-                    exp = self.get(exp_id)
-                    if exp.jobs:
-                        for job in exp.jobs:
-                            if job.status.current != CurrentJobStatus.finalized:
-                                progress.update(task_id, total=polls + 1, advance=1)
-                                break
-                        else:
-                            finished[exp_id] = exp
-                            progress.update(
-                                task_id,
-                                total=polls + 1,
-                                complete=polls + 1,
-                                description=f"{exp_id} - completed",
-                            )
-                            progress.stop_task(task_id)
-                            del exp_id_to_task[exp_id]
-
-                elapsed = time.time() - start
-                if timeout is not None and elapsed >= timeout:
-                    raise TimeoutError
-                if callback is not None:
-                    callback(elapsed)
+            if jobs_to_wait_on:
+                if timeout is not None:
+                    job_await_timeout = timeout - elapsed
+                self.beaker.job.await_all(
+                    *jobs_to_wait_on,
+                    timeout=job_await_timeout,
+                    poll_interval=poll_interval,
+                    quiet=quiet,
+                    callback=callback,
+                )
+            else:
                 time.sleep(poll_interval)
 
-        return [finished[exp_id] for exp_id in exp_ids]
+            exps_to_wait_on, jobs_to_wait_on = get_unfinished()
+
+        return [self.get(exp.id if isinstance(exp, Experiment) else exp) for exp in experiments]
 
     def _not_found_err_msg(self, experiment: str) -> str:
         return (

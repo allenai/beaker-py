@@ -1,6 +1,13 @@
-from typing import Any, Dict, Generator, Union
+import time
+from typing import Any, Callable, Dict, Generator, Optional, Union
 
-from rich.progress import FileSizeColumn, Progress, SpinnerColumn, TimeElapsedColumn
+from rich.progress import (
+    FileSizeColumn,
+    Progress,
+    SpinnerColumn,
+    TaskID,
+    TimeElapsedColumn,
+)
 
 from ..data_model import *
 from ..exceptions import *
@@ -220,3 +227,81 @@ class JobClient(ServiceClient):
                 data={"status": {"canceled": True}},
             ).json()
         )
+
+    def await_all(
+        self,
+        *jobs: Union[str, Job],
+        timeout: Optional[float] = None,
+        poll_interval: float = 2.0,
+        quiet: bool = False,
+        callback: Optional[Callable[[float], None]],
+    ) -> List[Job]:
+        """
+        Wait for all jobs to finalize.
+
+        :param jobs: Job ID, name, or object.
+        :param timeout: Maximum amount of time to wait for (in seocnds).
+        :param poll_interval: Time to wait between polling each job's status (in seconds).
+        :param quiet: If ``True``, progress won't be displayed.
+        :param callback: An optional user-provided callback function that takes a
+            single argument - the elapsed time.
+
+        :raises JobNotFound: If any job can't be found.
+        :raises TimeoutError: If the ``timeout`` expires.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        if timeout is not None and timeout <= 0:
+            raise ValueError("'timeout' must be a positive number")
+
+        def display_name(j: Job) -> str:
+            if j.execution is None:
+                return j.id
+            else:
+                return f"Exp {j.execution.experiment}, job {j.id}"
+
+        job_ids: List[str] = []
+        finished: Dict[str, Job] = {}
+        start = time.time()
+        with Progress(
+            "[progress.description]{task.description}", TimeElapsedColumn(), disable=quiet
+        ) as progress:
+            job_id_to_task: Dict[str, TaskID] = {}
+            for job_ in jobs:
+                job = job_ if isinstance(job_, Job) else self.get(job_)
+                job_ids.append(job.id)
+                if job.id not in job_id_to_task:
+                    job_id_to_task[job.id] = progress.add_task(f"{display_name(job)} - waiting")
+
+            polls = 0
+            while True:
+                if not job_id_to_task:
+                    break
+
+                polls += 1
+
+                # Poll each experiment and update the progress line.
+                for job_id in list(job_id_to_task):
+                    task_id = job_id_to_task[job_id]
+                    job = self.get(job_id)
+                    if job.status.current != CurrentJobStatus.finalized:
+                        progress.update(task_id, total=polls + 1, advance=1)
+                    else:
+                        finished[job_id] = job
+                        progress.update(
+                            task_id,
+                            total=polls + 1,
+                            complete=polls + 1,
+                            description=f"{display_name(job)} - completed",
+                        )
+                        progress.stop_task(task_id)
+                        del job_id_to_task[job_id]
+
+                elapsed = time.time() - start
+                if timeout is not None and elapsed >= timeout:
+                    raise TimeoutError
+                if callback is not None:
+                    callback(elapsed)
+                time.sleep(poll_interval)
+
+        return [finished[job_id] for job_id in job_ids]
