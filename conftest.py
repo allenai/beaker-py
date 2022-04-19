@@ -194,3 +194,13 @@ def alternate_group_name(client: Beaker) -> Generator[str, None, None]:
         client.group.delete(f"{client.account.whoami().name}/{group}")
     except GroupNotFound:
         pass
+
+
+@pytest.fixture()
+def experiment_id_with_metrics() -> str:
+    return "ex_1l1an142rn9l"
+
+
+@pytest.fixture()
+def experiment_id_with_results() -> str:
+    return "ex_1l1an142rn9l"

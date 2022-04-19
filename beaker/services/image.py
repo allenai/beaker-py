@@ -1,11 +1,11 @@
-from typing import Dict, Optional, Union
-
-from rich.progress import BarColumn, Progress, TaskID, TimeRemainingColumn
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
 from ..data_model import *
 from ..exceptions import *
-from ..util import DownloadUploadColumn
 from .service_client import ServiceClient
+
+if TYPE_CHECKING:
+    from rich.progress import TaskID
 
 
 class ImageClient(ServiceClient):
@@ -49,6 +49,7 @@ class ImageClient(ServiceClient):
         image_tag: str,
         workspace: Optional[str] = None,
         quiet: bool = False,
+        commit: bool = True,
     ) -> Image:
         """
         Upload a Docker image to Beaker.
@@ -58,6 +59,7 @@ class ImageClient(ServiceClient):
         :param workspace: The workspace to upload the image to. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param quiet: If ``True``, progress won't be displayed.
+        :param commit: Whether to commit the image after successful upload.
 
         :raises ValueError: If the image name is invalid.
         :raises ImageConflict: If an image with the given name already exists.
@@ -74,81 +76,107 @@ class ImageClient(ServiceClient):
         image = self.docker.images.get(image_tag)
 
         # Create new image on Beaker.
-        image_data = self.request(
+        image_id = self.request(
             "images",
             method="POST",
             data={"Workspace": workspace.id, "ImageID": image.id, "ImageTag": image_tag},
             query={"name": name},
             exceptions_for_status={409: ImageConflict(name)},
-        ).json()
+        ).json()["id"]
 
         # Get the repo data for the Beaker image.
-        repo_data = self.request(
-            f"images/{image_data['id']}/repository", query={"upload": True}
-        ).json()
-        auth = repo_data["auth"]
+        repo = ImageRepo.from_json(
+            self.request(f"images/{image_id}/repository", query={"upload": True}).json()
+        )
 
         # Tag the local image with the new tag for the Beaker image.
-        image.tag(repo_data["imageTag"])
+        image.tag(repo.image_tag)
 
         # Push the image to Beaker.
-        with Progress(
-            "[progress.description]{task.description}",
-            BarColumn(),
-            "[progress.percentage]{task.percentage:>3.0f}%",
-            TimeRemainingColumn(),
-            DownloadUploadColumn(),
-            disable=quiet,
-        ) as progress:
-            layer_id_to_task: Dict[str, TaskID] = {}
-            for line in self.docker.api.push(
-                repo_data["imageTag"],
+        from ..progress import get_image_upload_progress
+
+        with get_image_upload_progress(quiet) as progress:
+            layer_id_to_task: Dict[str, "TaskID"] = {}
+            for layer_state_data in self.docker.api.push(
+                repo.image_tag,
                 stream=True,
                 decode=True,
                 auth_config={
-                    "username": auth["user"],
-                    "password": auth["password"],
-                    "server_address": auth["server_address"],
+                    "username": repo.auth.user,
+                    "password": repo.auth.password,
+                    "server_address": repo.auth.server_address,
                 },
             ):
-                if "id" not in line or "status" not in line:
+                if "id" not in layer_state_data or "status" not in layer_state_data:
                     continue
-                layer_id = line["id"]
-                status = line["status"].lower()
-                progress_detail = line.get("progressDetail")
-                task_id: TaskID
-                if layer_id not in layer_id_to_task:
-                    task_id = progress.add_task(layer_id, start=True, total=1)
-                    layer_id_to_task[layer_id] = task_id
+
+                layer_state = DockerLayerUploadState.from_json(layer_state_data)
+
+                # Get progress task ID for layer, initializing if it doesn't already exist.
+                task_id: "TaskID"
+                if layer_state.id not in layer_id_to_task:
+                    task_id = progress.add_task(layer_state.id, start=True, total=1)
+                    layer_id_to_task[layer_state.id] = task_id
                 else:
-                    task_id = layer_id_to_task[layer_id]
-                if status in {"preparing", "waiting"}:
-                    progress.update(
-                        task_id, total=1, completed=0, description=f"{layer_id}: {status.title()}"
-                    )
-                elif status == "pushing" and progress_detail:
+                    task_id = layer_id_to_task[layer_state.id]
+
+                if layer_state.status in {
+                    DockerLayerUploadStatus.preparing,
+                    DockerLayerUploadStatus.waiting,
+                }:
                     progress.update(
                         task_id,
-                        total=progress_detail["total"],
-                        completed=progress_detail["current"],
-                        description=f"{layer_id}: Pushing",
+                        total=1,
+                        completed=0,
+                        description=f"{layer_state.id}: {layer_state.status.title()}",
                     )
-                elif status == "pushed":
+                elif layer_state.status == DockerLayerUploadStatus.pushing:
                     progress.update(
-                        task_id, total=1, completed=1, description=f"{layer_id}: Push complete"
+                        task_id,
+                        description=f"{layer_state.id}: Pushing",
                     )
-                elif status == "layer already exists":
+                    if layer_state.progress_detail.total and layer_state.progress_detail.current:
+                        progress.update(
+                            task_id,
+                            total=layer_state.progress_detail.total,
+                            completed=layer_state.progress_detail.current,
+                        )
+                elif layer_state.status == DockerLayerUploadStatus.pushed:
                     progress.update(
-                        task_id, total=1, completed=1, description=f"{layer_id}: Already exists"
+                        task_id,
+                        total=1,
+                        completed=1,
+                        description=f"{layer_state.id}: Push complete",
+                    )
+                elif layer_state.status == "layer already exists":
+                    progress.update(
+                        task_id,
+                        total=1,
+                        completed=1,
+                        description=f"{layer_state.id}: Already exists",
                     )
                 else:
-                    raise ValueError(f"unhandled status '{status}' ({line})")
+                    raise ValueError(f"unhandled status '{layer_state.status}' (layer_state)")
 
-        # Commit changes to Beaker.
-        self.request(f"images/{image_data['id']}", method="PATCH", data={"Commit": True})
+        if commit:
+            return self.commit(image_id)
+        else:
+            return self.get(image_id)
 
-        # Return info about the Beaker image.
-        return self.get(image_data["id"])
+    def commit(self, image: Union[str, Image]) -> Image:
+        """
+        Commit an image.
+
+        :param image: The Beaker image ID, name, or object.
+
+        :raises ImageNotFound: If the image can't be found on Beaker.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        image_id = self.resolve_image(image).id
+        return Image.from_json(
+            self.request(f"images/{image_id}", method="PATCH", data={"Commit": True}).json()
+        )
 
     def delete(self, image: Union[str, Image]):
         """

@@ -1,10 +1,12 @@
-from typing import Any, Dict, Generator, Union
-
-from rich.progress import FileSizeColumn, Progress, SpinnerColumn, TimeElapsedColumn
+import time
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Union
 
 from ..data_model import *
 from ..exceptions import *
 from .service_client import ServiceClient
+
+if TYPE_CHECKING:
+    from rich.progress import Progress, TaskID
 
 
 class JobClient(ServiceClient):
@@ -116,7 +118,6 @@ class JobClient(ServiceClient):
 
         :raises JobNotFound: If the job can't be found.
         :raises HTTPError: Any other HTTP exception that can occur.
-
         """
         job_id = job.id if isinstance(job, Job) else job
         response = self.request(
@@ -130,13 +131,9 @@ class JobClient(ServiceClient):
         #  content_length = response.headers.get("Content-Length")
         #  total = int(content_length) if content_length is not None else None
 
-        with Progress(
-            "[progress.description]{task.description}",
-            SpinnerColumn(),
-            FileSizeColumn(),
-            TimeElapsedColumn(),
-            disable=quiet,
-        ) as progress:
+        from ..progress import get_logs_progress
+
+        with get_logs_progress(quiet) as progress:
             task_id = progress.add_task("Downloading:")
             total = 0
             for chunk in response.iter_content(chunk_size=1024):
@@ -146,9 +143,12 @@ class JobClient(ServiceClient):
                     progress.update(task_id, total=total + 1, advance=advance)
                     yield chunk
 
-    def results(self, job: Union[str, Job]) -> Dict[str, Any]:
+    def metrics(self, job: Union[str, Job]) -> Optional[Dict[str, Any]]:
         """
-        Get the results for a job.
+        Get the metrics from a job.
+
+        .. seealso::
+            :meth:`Beaker.experiment.metrics() <ExperimentClient.metrics>`
 
         :param job: The Beaker job ID or object.
 
@@ -161,6 +161,24 @@ class JobClient(ServiceClient):
             method="GET",
             exceptions_for_status={404: JobNotFound(job_id)},
         ).json()["metrics"]
+
+    def results(self, job: Union[str, Job]) -> Optional[Dataset]:
+        """
+        Get the results from a job.
+
+        .. seealso::
+            :meth:`Beaker.experiment.results() <ExperimentClient.results>`
+
+        :param job: The Beaker job ID or object.
+
+        :raises JobNotFound: If the job can't be found.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        job: Job = self.get(job.id if isinstance(job, Job) else job)
+        if job.execution is None:
+            return None
+        else:
+            return self.beaker.dataset.get(job.execution.result.beaker)
 
     def finalize(self, job: Union[str, Job]) -> Job:
         """
@@ -199,3 +217,158 @@ class JobClient(ServiceClient):
                 data={"status": {"canceled": True}},
             ).json()
         )
+
+    def wait_for(
+        self,
+        *jobs: Union[str, Job],
+        timeout: Optional[float] = None,
+        poll_interval: float = 1.0,
+        quiet: bool = False,
+    ) -> List[Job]:
+        """
+        Wait for jobs to finalize, returning the completed jobs as a list in the same order
+        they were given as input.
+
+        .. seealso::
+            :meth:`as_completed()`
+
+        .. seealso::
+            :meth:`Beaker.experiment.wait_for() <ExperimentClient.wait_for>`
+
+        :param jobs: Job ID, name, or object.
+        :param timeout: Maximum amount of time to wait for (in seocnds).
+        :param poll_interval: Time to wait between polling each job's status (in seconds).
+        :param quiet: If ``True``, progress won't be displayed.
+
+        :raises JobNotFound: If any job can't be found.
+        :raises TimeoutError: If the ``timeout`` expires.
+        :raises DuplicateJobError: If the same job is given as an argument more than once.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        job_id_to_position: Dict[str, int] = {}
+        jobs_to_wait_on: List[Job] = []
+        for i, job_ in enumerate(jobs):
+            job = job_ if isinstance(job_, Job) else self.get(job_)
+            jobs_to_wait_on.append(job)
+            if job.id in job_id_to_position:
+                raise DuplicateJobError(job.display_name)
+            job_id_to_position[job.id] = i
+        completed_jobs: List[Job] = list(
+            self.as_completed(
+                *jobs_to_wait_on, timeout=timeout, poll_interval=poll_interval, quiet=quiet
+            )
+        )
+        return sorted(completed_jobs, key=lambda job: job_id_to_position[job.id])
+
+    def as_completed(
+        self,
+        *jobs: Union[str, Job],
+        timeout: Optional[float] = None,
+        poll_interval: float = 1.0,
+        quiet: bool = False,
+    ) -> Generator[Job, None, None]:
+        """
+        Wait for jobs to finalize, returning an iterator that yields jobs as they complete.
+
+        .. seealso::
+            :meth:`wait_for()`
+
+        .. seealso::
+            :meth:`Beaker.experiment.as_completed() <ExperimentClient.as_completed>`
+
+        :param jobs: Job ID, name, or object.
+        :param timeout: Maximum amount of time to wait for (in seocnds).
+        :param poll_interval: Time to wait between polling each job's status (in seconds).
+        :param quiet: If ``True``, progress won't be displayed.
+
+        :raises JobNotFound: If any job can't be found.
+        :raises TimeoutError: If the ``timeout`` expires.
+        :raises DuplicateJobError: If the same job is given as an argument more than once.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        yield from self._as_completed(
+            *jobs, timeout=timeout, poll_interval=poll_interval, quiet=quiet
+        )
+
+    def _as_completed(
+        self,
+        *jobs: Union[str, Job],
+        timeout: Optional[float] = None,
+        poll_interval: float = 1.0,
+        quiet: bool = False,
+        _progress: Optional["Progress"] = None,
+    ) -> Generator[Job, None, None]:
+        if timeout is not None and timeout <= 0:
+            raise ValueError("'timeout' must be a positive number")
+
+        exp_id_to_name: Dict[str, str] = {}
+        task_id_to_name: Dict[str, str] = {}
+
+        def display_name(j: Job) -> str:
+            if j.execution is None:
+                return f"[i]{j.id}[/]"
+            else:
+                if j.execution.experiment not in exp_id_to_name:
+                    exp = self.beaker.experiment.get(j.execution.experiment)
+                    exp_id_to_name[exp.id] = exp.name if exp.name is not None else exp.id
+                if j.execution.task not in task_id_to_name:
+                    for task in self.beaker.experiment.tasks(j.execution.experiment):
+                        if task.id not in task_id_to_name:
+                            task_id_to_name[task.id] = (
+                                task.name if task.name is not None else task.id
+                            )
+                return (
+                    f"[b cyan]{exp_id_to_name[j.execution.experiment]}[/] "
+                    f"\N{rightwards arrow} [i]{task_id_to_name[j.execution.task]}[/]"
+                )
+
+        from ..progress import get_jobs_progress
+
+        job_ids: List[str] = []
+        start = time.time()
+        owned_progress = _progress is None
+        progress = _progress or get_jobs_progress(quiet)
+        if owned_progress:
+            progress.start()
+        try:
+            job_id_to_progress_task: Dict[str, "TaskID"] = {}
+            for job_ in jobs:
+                job = job_ if isinstance(job_, Job) else self.get(job_)
+                job_ids.append(job.id)
+                if job.id in job_id_to_progress_task:
+                    raise DuplicateJobError(job.id)
+                job_id_to_progress_task[job.id] = progress.add_task(f"{display_name(job)}:")
+
+            polls = 0
+            while True:
+                if not job_id_to_progress_task:
+                    yield from []
+                    return
+
+                polls += 1
+
+                # Poll each experiment and update the progress line.
+                for job_id in list(job_id_to_progress_task):
+                    task_id = job_id_to_progress_task[job_id]
+                    job = self.get(job_id)
+                    if not job.is_finalized:
+                        progress.update(task_id, total=polls + 1, advance=1)
+                    else:
+                        progress.update(
+                            task_id,
+                            total=polls + 1,
+                            completed=polls + 1,
+                        )
+                        progress.stop_task(task_id)
+                        del job_id_to_progress_task[job_id]
+                        yield job
+
+                elapsed = time.time() - start
+                if timeout is not None and elapsed >= timeout:
+                    raise TimeoutError
+                time.sleep(poll_interval)
+        finally:
+            if owned_progress:
+                progress.stop()

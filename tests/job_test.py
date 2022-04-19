@@ -11,6 +11,11 @@ def test_job_get(client: Beaker, hello_world_job_id):
     assert job.to_json()["kind"] == "execution"
 
 
+def test_job_results(client: Beaker, hello_world_job_id):
+    results = client.job.results(hello_world_job_id)
+    assert results is not None
+
+
 def test_job_stop_and_finalize(client: Beaker, experiment_name: str, beaker_cluster_name: str):
     start = time.time()
     spec = ExperimentSpec().with_task(

@@ -130,16 +130,16 @@ For example, create an experiment with :meth:`Beaker.experiment.create() <servic
 ... )
 
 Wait for the experiment to complete with
-:meth:`Beaker.experiment.await_all() <services.ExperimentClient.await_all>`:
+:meth:`Beaker.experiment.wait_for() <services.ExperimentClient.wait_for>`:
 
->>> experiment = beaker.experiment.await_all(
+>>> experiment = beaker.experiment.wait_for(
 ...     experiment,
 ...     timeout=60 * 3,
 ...     quiet=True,
 ... )[0]
-<BLANKLINE>
 
-Get the logs from the experiment with :meth:`Beaker.experiment.logs() <services.ExperimentClient.logs>`:
+Get the logs from the execution of a task in an experiment with
+:meth:`Beaker.experiment.logs() <services.ExperimentClient.logs>`:
 
 >>> logs = "".join([
 ...    line.decode() for line in
@@ -147,10 +147,10 @@ Get the logs from the experiment with :meth:`Beaker.experiment.logs() <services.
 ... ])
 <BLANKLINE>
 
-Get the results from all tasks in an experiment with
+Get the results from a task in an experiment with
 :meth:`Beaker.experiment.results <services.ExperimentClient.results>`:
 
->>> task, results = beaker.experiment.results(experiment)[0]
+>>> results = beaker.experiment.results(experiment)
 
 Jobs
 ----
@@ -159,7 +159,7 @@ Manage Beaker jobs with :data:`Beaker.job`.
 
 For example, get the logs from a job with :meth:`Beaker.job.logs() <services.JobClient.logs>`
 (equivalent to :meth:`Beaker.experiment.logs() <services.ExperimentClient.logs>` when there is
-only one job in the experiment):
+only one task in the experiment):
 
 >>> job = experiment.jobs[0]
 >>> logs = "".join([

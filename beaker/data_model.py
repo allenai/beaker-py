@@ -570,6 +570,18 @@ class ExperimentSpec(BaseModel):
             raise ValueError(f"Spec version '{v}' is not supported")
         return v
 
+    @validator("tasks")
+    def _validate_tasks(cls, v: List[TaskSpec]) -> List[TaskSpec]:
+        task_names = set()
+        for task in v:
+            if task.name is None:
+                continue
+            if task.name in task_names:
+                raise ValueError(f"Duplicate task name '{task.name}'")
+            else:
+                task_names.add(task.name)
+        return v
+
     @classmethod
     def from_file(cls, path: PathOrStr) -> "ExperimentSpec":
         """
@@ -597,6 +609,10 @@ class ExperimentSpec(BaseModel):
         ...     )
         ... )
         """
+        if task.name is not None:
+            for other_task in self.tasks:
+                if task.name == other_task.name:
+                    raise ValueError(f"A task with the name '{task.name}' already exists")
         return self.copy(
             deep=True, update={"tasks": [d.copy(deep=True) for d in self.tasks or []] + [task]}
         )
@@ -715,7 +731,7 @@ class CurrentJobStatus(BaseEnum):
 
 
 class JobStatus(BaseModel):
-    created: Optional[datetime] = None
+    created: datetime
     scheduled: Optional[datetime] = None
     started: Optional[datetime] = None
     exited: Optional[datetime] = None
@@ -803,6 +819,14 @@ class Job(BaseModel):
     requests: Optional[JobRequests] = None
     limits: Optional[JobLimits] = None
 
+    @property
+    def display_name(self) -> str:
+        return self.name if self.name is not None else self.id
+
+    @property
+    def is_finalized(self) -> bool:
+        return self.status.current == CurrentJobStatus.finalized
+
 
 class Jobs(BaseModel):
     data: Optional[List[Job]] = None
@@ -819,6 +843,10 @@ class Experiment(BaseModel):
     full_name: Optional[str] = None
     jobs: List[Job] = Field(default_factory=list)
 
+    @property
+    def display_name(self) -> str:
+        return self.name if self.name is not None else self.id
+
 
 class Task(BaseModel):
     id: str
@@ -829,6 +857,10 @@ class Task(BaseModel):
     name: Optional[str] = None
     schedulable: bool = False
     jobs: List[Job] = Field(default_factory=list)
+
+    @property
+    def display_name(self) -> str:
+        return self.name if self.name is not None else self.id
 
 
 class DatasetStorage(BaseModel):
@@ -959,3 +991,37 @@ class Group(BaseModel):
     name: Optional[str] = None
     full_name: Optional[str] = None
     workspace_ref: Optional[WorkspaceRef] = None
+
+
+class ImageRepoAuth(BaseModel):
+    user: str
+    password: str
+    server_address: str
+
+
+class ImageRepo(BaseModel):
+    image_tag: str
+    auth: ImageRepoAuth
+
+
+class DockerLayerUploadProgress(BaseModel):
+    current: Optional[int] = None
+    total: Optional[int] = None
+
+
+class DockerLayerUploadStatus(str, Enum):
+    preparing = "preparing"
+    waiting = "waiting"
+    pushing = "pushing"
+    pushed = "pushed"
+    already_exists = "layer already exists"
+
+
+class DockerLayerUploadState(BaseModel):
+    id: str
+    status: DockerLayerUploadStatus
+    progress_detail: DockerLayerUploadProgress
+
+    @validator("status", pre=True)
+    def _validate_status(cls, v: str) -> str:
+        return v.lower()

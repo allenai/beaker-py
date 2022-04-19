@@ -12,7 +12,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Beaker.group` client and methods.
 - Added `Beaker.workspace.groups()` method.
 - Added `Beaker.experiment.resume()` method.
+- Added `Beaker.experiment.metrics()` method.
+- Added `Beaker.job.metrics()` method.
 - Added `Beaker.job.results()` method.
+- Added `Beaker.job.wait_for()` method.
+- Added `Beaker.job.as_completed()` method.
+- Added `Beaker.experiment.as_completed()` method.
+- Added `Beaker.image.commit()` method.
+- Added `commit` parameter to `Beaker.image.create()`.
+
+### Changed
+
+- Changed the signature of `Beaker.experiment.results()`. Added the `task_name` parameter
+  and changed the return type to `Optional[Dataset]`.
+- Changed the signature of `Beaker.experiment.logs()`. Removed the `job_id` parameter
+  and added the `task_name` parameter.
+- Deprecated `Beaker.experiment.await_all()`. Use `Beaker.experiment.wait_for()` instead.
+
+### Fixed
+
+- Fixed bug with `Beaker.image.create()`.
 
 ## [v0.8.4](https://github.com/allenai/beaker-py/releases/tag/v0.8.4) - 2022-04-18
 

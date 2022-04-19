@@ -1,23 +1,15 @@
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Deque, Dict, Generator, List, Optional, Tuple, Union
-
-from rich.progress import (
-    BarColumn,
-    Progress,
-    ProgressColumn,
-    SpinnerColumn,
-    TaskID,
-    TimeElapsedColumn,
-    TimeRemainingColumn,
-)
+from typing import TYPE_CHECKING, Deque, Dict, Generator, Optional, Tuple, Union
 
 from ..aliases import PathOrStr
 from ..data_model import *
 from ..exceptions import *
-from ..util import BufferedReaderWithProgress, DownloadUploadColumn
 from .service_client import ServiceClient
+
+if TYPE_CHECKING:
+    from rich.progress import Progress, TaskID
 
 
 class DatasetClient(ServiceClient):
@@ -204,26 +196,18 @@ class DatasetClient(ServiceClient):
 
         total_bytes_to_download: Optional[int] = None
         total_downloaded: int = 0
-        progress_columns: List[Union[str, ProgressColumn]]
+        from ..progress import (
+            get_sized_dataset_fetch_progress,
+            get_unsized_dataset_fetch_progress,
+        )
+
         if storage_info.size is not None and storage_info.size.final:
             total_bytes_to_download = storage_info.size.bytes
-            progress_columns = [
-                "[progress.description]{task.description}",
-                BarColumn(),
-                "[progress.percentage]{task.percentage:>3.0f}%",
-                TimeElapsedColumn(),
-                TimeRemainingColumn(),
-                DownloadUploadColumn(),
-            ]
+            progress = get_sized_dataset_fetch_progress(quiet)
         else:
-            progress_columns = [
-                "[progress.description]{task.description}",
-                SpinnerColumn(),
-                TimeElapsedColumn(),
-                DownloadUploadColumn(),
-            ]
+            progress = get_unsized_dataset_fetch_progress(quiet)
 
-        with Progress(*progress_columns, disable=quiet) as progress:
+        with progress:
             bytes_task = progress.add_task("Downloading dataset")
             if total_bytes_to_download is not None:
                 progress.update(bytes_task, total=total_bytes_to_download)
@@ -350,15 +334,9 @@ class DatasetClient(ServiceClient):
         if dataset.committed is not None:
             raise DatasetWriteError(dataset.id)
 
-        with Progress(
-            "[progress.description]{task.description}",
-            BarColumn(),
-            "[progress.percentage]{task.percentage:>3.0f}%",
-            TimeElapsedColumn(),
-            TimeRemainingColumn(),
-            DownloadUploadColumn(),
-            disable=quiet,
-        ) as progress:
+        from ..progress import get_dataset_sync_progress
+
+        with get_dataset_sync_progress(quiet) as progress:
             bytes_task = progress.add_task("Uploading dataset")
             total_bytes = 0
             # map source path to (target_path, size)
@@ -495,8 +473,8 @@ class DatasetClient(ServiceClient):
         size: int,
         source: PathOrStr,
         target: PathOrStr,
-        progress: Progress,
-        task_id: TaskID,
+        progress: "Progress",
+        task_id: "TaskID",
         ignore_errors: bool = False,
     ) -> int:
         source: Path = Path(source)
@@ -505,6 +483,8 @@ class DatasetClient(ServiceClient):
             return 0
 
         with source.open("rb") as source_file:
+            from ..progress import BufferedReaderWithProgress
+
             source_file_wrapper = BufferedReaderWithProgress(source_file, progress, task_id)
             body: Optional[BufferedReaderWithProgress] = source_file_wrapper
             digest: Optional[bytes] = None
@@ -637,8 +617,8 @@ class DatasetClient(ServiceClient):
         storage: DatasetStorage,
         file_info: FileInfo,
         target_path: Path,
-        progress: Progress,
-        task_id: TaskID,
+        progress: "Progress",
+        task_id: "TaskID",
     ) -> int:
         import tempfile
 
