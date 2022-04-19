@@ -731,7 +731,7 @@ class CurrentJobStatus(BaseEnum):
 
 
 class JobStatus(BaseModel):
-    created: Optional[datetime] = None
+    created: datetime
     scheduled: Optional[datetime] = None
     started: Optional[datetime] = None
     exited: Optional[datetime] = None
@@ -819,6 +819,14 @@ class Job(BaseModel):
     requests: Optional[JobRequests] = None
     limits: Optional[JobLimits] = None
 
+    @property
+    def display_name(self) -> str:
+        return self.name if self.name is not None else self.id
+
+    @property
+    def is_finalized(self) -> bool:
+        return self.status.current == CurrentJobStatus.finalized
+
 
 class Jobs(BaseModel):
     data: Optional[List[Job]] = None
@@ -835,6 +843,10 @@ class Experiment(BaseModel):
     full_name: Optional[str] = None
     jobs: List[Job] = Field(default_factory=list)
 
+    @property
+    def display_name(self) -> str:
+        return self.name if self.name is not None else self.id
+
 
 class Task(BaseModel):
     id: str
@@ -845,6 +857,10 @@ class Task(BaseModel):
     name: Optional[str] = None
     schedulable: bool = False
     jobs: List[Job] = Field(default_factory=list)
+
+    @property
+    def display_name(self) -> str:
+        return self.name if self.name is not None else self.id
 
 
 class DatasetStorage(BaseModel):

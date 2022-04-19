@@ -130,14 +130,13 @@ For example, create an experiment with :meth:`Beaker.experiment.create() <servic
 ... )
 
 Wait for the experiment to complete with
-:meth:`Beaker.experiment.await_all() <services.ExperimentClient.await_all>`:
+:meth:`Beaker.experiment.wait_for() <services.ExperimentClient.wait_for>`:
 
->>> experiment = beaker.experiment.await_all(
+>>> experiment = beaker.experiment.wait_for(
 ...     experiment,
 ...     timeout=60 * 3,
 ...     quiet=True,
 ... )[0]
-<BLANKLINE>
 
 Get the logs from the execution of a task in an experiment with
 :meth:`Beaker.experiment.logs() <services.ExperimentClient.logs>`:

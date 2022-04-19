@@ -62,7 +62,7 @@ def test_experiment_spec(client: Beaker, hello_world_experiment_id: str):
     assert isinstance(spec, ExperimentSpec)
 
 
-def test_experiment_create_await_rename(
+def test_experiment_create_wait_rename(
     client: Beaker,
     experiment_name: str,
     alternate_experiment_name: str,
@@ -83,7 +83,7 @@ def test_experiment_create_await_rename(
     experiment = client.experiment.create(experiment_name, spec)
 
     # Wait for it to finish.
-    experiment = client.experiment.await_all(experiment, timeout=60 * 3)[0]
+    experiment = client.experiment.wait_for(experiment, timeout=60 * 3)[0]
 
     # Get the logs.
     logs = "".join([line.decode() for line in client.experiment.logs(experiment)])

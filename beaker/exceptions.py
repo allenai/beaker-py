@@ -149,3 +149,15 @@ class GroupConflict(BeakerError):
 
 class GroupNotFound(BeakerError):
     pass
+
+
+class DuplicateJobError(BeakerError):
+    """
+    Raised when duplicate jobs are passed into a method that expects unique jobs.
+    """
+
+
+class DuplicateExperimentError(BeakerError):
+    """
+    Raised when duplicate experiments are passed into a method that expects unique experiments.
+    """

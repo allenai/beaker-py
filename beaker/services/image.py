@@ -1,11 +1,11 @@
-from typing import Dict, Optional, Union
-
-from rich.progress import BarColumn, Progress, TaskID, TimeRemainingColumn
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
 from ..data_model import *
 from ..exceptions import *
-from ..util import DownloadUploadColumn
 from .service_client import ServiceClient
+
+if TYPE_CHECKING:
+    from rich.progress import TaskID
 
 
 class ImageClient(ServiceClient):
@@ -92,15 +92,10 @@ class ImageClient(ServiceClient):
         image.tag(repo_data["imageTag"])
 
         # Push the image to Beaker.
-        with Progress(
-            "[progress.description]{task.description}",
-            BarColumn(),
-            "[progress.percentage]{task.percentage:>3.0f}%",
-            TimeRemainingColumn(),
-            DownloadUploadColumn(),
-            disable=quiet,
-        ) as progress:
-            layer_id_to_task: Dict[str, TaskID] = {}
+        from ..progress import get_image_upload_progress
+
+        with get_image_upload_progress(quiet) as progress:
+            layer_id_to_task: Dict[str, "TaskID"] = {}
             for line in self.docker.api.push(
                 repo_data["imageTag"],
                 stream=True,
@@ -116,7 +111,7 @@ class ImageClient(ServiceClient):
                 layer_id = line["id"]
                 status = line["status"].lower()
                 progress_detail = line.get("progressDetail")
-                task_id: TaskID
+                task_id: "TaskID"
                 if layer_id not in layer_id_to_task:
                     task_id = progress.add_task(layer_id, start=True, total=1)
                     layer_id_to_task[layer_id] = task_id

@@ -1,10 +1,13 @@
 import time
-from typing import Any, Callable, Dict, Generator, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Set, Union
 
 from ..aliases import PathOrStr
 from ..data_model import *
 from ..exceptions import *
 from .service_client import ServiceClient
+
+if TYPE_CHECKING:
+    from rich.progress import TaskID
 
 
 class ExperimentClient(ServiceClient):
@@ -300,72 +303,220 @@ class ExperimentClient(ServiceClient):
         self,
         *experiments: Union[str, Experiment],
         timeout: Optional[float] = None,
-        poll_interval: float = 2.0,
+        poll_interval: float = 1.0,
         quiet: bool = False,
-        callback: Optional[Callable[[float], None]] = None,
+    ) -> List[Experiment]:
+        import warnings
+
+        warnings.warn(
+            "'ExperimentClient.await_all()' is deprecated. Please use 'ExperimentClient.wait_for()' instead.",
+            DeprecationWarning,
+        )
+        return self.wait_for(
+            *experiments, timeout=timeout, poll_interval=poll_interval, quiet=quiet
+        )
+
+    def wait_for(
+        self,
+        *experiments: Union[str, Experiment],
+        timeout: Optional[float] = None,
+        poll_interval: float = 1.0,
+        quiet: bool = False,
     ) -> List[Experiment]:
         """
-        Wait for all jobs in the experiments to complete.
+        Wait for experiments to finalize, returning the completed experiments as a list
+        in the same order they were given as input.
+
+        .. seealso::
+            :meth:`as_completed()`
+
+        .. seealso::
+            :meth:`Beaker.job.wait_for() <JobClient.wait_for>`
 
         :param experiments: Experiment ID, name, or object.
         :param timeout: Maximum amount of time to wait for (in seocnds).
         :param poll_interval: Time to wait between polling the experiment (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
-        :param callback: An optional user-provided callback function that takes a
-            single argument - the elapsed time.
 
         :raises ExperimentNotFound: If any experiment can't be found.
         :raises TimeoutError: If the ``timeout`` expires.
+        :raises DuplicateExperimentError: If the same experiment is given as an argument more than once.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        exp_id_to_position: Dict[str, int] = {}
+        exps_to_wait_on: List[Experiment] = []
+        for i, exp_ in enumerate(experiments):
+            exp = exp_ if isinstance(exp_, Experiment) else self.get(exp_)
+            exps_to_wait_on.append(exp)
+            if exp.id in exp_id_to_position:
+                raise DuplicateExperimentError(exp.display_name)
+            exp_id_to_position[exp.id] = i
+        completed_exps: List[Experiment] = list(
+            self.as_completed(
+                *exps_to_wait_on, timeout=timeout, poll_interval=poll_interval, quiet=quiet
+            )
+        )
+        return sorted(completed_exps, key=lambda exp: exp_id_to_position[exp.id])
+
+    def as_completed(
+        self,
+        *experiments: Union[str, Experiment],
+        timeout: Optional[float] = None,
+        poll_interval: float = 1.0,
+        quiet: bool = False,
+    ) -> Generator[Experiment, None, None]:
+        """
+        Wait for experiments to finalize, returning an iterator that yields experiments as they
+        complete.
+
+        .. seealso::
+            :meth:`wait_for()`
+
+        .. seealso::
+            :meth:`Beaker.job.as_completed() <JobClient.as_completed>`
+
+        :param experiments: Experiment ID, name, or object.
+        :param timeout: Maximum amount of time to wait for (in seocnds).
+        :param poll_interval: Time to wait between polling the experiment (in seconds).
+        :param quiet: If ``True``, progress won't be displayed.
+
+        :raises ExperimentNotFound: If any experiment can't be found.
+        :raises TimeoutError: If the ``timeout`` expires.
+        :raises DuplicateExperimentError: If the same experiment is given as an argument more than once.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         if timeout is not None and timeout <= 0:
             raise ValueError("'timeout' must be a positive number")
 
+        from ..progress import get_exps_and_jobs_progress
+
         start = time.time()
-        job_await_timeout = timeout
+        # Initialize progress trackers.
+        live_display, experiments_progress, jobs_progress = get_exps_and_jobs_progress(quiet)
+        # Keeps track of the IDs of each job for each task in each experiment.
+        exp_to_task_to_job: Dict[str, Dict[str, Optional[str]]] = {}
+        # Keeps track of the progress tracker "TaskID"s for each experiment.
+        exp_to_progress_task: Dict[str, "TaskID"] = {}
+        # Keeps track of experiments that haven't been returned yet.
+        incomplete_exps: Set[str] = set()
+        # Keeps track of jobs that have been finalized.
+        finalized_jobs: Set[str] = set()
 
-        def get_unfinished():
-            exps = []
-            jobs = []
-            for exp_ in experiments:
-                experiment = self.get(exp_.id if isinstance(exp_, Experiment) else exp_)
-                if experiment.jobs:
-                    has_unfinished_jobs = False
-                    for job in experiment.jobs:
-                        if job.status.current != CurrentJobStatus.finalized:
-                            jobs.append(job)
-                            has_unfinished_jobs = True
-                    if has_unfinished_jobs:
-                        exps.append(experiment)
-                else:
-                    exps.append(experiment)
-            return exps, jobs
+        def completed_tasks(exp_id: str) -> int:
+            return len(
+                [
+                    job_id
+                    for _, job_id in exp_to_task_to_job[exp_id].items()
+                    if job_id is not None and job_id in finalized_jobs
+                ]
+            )
 
-        exps_to_wait_on, jobs_to_wait_on = get_unfinished()
-        while exps_to_wait_on or jobs_to_wait_on:
-            elapsed = time.time() - start
-            if timeout is not None and elapsed >= timeout:
-                raise TimeoutError
-            if callback is not None:
-                callback(elapsed)
+        def total_tasks(exp_id: str) -> int:
+            return len(exp_to_task_to_job[exp_id])
 
-            if jobs_to_wait_on:
-                if timeout is not None:
-                    job_await_timeout = timeout - elapsed
-                self.beaker.job.await_all(
-                    *jobs_to_wait_on,
-                    timeout=job_await_timeout,
-                    poll_interval=poll_interval,
-                    quiet=quiet,
-                    callback=callback,
+        def experiment_finalized(exp_id: str) -> bool:
+            return completed_tasks(exp_id) == total_tasks(exp_id)
+
+        def complete_experiment(exp_id: str) -> Experiment:
+            incomplete_exps.remove(exp_id)
+            return self.get(exp_id)
+
+        with live_display:
+            # Populate progress trackers and state variables, also yielding
+            # any experiments that are already complete.
+            for e in experiments:
+                experiment = self.get(e.id if isinstance(e, Experiment) else e)
+                exp_id = experiment.id
+                incomplete_exps.add(exp_id)
+
+                # Ensure experiment is unique.
+                if exp_id in exp_to_task_to_job:
+                    raise DuplicateExperimentError(experiment.display_name)
+
+                # Get state of experiment.
+                exp_to_task_to_job[exp_id] = {}
+                tasks = self.tasks(experiment)
+                for task in tasks:
+                    latest_job = self._latest_job(task.jobs)
+                    exp_to_task_to_job[exp_id][task.id] = (
+                        None if latest_job is None else latest_job.id
+                    )
+                    if latest_job is not None and latest_job.is_finalized:
+                        finalized_jobs.add(latest_job.id)
+
+                # Add to progress tracker.
+                exp_to_progress_task[exp_id] = experiments_progress.add_task(
+                    experiment.display_name,
+                    total=total_tasks(exp_id),
+                    completed=completed_tasks(exp_id),
                 )
-            else:
-                time.sleep(poll_interval)
 
-            exps_to_wait_on, jobs_to_wait_on = get_unfinished()
+            # Now wait for the incomplete experiments to finalize.
+            while incomplete_exps:
+                # Collect (registered) incomplete jobs and also yield any experiments
+                # that have been finalized.
+                incomplete_jobs: List[str] = []
+                for exp_id, task_to_job in exp_to_task_to_job.items():
+                    if not experiment_finalized(exp_id):
+                        for job_id in task_to_job.values():
+                            if job_id is not None and job_id not in finalized_jobs:
+                                incomplete_jobs.append(job_id)
+                    elif exp_id in incomplete_exps:
+                        # Experiment has just completed, yield it.
+                        yield complete_experiment(exp_id)
 
-        return [self.get(exp.id if isinstance(exp, Experiment) else exp) for exp in experiments]
+                # Check for timeout.
+                elapsed = time.time() - start
+                if timeout is not None and elapsed >= timeout:
+                    raise TimeoutError
+
+                if incomplete_jobs:
+                    # Wait for current stack of incomplete jobs to finalize.
+                    for job in self.beaker.job._as_completed(
+                        *incomplete_jobs,
+                        timeout=None if timeout is None else timeout - elapsed,
+                        poll_interval=poll_interval,
+                        quiet=quiet,
+                        _progress=jobs_progress,
+                    ):
+                        finalized_jobs.add(job.id)
+
+                        assert job.execution is not None
+                        exp_id = job.execution.experiment
+
+                        # Update progress display.
+                        experiments_progress.advance(exp_to_progress_task[exp_id])
+
+                        # Check if corresponding experiment is now finalized.
+                        if experiment_finalized(exp_id) and exp_id in incomplete_exps:
+                            # Experiment has just completed, yield it.
+                            yield complete_experiment(exp_id)
+                else:
+                    # Wait for `poll_interval` to give Beaker a chance to register jobs.
+                    time.sleep(poll_interval)
+
+                # Now check for jobs that haven't been registered yet.
+                for exp_id, task_to_job in exp_to_task_to_job.items():
+                    if experiment_finalized(exp_id):
+                        # Experiment already finalized, no need for anything.
+                        continue
+
+                    if all(job_id is not None for job_id in task_to_job.values()):
+                        # All tasks already have registered jobs.
+                        continue
+
+                    for task in self.tasks(exp_id):
+                        if task_to_job[task.id] is not None or not task.jobs:
+                            continue
+
+                        latest_job = self._latest_job(task.jobs)
+                        assert latest_job is not None
+                        task_to_job[task.id] = latest_job.id
+                        if latest_job.is_finalized:
+                            # The newly registered job has already completed.
+                            finalized_jobs.add(latest_job.id)
 
     def _not_found_err_msg(self, experiment: str) -> str:
         return (
@@ -429,4 +580,4 @@ class ExperimentClient(ServiceClient):
             ]
         if not jobs:
             return None
-        return sorted(jobs, key=lambda job: (job.status.finalized, job.status.created))[-1]
+        return sorted(jobs, key=lambda job: job.status.created)[-1]

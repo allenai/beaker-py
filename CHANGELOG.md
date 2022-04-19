@@ -15,7 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Beaker.experiment.metrics()` method.
 - Added `Beaker.job.metrics()` method.
 - Added `Beaker.job.results()` method.
-- Added `Beaker.job.await_all()` method.
+- Added `Beaker.job.wait_for()` method.
+- Added `Beaker.job.as_completed()` method.
+- Added `Beaker.experiment.as_completed()` method.
 
 ### Changed
 
@@ -23,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and changed the return type to `Optional[Dataset]`.
 - Changed the signature of `Beaker.experiment.logs()`. Removed the `job_id` parameter
   and added the `task_name` parameter.
+- Deprecated `Beaker.experiment.await_all()`. Use `Beaker.experiment.wait_for()` instead.
 
 ## [v0.8.4](https://github.com/allenai/beaker-py/releases/tag/v0.8.4) - 2022-04-18
 
