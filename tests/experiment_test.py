@@ -161,3 +161,16 @@ def test_create_experiment_cluster_not_found(
     )
     with pytest.raises(ClusterNotFound):
         client.experiment.create(experiment_name, spec)
+
+
+def test_experiment_url(client: Beaker, hello_world_experiment_id: str):
+    assert (
+        client.experiment.url(hello_world_experiment_id)
+        == "https://beaker.org/ex/01FPB5WGRTM33P5AE6A28MT8QF"
+    )
+    assert (
+        client.experiment.url(hello_world_experiment_id, "main")
+        == "https://beaker.org/ex/01FPB5WGRTM33P5AE6A28MT8QF/tasks/01FPB5WGTFQH7K1NM2M1KMZA78"
+    )
+    with pytest.raises(ValueError, match="No task with name"):
+        client.experiment.url(hello_world_experiment_id, "foo")

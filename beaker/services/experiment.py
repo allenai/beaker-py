@@ -227,7 +227,7 @@ class ExperimentClient(ServiceClient):
         :param quiet: If ``True``, progress won't be displayed.
 
         :raises ValueError: The experiment has no tasks or jobs, or the experiment has multiple tasks but
-            ``task_name`` is not specified.
+            ``task_name`` is not specified, or no task by that name exists.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
@@ -259,7 +259,7 @@ class ExperimentClient(ServiceClient):
             Required if there are multiple tasks in the experiment.
 
         :raises ValueError: The experiment has no tasks, or the experiment has multiple tasks but
-            ``task_name`` is not specified.
+            ``task_name`` is not specified, or no task by that name exists.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
@@ -286,7 +286,7 @@ class ExperimentClient(ServiceClient):
             Required if there are multiple tasks in the experiment.
 
         :raises ValueError: The experiment has no tasks, or the experiment has multiple tasks but
-            ``task_name`` is not specified.
+            ``task_name`` is not specified, or no task by that name exists.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
@@ -517,6 +517,29 @@ class ExperimentClient(ServiceClient):
                         if latest_job.is_finalized:
                             # The newly registered job has already completed.
                             finalized_jobs.add(latest_job.id)
+
+    def url(self, experiment: Union[str, Experiment], task_name: Optional[str] = None) -> str:
+        """
+        Get the URL for an experiment.
+
+        :param experiment: The experiment ID, name, or object.
+        :param task_name: The name of a specific task in the experiment. If given, the URL
+            will point to that task.
+
+        :raises ValueError: If no task by that name exists.
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        experiment = self.resolve_experiment(experiment)
+        experiment_url = f"{self.config.agent_address}/ex/{self.url_quote(experiment.id)}"
+        if task_name is None:
+            return experiment_url
+        else:
+            for task in self.tasks(experiment):
+                if task.name == task_name:
+                    return f"{experiment_url}/tasks/{task.id}"
+            raise ValueError(f"No task with name '{task_name}' in experiment {experiment.id}")
 
     def _not_found_err_msg(self, experiment: Union[str, Experiment]) -> str:
         experiment = experiment if isinstance(experiment, str) else experiment.id
