@@ -54,7 +54,7 @@ class ExperimentClient(ServiceClient):
 
         :param name: The name to assign the experiment.
         :param spec: The spec for the Beaker experiment. This can either be an
-            :class:`~beaker.data_model.ExperimentSpec` instance or the path to a YAML spec file.
+            :class:`~beaker.data_model.experiment.ExperimentSpec` instance or the path to a YAML spec file.
         :param workspace: The workspace to create the experiment under. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
 
@@ -86,7 +86,7 @@ class ExperimentClient(ServiceClient):
 
     def spec(self, experiment: Union[str, Experiment]) -> ExperimentSpec:
         """
-        Get the :class:`spec <beaker.data_model.ExperimentSpec>` of an experiment.
+        Get the :class:`spec <beaker.data_model.experiment.ExperimentSpec>` of an experiment.
 
         :param experiment: The experiment ID, name, or object.
 

@@ -89,6 +89,83 @@ Data Models
 -----------
 
 .. automodule:: beaker.data_model
+
+.. autoclass:: beaker.data_model.base.BaseModel
+
+Account
+~~~~~~~
+
+.. automodule:: beaker.data_model.account
+   :members:
+   :undoc-members:
+
+Organization
+~~~~~~~~~~~~
+
+.. automodule:: beaker.data_model.organization
+   :members:
+   :undoc-members:
+
+Workspace
+~~~~~~~~~
+
+.. automodule:: beaker.data_model.workspace
+   :members:
+   :undoc-members:
+
+Cluster
+~~~~~~~
+
+.. automodule:: beaker.data_model.cluster
+   :members:
+   :undoc-members:
+
+Node
+~~~~
+
+.. automodule:: beaker.data_model.node
+   :members:
+   :undoc-members:
+
+Dataset
+~~~~~~~
+
+.. automodule:: beaker.data_model.dataset
+   :members:
+   :undoc-members:
+
+Image
+~~~~~
+
+.. automodule:: beaker.data_model.image
+   :members:
+   :undoc-members:
+
+Job
+~~~
+
+.. automodule:: beaker.data_model.job
+   :members:
+   :undoc-members:
+
+Experiment
+~~~~~~~~~~
+
+.. automodule:: beaker.data_model.experiment
+   :members:
+   :undoc-members:
+
+Secret
+~~~~~~
+
+.. automodule:: beaker.data_model.secret
+   :members:
+   :undoc-members:
+
+Group
+~~~~~
+
+.. automodule:: beaker.data_model.group
    :members:
    :undoc-members:
 
