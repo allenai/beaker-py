@@ -29,12 +29,12 @@ class Node(BaseModel):
 class NodeSpecUtil(BaseModel):
     cpu_count: Optional[float] = None
     gpu_count: Optional[int] = None
-    #  memory: Optional[str]   # TODO
 
 
 class NodeUtilization(BaseModel):
     id: str
     hostname: str
     limits: NodeSpec
+    running_jobs: int
     used: NodeSpecUtil
     free: NodeSpecUtil
