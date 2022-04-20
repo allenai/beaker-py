@@ -76,6 +76,11 @@ def beaker_image_name(client: Beaker) -> Generator[str, None, None]:
 
 
 @pytest.fixture()
+def beaker_python_image_name() -> str:
+    return "petew/python-3-10-alpine"
+
+
+@pytest.fixture()
 def alternate_beaker_image_name(client: Beaker) -> Generator[str, None, None]:
     yield from beaker_object_fixture(client, "image")
 

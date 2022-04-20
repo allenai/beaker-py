@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
+from docker.models.images import Image as DockerImage
+
 from ..data_model import *
 from ..exceptions import *
 from .service_client import ServiceClient
@@ -120,7 +122,22 @@ class ImageClient(ServiceClient):
                 else:
                     task_id = layer_id_to_task[layer_state.id]
 
-                if layer_state.status in {
+                # Update task progress description.
+                progress.update(
+                    task_id, description=f"{layer_state.id}: {layer_state.status.title()}"
+                )
+
+                # Update task progress total and completed.
+                if (
+                    layer_state.progress_detail.total is not None
+                    and layer_state.progress_detail.current is not None
+                ):
+                    progress.update(
+                        task_id,
+                        total=layer_state.progress_detail.total,
+                        completed=layer_state.progress_detail.current,
+                    )
+                elif layer_state.status in {
                     DockerLayerUploadStatus.preparing,
                     DockerLayerUploadStatus.waiting,
                 }:
@@ -128,35 +145,16 @@ class ImageClient(ServiceClient):
                         task_id,
                         total=1,
                         completed=0,
-                        description=f"{layer_state.id}: {layer_state.status.title()}",
                     )
-                elif layer_state.status == DockerLayerUploadStatus.pushing:
-                    progress.update(
-                        task_id,
-                        description=f"{layer_state.id}: Pushing",
-                    )
-                    if layer_state.progress_detail.total and layer_state.progress_detail.current:
-                        progress.update(
-                            task_id,
-                            total=layer_state.progress_detail.total,
-                            completed=layer_state.progress_detail.current,
-                        )
-                elif layer_state.status == DockerLayerUploadStatus.pushed:
+                elif layer_state.status in {
+                    DockerLayerUploadStatus.pushed,
+                    DockerLayerUploadStatus.already_exists,
+                }:
                     progress.update(
                         task_id,
                         total=1,
                         completed=1,
-                        description=f"{layer_state.id}: Push complete",
                     )
-                elif layer_state.status == "layer already exists":
-                    progress.update(
-                        task_id,
-                        total=1,
-                        completed=1,
-                        description=f"{layer_state.id}: Already exists",
-                    )
-                else:
-                    raise ValueError(f"unhandled status '{layer_state.status}' (layer_state)")
 
         if commit:
             return self.commit(image_id)
@@ -223,6 +221,92 @@ class ImageClient(ServiceClient):
                 exceptions_for_status={404: ImageNotFound(self._not_found_err_msg(image))},
             ).json()
         )
+
+    def pull(self, image: Union[str, Image], quiet: bool = False) -> DockerImage:
+        """
+        Pull an image from Beaker.
+
+        .. important::
+            This method returns a Docker :class:`~docker.models.images.Image`, not
+            a Beaker :class:`~beaker.data_model.Image`.
+
+        :param image: The Beaker image ID, name, or object.
+        :param quiet: If ``True``, progress won't be displayed.
+
+        :raises ImageNotFound: If the image can't be found on Beaker.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        image_id = self.resolve_image(image).id
+        repo = ImageRepo.from_json(self.request(f"images/{image_id}/repository").json())
+
+        from ..progress import get_image_download_progress
+
+        with get_image_download_progress(quiet) as progress:
+            layer_id_to_task: Dict[str, "TaskID"] = {}
+            for layer_state_data in self.docker.api.pull(
+                repo.image_tag,
+                stream=True,
+                decode=True,
+                auth_config={
+                    "username": repo.auth.user,
+                    "password": repo.auth.password,
+                    "server_address": repo.auth.server_address,
+                },
+            ):
+                if "id" not in layer_state_data or "status" not in layer_state_data:
+                    continue
+                if layer_state_data["status"].lower().startswith("pulling "):
+                    continue
+
+                layer_state = DockerLayerDownloadState.from_json(layer_state_data)
+
+                # Get progress task ID for layer, initializing if it doesn't already exist.
+                task_id: "TaskID"
+                if layer_state.id not in layer_id_to_task:
+                    task_id = progress.add_task(layer_state.id, start=True, total=1)
+                    layer_id_to_task[layer_state.id] = task_id
+                else:
+                    task_id = layer_id_to_task[layer_state.id]
+
+                # Update task progress description.
+                progress.update(
+                    task_id, description=f"{layer_state.id}: {layer_state.status.title()}"
+                )
+
+                # Update task progress total and completed.
+                if (
+                    layer_state.progress_detail.total is not None
+                    and layer_state.progress_detail.current is not None
+                ):
+                    progress.update(
+                        task_id,
+                        total=layer_state.progress_detail.total,
+                        completed=layer_state.progress_detail.current,
+                    )
+                elif layer_state.status in {
+                    DockerLayerDownloadStatus.waiting,
+                    DockerLayerDownloadStatus.extracting,
+                    DockerLayerDownloadStatus.verifying_checksum,
+                }:
+                    progress.update(
+                        task_id,
+                        total=1,
+                        completed=0,
+                    )
+                elif layer_state.status in {
+                    DockerLayerDownloadStatus.download_complete,
+                    DockerLayerDownloadStatus.pull_complete,
+                    DockerLayerDownloadStatus.already_exists,
+                }:
+                    progress.update(
+                        task_id,
+                        total=1,
+                        completed=1,
+                    )
+
+        local_image = self.docker.images.get(repo.image_tag)
+        return local_image
 
     def _not_found_err_msg(self, image: Union[str, Image]) -> str:
         image = image if isinstance(image, str) else image.id

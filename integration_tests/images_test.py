@@ -10,7 +10,9 @@ from beaker import Beaker
 LOCAL_IMAGE_TAG = "beaker-py-test"
 
 
-def test_image_workflow(client: Beaker, beaker_image_name: str, alternate_beaker_image_name: str):
+def test_image_create_workflow(
+    client: Beaker, beaker_image_name: str, alternate_beaker_image_name: str
+):
     # Create and push the image.
     print(f"Creating image '{beaker_image_name}'")
     image = client.image.create(beaker_image_name, LOCAL_IMAGE_TAG)
@@ -21,3 +23,7 @@ def test_image_workflow(client: Beaker, beaker_image_name: str, alternate_beaker
     print(f"Renaming image to '{alternate_beaker_image_name}'")
     image = client.image.rename(image, alternate_beaker_image_name)
     assert image.name == alternate_beaker_image_name
+
+
+def test_image_pull_workflow(client: Beaker, beaker_python_image_name: str):
+    client.image.pull(beaker_python_image_name)

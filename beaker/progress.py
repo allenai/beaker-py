@@ -164,3 +164,7 @@ def get_image_upload_progress(quiet: bool = False) -> Progress:
         DownloadUploadColumn(),
         disable=quiet,
     )
+
+
+def get_image_download_progress(quiet: bool = False) -> Progress:
+    return get_image_upload_progress(quiet)

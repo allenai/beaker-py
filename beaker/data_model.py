@@ -1012,7 +1012,7 @@ class ImageRepo(BaseModel):
     auth: ImageRepoAuth
 
 
-class DockerLayerUploadProgress(BaseModel):
+class DockerLayerProgress(BaseModel):
     current: Optional[int] = None
     total: Optional[int] = None
 
@@ -1025,10 +1025,30 @@ class DockerLayerUploadStatus(str, Enum):
     already_exists = "layer already exists"
 
 
+class DockerLayerDownloadStatus(str, Enum):
+    waiting = "waiting"
+    downloading = "downloading"
+    download_complete = "download complete"
+    verifying_checksum = "verifying checksum"
+    extracting = "extracting"
+    pull_complete = "pull complete"
+    already_exists = "already exists"
+
+
 class DockerLayerUploadState(BaseModel):
     id: str
     status: DockerLayerUploadStatus
-    progress_detail: DockerLayerUploadProgress
+    progress_detail: DockerLayerProgress
+
+    @validator("status", pre=True)
+    def _validate_status(cls, v: str) -> str:
+        return v.lower()
+
+
+class DockerLayerDownloadState(BaseModel):
+    id: str
+    status: DockerLayerDownloadStatus
+    progress_detail: DockerLayerProgress
 
     @validator("status", pre=True)
     def _validate_status(cls, v: str) -> str:
