@@ -82,11 +82,10 @@ jobs:
 
           - name: Images
             run: |
-              set -euo pipefail
               cd test_fixtures/docker \
                 && docker build --build-arg "COMMIT_SHA=$COMMIT_SHA" -t beaker-py-test . \
                 && cd -
-              pytest -v --color=yes integration_tests/image_test.py
+              pytest -rP -v --color=yes integration_tests/image_test.py
 
           - name: Build
             run: |
@@ -124,6 +123,7 @@ jobs:
       - name: ${{ matrix.task.name }}
         shell: bash
         run: |
+          set -euo pipefail
           . .venv/bin/activate
           ${{ matrix.task.run }}
 

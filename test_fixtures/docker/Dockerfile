@@ -6,5 +6,6 @@ FROM python:3.10-alpine
 # We use the commit SHA to ensure this image has unique layers to upload.
 ARG COMMIT_SHA
 
-# Install some random stuff so that we have a layer to upload.
+# Now do some other some other random stuff so that we have more layers to upload.
+RUN echo ${COMMIT_SHA} > /out.log
 RUN pip install requests PyYAML pydantic
