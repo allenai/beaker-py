@@ -95,7 +95,7 @@ class GroupClient(ServiceClient):
         self.request(
             f"groups/{self.url_quote(group_id)}",
             method="DELETE",
-            exceptions_for_status={404: GroupNotFound(self._not_found_err_msg(group_id))},
+            exceptions_for_status={404: GroupNotFound(self._not_found_err_msg(group))},
         )
 
     def rename(self, group: Union[str, Group], name: str) -> Group:
@@ -119,7 +119,7 @@ class GroupClient(ServiceClient):
                 method="PATCH",
                 data={"name": name},
                 exceptions_for_status={
-                    404: GroupNotFound(self._not_found_err_msg(group_id)),
+                    404: GroupNotFound(self._not_found_err_msg(group)),
                     409: GroupConflict(name),
                 },
             ).json()
@@ -145,7 +145,7 @@ class GroupClient(ServiceClient):
             f"groups/{self.url_quote(group_id)}",
             method="PATCH",
             data={"addExperiments": exp_ids},
-            exceptions_for_status={404: GroupNotFound(self._not_found_err_msg(group_id))},
+            exceptions_for_status={404: GroupNotFound(self._not_found_err_msg(group))},
         )
 
     def remove_experiments(self, group: Union[str, Group], *experiments: Union[str, Experiment]):
@@ -168,7 +168,7 @@ class GroupClient(ServiceClient):
             f"groups/{self.url_quote(group_id)}",
             method="PATCH",
             data={"removeExperiments": exp_ids},
-            exceptions_for_status={404: GroupNotFound(self._not_found_err_msg(group_id))},
+            exceptions_for_status={404: GroupNotFound(self._not_found_err_msg(group))},
         )
 
     def list_experiments(self, group: Union[str, Group]) -> List[Experiment]:
@@ -185,12 +185,13 @@ class GroupClient(ServiceClient):
         exp_ids = self.request(
             f"groups/{self.url_quote(group_id)}/experiments",
             method="GET",
-            exceptions_for_status={404: GroupNotFound(self._not_found_err_msg(group_id))},
+            exceptions_for_status={404: GroupNotFound(self._not_found_err_msg(group))},
         ).json()
         # TODO: make these requests concurrently.
         return [self.beaker.experiment.get(exp_id) for exp_id in exp_ids or []]
 
-    def _not_found_err_msg(self, group: str) -> str:
+    def _not_found_err_msg(self, group: Union[str, Group]) -> str:
+        group = group if isinstance(group, str) else group.id
         return (
             f"'{group}': Make sure you're using a valid Beaker group ID or the "
             f"*full* name of the group (with the account prefix, e.g. 'username/group_name')"

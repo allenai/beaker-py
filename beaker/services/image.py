@@ -175,7 +175,12 @@ class ImageClient(ServiceClient):
         """
         image_id = self.resolve_image(image).id
         return Image.from_json(
-            self.request(f"images/{image_id}", method="PATCH", data={"Commit": True}).json()
+            self.request(
+                f"images/{image_id}",
+                method="PATCH",
+                data={"commit": True},
+                exceptions_for_status={404: ImageNotFound(self._not_found_err_msg(image))},
+            ).json()
         )
 
     def delete(self, image: Union[str, Image]):
@@ -192,10 +197,35 @@ class ImageClient(ServiceClient):
         self.request(
             f"images/{self.url_quote(image_id)}",
             method="DELETE",
-            exceptions_for_status={404: ImageNotFound(self._not_found_err_msg(image_id))},
+            exceptions_for_status={404: ImageNotFound(self._not_found_err_msg(image))},
         )
 
-    def _not_found_err_msg(self, image: str) -> str:
+    def rename(self, image: Union[str, Image], name: str) -> Image:
+        """
+        Rename an image on Beaker.
+
+        :param image: The Beaker image ID, name, or object.
+        :param name: The new name for the image.
+
+        :raises ImageNotFound: If the image can't be found on Beaker.
+        :raises ValueError: If the image name is invalid.
+        :raises ImageConflict: If an image with the given name already exists.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        self.validate_beaker_name(name)
+        image_id = self.resolve_image(image).id
+        return Image.from_json(
+            self.request(
+                f"images/{image_id}",
+                method="PATCH",
+                data={"name": name},
+                exceptions_for_status={404: ImageNotFound(self._not_found_err_msg(image))},
+            ).json()
+        )
+
+    def _not_found_err_msg(self, image: Union[str, Image]) -> str:
+        image = image if isinstance(image, str) else image.id
         return (
             f"'{image}': Make sure you're using a valid Beaker image ID or the "
             f"*full* name of the image (with the account prefix, e.g. 'username/image_name')"

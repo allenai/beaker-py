@@ -888,6 +888,10 @@ class Dataset(BaseModel):
     full_name: Optional[str] = None
     storage: Optional[DatasetStorage] = None
 
+    @property
+    def display_name(self) -> str:
+        return self.name if self.name is not None else self.id
+
     @validator("committed")
     def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
         if v is not None and v.year == 1:
@@ -939,6 +943,10 @@ class Image(BaseModel):
     name: Optional[str] = None
     full_name: Optional[str] = None
     committed: Optional[datetime] = None
+
+    @property
+    def display_name(self) -> str:
+        return self.name if self.name is not None else self.id
 
     @validator("committed")
     def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
