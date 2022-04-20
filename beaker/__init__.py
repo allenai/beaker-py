@@ -71,7 +71,7 @@ Or you could check how many GPUs are free on an on-premise cluster with
 :meth:`Beaker.cluster.utilization() <services.ClusterClient.utilization>`:
 
 >>> free_gpus = 0
->>> for node_util in beaker.cluster.utilization(beaker_on_prem_cluster_name):
+>>> for node_util in beaker.cluster.utilization(beaker_on_prem_cluster_name).nodes:
 ...     free_gpus += node_util.free.gpu_count
 
 Nodes
