@@ -33,7 +33,7 @@ def test_experiment_workflow(
     experiment = client.experiment.create(experiment_name, spec)
 
     # Wait for it to finish.
-    experiment = client.experiment.wait_for(experiment, timeout=60 * 3)[0]
+    experiment = client.experiment.wait_for(experiment, timeout=60 * 5)[0]
 
     # Get the logs.
     logs = "".join([line.decode() for line in client.experiment.logs(experiment)])
