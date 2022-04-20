@@ -86,6 +86,11 @@ def beaker_cluster_name() -> str:
 
 
 @pytest.fixture()
+def beaker_cloud_cluster_name() -> str:
+    return "ai2/petew-cpu"
+
+
+@pytest.fixture()
 def beaker_on_prem_cluster_name() -> str:
     return "ai2/allennlp-cirrascale"
 
