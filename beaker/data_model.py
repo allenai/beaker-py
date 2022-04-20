@@ -14,10 +14,6 @@ T = TypeVar("T")
 logger = logging.getLogger(__name__)
 
 
-SPEC_VERSION = "v2"
-ALLOWED_SPEC_VERSIONS = {SPEC_VERSION, "v2-alpha"}
-
-
 class BaseModel(_BaseModel):
     """
     The base class for all Beaker data models.
@@ -527,6 +523,11 @@ class TaskSpec(BaseModel):
         )
 
 
+class SpecVersion(str, Enum):
+    v2 = "v2"
+    v2_alpha = "v2-alpha"
+
+
 class ExperimentSpec(BaseModel):
     """
     Experiments are the main unit of execution in Beaker.
@@ -554,7 +555,7 @@ class ExperimentSpec(BaseModel):
     Specifications for each process to run.
     """
 
-    version: str = SPEC_VERSION
+    version: SpecVersion = SpecVersion.v2
     """
     Must be 'v2' for now.
     """
@@ -563,12 +564,6 @@ class ExperimentSpec(BaseModel):
     """
     Long-form explanation for an experiment.
     """
-
-    @validator("version")
-    def _validate_version(cls, v: str) -> str:
-        if v not in ALLOWED_SPEC_VERSIONS:
-            raise ValueError(f"Spec version '{v}' is not supported")
-        return v
 
     @validator("tasks")
     def _validate_tasks(cls, v: List[TaskSpec]) -> List[TaskSpec]:
@@ -640,8 +635,13 @@ class Organization(BaseModel):
     display_name: str
 
 
+class OrganizationRole(str, Enum):
+    admin = "admin"
+    member = "member"
+
+
 class OrganizationMember(BaseModel):
-    role: str
+    role: OrganizationRole
     organization: Organization
     user: Account
 
@@ -664,6 +664,13 @@ class NodeSpecUtil(BaseModel):
     cpu_count: Optional[float] = None
     gpu_count: Optional[int] = None
     #  memory: Optional[str]   # TODO
+
+
+class ClusterStatus(str, Enum):
+    pending = "pending"
+    active = "active"
+    terminated = "terminated"
+    failed = "failed"
 
 
 class Cluster(BaseModel):
@@ -982,7 +989,7 @@ class WorkspacePage(BaseModel):
 
 
 class WorkspacePermissions(BaseModel):
-    requesterAuth: str
+    requester_auth: str
     public: bool
     authorizations: Dict[str, str]
     """

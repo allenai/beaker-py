@@ -98,7 +98,7 @@ class ExperimentClient(ServiceClient):
         return ExperimentSpec.from_json(
             self.request(
                 f"experiments/{self.url_quote(experiment_id)}/spec",
-                query={"version": SPEC_VERSION},
+                query={"version": SpecVersion.v2},
                 headers={"Accept": "application/json"},
             ).json()
         )
