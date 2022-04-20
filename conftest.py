@@ -82,8 +82,7 @@ def alternate_beaker_image_name(client: Beaker) -> Generator[str, None, None]:
 
 @pytest.fixture()
 def beaker_cluster_name() -> str:
-    cluster = "ai2/petew-cpu"
-    return cluster
+    return "ai2/general-cirrascale"
 
 
 @pytest.fixture()
