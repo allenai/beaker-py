@@ -188,7 +188,7 @@ class Beaker:
 
         :examples:
 
-        >>> beaker.cluster.get(beaker_cluster_name).autoscale
+        >>> beaker.cluster.get(beaker_cloud_cluster_name).autoscale
         True
 
         .. tip::
