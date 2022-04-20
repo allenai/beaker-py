@@ -85,7 +85,15 @@ jobs:
               cd test_fixtures/docker \
                 && docker build --build-arg "COMMIT_SHA=$COMMIT_SHA" -t beaker-py-test . \
                 && cd -
-              pytest -rP -v --color=yes integration_tests/image_test.py
+              pytest -rP -v --color=yes integration_tests/images_test.py
+
+          - name: Jobs
+            run: |
+              pytest -rP -v --color=yes integration_tests/jobs_test.py
+
+          - name: Experiments
+            run: |
+              pytest -rP -v --color=yes integration_tests/experiments_test.py
 
           - name: Build
             run: |
