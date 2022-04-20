@@ -10,6 +10,10 @@ from beaker.data_model import *
 from beaker.exceptions import *
 
 
+def unique_name() -> str:
+    return petname.generate() + "-" + str(uuid.uuid4())[:8]
+
+
 @pytest.fixture()
 def workspace_name() -> str:
     name = "ai2/petew-testing"
@@ -52,7 +56,7 @@ def docker_image_name(client: Beaker):
 
 @pytest.fixture()
 def beaker_image_name(client: Beaker) -> Generator[str, None, None]:
-    image = petname.generate() + "-" + str(uuid.uuid4())[:8]
+    image = unique_name()
     yield image
     try:
         client.image.delete(f"{client.account.whoami().name}/{image}")
@@ -73,7 +77,7 @@ def beaker_on_prem_cluster_name() -> str:
 
 @pytest.fixture()
 def experiment_name(client: Beaker) -> Generator[str, None, None]:
-    name = petname.generate() + "-" + str(uuid.uuid4())[:8]
+    name = unique_name()
     yield name
     try:
         client.experiment.delete(f"{client.account.whoami().name}/{name}")
@@ -83,7 +87,7 @@ def experiment_name(client: Beaker) -> Generator[str, None, None]:
 
 @pytest.fixture()
 def alternate_experiment_name(client: Beaker) -> Generator[str, None, None]:
-    name = petname.generate() + "-" + str(uuid.uuid4())[:8]
+    name = unique_name()
     yield name
     try:
         client.experiment.delete(f"{client.account.whoami().name}/{name}")
@@ -93,7 +97,7 @@ def alternate_experiment_name(client: Beaker) -> Generator[str, None, None]:
 
 @pytest.fixture()
 def dataset_name(client: Beaker) -> Generator[str, None, None]:
-    name = petname.generate() + "-" + str(uuid.uuid4())[:8]
+    name = unique_name()
     yield name
     try:
         client.dataset.delete(f"{client.account.whoami().name}/{name}")
@@ -103,7 +107,7 @@ def dataset_name(client: Beaker) -> Generator[str, None, None]:
 
 @pytest.fixture()
 def alternate_dataset_name(client: Beaker) -> Generator[str, None, None]:
-    name = petname.generate() + "-" + str(uuid.uuid4())[:8]
+    name = unique_name()
     yield name
     try:
         client.dataset.delete(f"{client.account.whoami().name}/{name}")
@@ -144,7 +148,7 @@ def beaker_node_id() -> str:
 
 @pytest.fixture()
 def secret_name(client: Beaker) -> Generator[str, None, None]:
-    name = petname.generate() + "-" + str(uuid.uuid4())[:8]
+    name = unique_name()
     yield name
     try:
         client.secret.delete(name)
@@ -178,7 +182,7 @@ def alternate_user(client: Beaker) -> Account:
 
 @pytest.fixture()
 def group_name(client: Beaker) -> Generator[str, None, None]:
-    group = petname.generate() + "-" + str(uuid.uuid4())[:8]
+    group = unique_name()
     yield group
     try:
         client.group.delete(f"{client.account.whoami().name}/{group}")
@@ -188,7 +192,7 @@ def group_name(client: Beaker) -> Generator[str, None, None]:
 
 @pytest.fixture()
 def alternate_group_name(client: Beaker) -> Generator[str, None, None]:
-    group = petname.generate() + "-" + str(uuid.uuid4())[:8]
+    group = unique_name()
     yield group
     try:
         client.group.delete(f"{client.account.whoami().name}/{group}")

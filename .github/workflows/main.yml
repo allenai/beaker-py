@@ -80,6 +80,13 @@ jobs:
             run: |
               pytest -v --color=yes --doctest-modules beaker/
 
+          - name: Images
+            run: |
+              cd test_fixtures/docker \
+                && docker build --build-arg "COMMIT_SHA=$COMMIT_SHA" -t beaker-py-test . \
+                && cd -
+              pytest -v --color=yes integration_tests/image_test.py
+
           - name: Build
             run: |
               python setup.py check
@@ -96,6 +103,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - name: Determine current commit SHA (pull request)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "COMMIT_SHA=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+
+      - name: Determine current commit SHA (push)
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
 
       - name: Setup Python environment
         uses: ./.github/actions/setup-venv
