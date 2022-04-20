@@ -1,4 +1,5 @@
 import logging
+import random
 import uuid
 from pathlib import Path
 from typing import Generator
@@ -87,7 +88,15 @@ def alternate_beaker_image_name(client: Beaker) -> Generator[str, None, None]:
 
 @pytest.fixture()
 def beaker_cluster_name() -> str:
-    return "ai2/general-cirrascale"
+    return random.choice(
+        [
+            "ai2/general-cirrascale",
+            "ai2/allennlp-cirrascale",
+            "ai2/aristo-cirrascale",
+            "ai2/mosaic-cirrascale",
+            "ai2/s2-cirrascale",
+        ]
+    )
 
 
 @pytest.fixture()
