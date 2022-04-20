@@ -117,7 +117,7 @@ class ExperimentClient(ServiceClient):
         self.request(
             f"experiments/{self.url_quote(experiment_id)}/stop",
             method="PUT",
-            exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment_id))},
+            exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment))},
         )
 
     def resume(self, experiment: Union[str, Experiment]):
@@ -134,7 +134,7 @@ class ExperimentClient(ServiceClient):
         self.request(
             f"experiments/{self.url_quote(experiment_id)}/resume",
             method="POST",
-            exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment_id))},
+            exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment))},
         )
 
     def delete(self, experiment: Union[str, Experiment]):
@@ -151,7 +151,7 @@ class ExperimentClient(ServiceClient):
         self.request(
             f"experiments/{self.url_quote(experiment_id)}",
             method="DELETE",
-            exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment_id))},
+            exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment))},
         )
 
     def rename(self, experiment: Union[str, Experiment], name: str) -> Experiment:
@@ -174,7 +174,7 @@ class ExperimentClient(ServiceClient):
                 method="PATCH",
                 data={"name": name},
                 exceptions_for_status={
-                    404: ExperimentNotFound(self._not_found_err_msg(experiment_id)),
+                    404: ExperimentNotFound(self._not_found_err_msg(experiment)),
                     409: ExperimentConflict(name),
                 },
             ).json()
@@ -197,7 +197,7 @@ class ExperimentClient(ServiceClient):
                 f"experiments/{self.url_quote(experiment_id)}/tasks",
                 method="GET",
                 exceptions_for_status={
-                    404: ExperimentNotFound(self._not_found_err_msg(experiment_id))
+                    404: ExperimentNotFound(self._not_found_err_msg(experiment))
                 },
             ).json()
         ]
@@ -518,7 +518,8 @@ class ExperimentClient(ServiceClient):
                             # The newly registered job has already completed.
                             finalized_jobs.add(latest_job.id)
 
-    def _not_found_err_msg(self, experiment: str) -> str:
+    def _not_found_err_msg(self, experiment: Union[str, Experiment]) -> str:
+        experiment = experiment if isinstance(experiment, str) else experiment.id
         return (
             f"'{experiment}': Make sure you're using a valid Beaker experiment ID or the "
             f"*full* name of the experiment (with the account prefix, e.g. 'username/experiment_name')"

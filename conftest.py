@@ -1,3 +1,4 @@
+import logging
 import uuid
 from pathlib import Path
 from typing import Generator
@@ -5,9 +6,28 @@ from typing import Generator
 import petname
 import pytest
 
+from beaker import exceptions
 from beaker.client import Beaker
 from beaker.data_model import *
-from beaker.exceptions import *
+
+logger = logging.getLogger(__name__)
+
+
+def unique_name() -> str:
+    return petname.generate() + "-" + str(uuid.uuid4())[:8]
+
+
+def beaker_object_fixture(client: Beaker, service: str):
+    name = unique_name()
+    service_client = getattr(client, service)
+    not_found_exception = getattr(exceptions, f"{service.title()}NotFound")
+    yield name
+    try:
+        logger.info("Attempting to remove %s '%s' from Beaker", service, name)
+        service_client.delete(name)
+        logger.info("Successfully deleted %s '%s' from Beaker", service, name)
+    except not_found_exception:
+        logger.info("%s '%s' not found on Beaker", service.title(), name)
 
 
 @pytest.fixture()
@@ -52,18 +72,22 @@ def docker_image_name(client: Beaker):
 
 @pytest.fixture()
 def beaker_image_name(client: Beaker) -> Generator[str, None, None]:
-    image = petname.generate() + "-" + str(uuid.uuid4())[:8]
-    yield image
-    try:
-        client.image.delete(f"{client.account.whoami().name}/{image}")
-    except ImageNotFound:
-        pass
+    yield from beaker_object_fixture(client, "image")
+
+
+@pytest.fixture()
+def alternate_beaker_image_name(client: Beaker) -> Generator[str, None, None]:
+    yield from beaker_object_fixture(client, "image")
 
 
 @pytest.fixture()
 def beaker_cluster_name() -> str:
-    cluster = "ai2/petew-cpu"
-    return cluster
+    return "ai2/general-cirrascale"
+
+
+@pytest.fixture()
+def beaker_cloud_cluster_name() -> str:
+    return "ai2/petew-cpu"
 
 
 @pytest.fixture()
@@ -73,42 +97,22 @@ def beaker_on_prem_cluster_name() -> str:
 
 @pytest.fixture()
 def experiment_name(client: Beaker) -> Generator[str, None, None]:
-    name = petname.generate() + "-" + str(uuid.uuid4())[:8]
-    yield name
-    try:
-        client.experiment.delete(f"{client.account.whoami().name}/{name}")
-    except ExperimentNotFound:
-        pass
+    yield from beaker_object_fixture(client, "experiment")
 
 
 @pytest.fixture()
 def alternate_experiment_name(client: Beaker) -> Generator[str, None, None]:
-    name = petname.generate() + "-" + str(uuid.uuid4())[:8]
-    yield name
-    try:
-        client.experiment.delete(f"{client.account.whoami().name}/{name}")
-    except ExperimentNotFound:
-        pass
+    yield from beaker_object_fixture(client, "experiment")
 
 
 @pytest.fixture()
 def dataset_name(client: Beaker) -> Generator[str, None, None]:
-    name = petname.generate() + "-" + str(uuid.uuid4())[:8]
-    yield name
-    try:
-        client.dataset.delete(f"{client.account.whoami().name}/{name}")
-    except DatasetNotFound:
-        pass
+    yield from beaker_object_fixture(client, "dataset")
 
 
 @pytest.fixture()
 def alternate_dataset_name(client: Beaker) -> Generator[str, None, None]:
-    name = petname.generate() + "-" + str(uuid.uuid4())[:8]
-    yield name
-    try:
-        client.dataset.delete(f"{client.account.whoami().name}/{name}")
-    except DatasetNotFound:
-        pass
+    yield from beaker_object_fixture(client, "dataset")
 
 
 @pytest.fixture()
@@ -144,12 +148,7 @@ def beaker_node_id() -> str:
 
 @pytest.fixture()
 def secret_name(client: Beaker) -> Generator[str, None, None]:
-    name = petname.generate() + "-" + str(uuid.uuid4())[:8]
-    yield name
-    try:
-        client.secret.delete(name)
-    except SecretNotFound:
-        pass
+    yield from beaker_object_fixture(client, "secret")
 
 
 @pytest.fixture()
@@ -178,22 +177,12 @@ def alternate_user(client: Beaker) -> Account:
 
 @pytest.fixture()
 def group_name(client: Beaker) -> Generator[str, None, None]:
-    group = petname.generate() + "-" + str(uuid.uuid4())[:8]
-    yield group
-    try:
-        client.group.delete(f"{client.account.whoami().name}/{group}")
-    except GroupNotFound:
-        pass
+    yield from beaker_object_fixture(client, "group")
 
 
 @pytest.fixture()
 def alternate_group_name(client: Beaker) -> Generator[str, None, None]:
-    group = petname.generate() + "-" + str(uuid.uuid4())[:8]
-    yield group
-    try:
-        client.group.delete(f"{client.account.whoami().name}/{group}")
-    except GroupNotFound:
-        pass
+    yield from beaker_object_fixture(client, "group")
 
 
 @pytest.fixture()

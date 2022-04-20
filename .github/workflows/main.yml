@@ -74,11 +74,26 @@ jobs:
 
           - name: Unit tests
             run: |
-              pytest -v --color=yes tests/
+              pytest -v --color=yes --durations=10 tests/
 
           - name: Doc tests
             run: |
               pytest -v --color=yes --doctest-modules beaker/
+
+          - name: Images
+            run: |
+              cd test_fixtures/docker \
+                && docker build --build-arg "COMMIT_SHA=$COMMIT_SHA" -t beaker-py-test . \
+                && cd -
+              pytest -rP -v --color=yes integration_tests/images_test.py
+
+          - name: Jobs
+            run: |
+              pytest -rP -v --color=yes integration_tests/jobs_test.py
+
+          - name: Experiments
+            run: |
+              pytest -rP -v --color=yes integration_tests/experiments_test.py
 
           - name: Build
             run: |
@@ -97,6 +112,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Determine current commit SHA (pull request)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "COMMIT_SHA=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+
+      - name: Determine current commit SHA (push)
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
+
       - name: Setup Python environment
         uses: ./.github/actions/setup-venv
         with:
@@ -106,6 +131,7 @@ jobs:
       - name: ${{ matrix.task.name }}
         shell: bash
         run: |
+          set -euo pipefail
           . .venv/bin/activate
           ${{ matrix.task.run }}
 

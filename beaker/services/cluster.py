@@ -113,7 +113,7 @@ class ClusterClient(ServiceClient):
                 f"clusters/{cluster_name}",
                 method="PATCH",
                 data={"capacity": max_size},
-                exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster_name))},
+                exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster))},
             ).json()
         )
 
@@ -131,7 +131,7 @@ class ClusterClient(ServiceClient):
         self.request(
             f"clusters/{cluster_name}",
             method="DELETE",
-            exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster_name))},
+            exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster))},
         )
 
     def list(self, org: Optional[Union[str, Organization]] = None) -> List[Cluster]:
@@ -173,7 +173,7 @@ class ClusterClient(ServiceClient):
             for d in self.request(
                 f"clusters/{cluster_name}/nodes",
                 method="GET",
-                exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster_name))},
+                exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster))},
             ).json()["data"]
         ]
 
@@ -266,7 +266,8 @@ class ClusterClient(ServiceClient):
 
         return available
 
-    def _not_found_err_msg(self, cluster: str) -> str:
+    def _not_found_err_msg(self, cluster: Union[str, Cluster]) -> str:
+        cluster = cluster if isinstance(cluster, str) else cluster.id
         return (
             f"'{cluster}': Make sure you're using a valid ID or *full* name of the cluster "
             f"(with the organization prefix, e.g. 'org/cluster_name')"

@@ -147,7 +147,7 @@ class DatasetClient(ServiceClient):
                 f"datasets/{self.url_quote(dataset_id)}",
                 method="PATCH",
                 data={"commit": True},
-                exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset_id))},
+                exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset))},
             ).json()
         )
 
@@ -301,7 +301,7 @@ class DatasetClient(ServiceClient):
         self.request(
             f"datasets/{self.url_quote(dataset_id)}",
             method="DELETE",
-            exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset_id))},
+            exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset))},
         )
 
     def sync(
@@ -461,7 +461,8 @@ class DatasetClient(ServiceClient):
             ).json()
         )
 
-    def _not_found_err_msg(self, dataset: str) -> str:
+    def _not_found_err_msg(self, dataset: Union[str, Dataset]) -> str:
+        dataset = dataset if isinstance(dataset, str) else dataset.id
         return (
             f"'{dataset}': Make sure you're using a valid Beaker dataset ID or the "
             f"*full* name of the dataset (with the account prefix, e.g. 'username/dataset_name')"
