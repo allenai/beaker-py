@@ -99,6 +99,7 @@ def beaker_cluster_name(client: Beaker) -> str:
     for cluster in choices:
         utilization = client.cluster.utilization(cluster)
         if utilization.queued_jobs == 0:
+            logger.info("Found suitable on-prem cluster '%s'", cluster)
             return cluster
     return "ai2/petew-cpu"
 
