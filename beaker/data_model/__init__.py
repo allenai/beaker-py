@@ -3,6 +3,7 @@ from .base import BaseModel
 from .cluster import *
 from .dataset import *
 from .experiment import *
+from .experiment_spec import *
 from .group import *
 from .image import *
 from .job import *

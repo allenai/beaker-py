@@ -1,14 +1,12 @@
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 from pydantic import Field, validator
 
 from .account import Account
 from .base import BaseModel
-
-if TYPE_CHECKING:
-    from .experiment_spec import TaskSpec
+from .experiment_spec import TaskSpec
 
 
 class CurrentJobStatus(str, Enum):
@@ -83,7 +81,7 @@ class JobLimits(BaseModel):
 class JobExecution(BaseModel):
     task: str
     experiment: str
-    spec: "TaskSpec"
+    spec: TaskSpec
     result: ExecutionResult
 
 

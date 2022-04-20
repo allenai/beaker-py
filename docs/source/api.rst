@@ -169,6 +169,22 @@ Group
    :members:
    :undoc-members:
 
+Experiment Spec
+---------------
+
+.. autoclass:: beaker.data_model.experiment_spec.ExperimentSpec
+   :members:
+   :undoc-members:
+
+.. autoclass:: beaker.data_model.experiment_spec.TaskSpec
+   :members:
+   :undoc-members:
+
+.. automodule:: beaker.data_model.experiment_spec
+   :members:
+   :undoc-members:
+   :exclude-members: ExperimentSpec,TaskSpec
+
 Config
 ------
 
