@@ -169,7 +169,7 @@ class DatasetClient(ServiceClient):
         :param quiet: If ``True``, progress won't be displayed.
 
         :raises DatasetNotFound: If the dataset can't be found.
-        :raises DatasetReadError: If the :data:`~beaker.data_model.Dataset.storage` hasn't been set.
+        :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
         :raises FileExistsError: If ``force=False`` and an existing local file clashes with a file
             in the Beaker dataset.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
@@ -258,7 +258,7 @@ class DatasetClient(ServiceClient):
             Errors can be expected for very large files.
 
         :raises DatasetNotFound: If the dataset can't be found.
-        :raises DatasetReadError: If the :data:`~beaker.data_model.Dataset.storage` hasn't been set.
+        :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
         :raises FileNotFoundError: If the file doesn't exist in the dataset.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
@@ -405,7 +405,7 @@ class DatasetClient(ServiceClient):
         :param dataset: The dataset ID, name, or object.
 
         :raises DatasetNotFound: If the dataset can't be found.
-        :raises DatasetReadError: If the :data:`~beaker.data_model.Dataset.storage` hasn't been set.
+        :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """

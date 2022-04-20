@@ -96,7 +96,7 @@ For example, upload a local Docker image to Beaker with
 >>> image = beaker.image.create(beaker_image_name, docker_image_name, quiet=True)
 <BLANKLINE>
 
-The object returned is the same :class:`~data_model.Image` object you get from
+The object returned is the same :class:`~data_model.image.Image` object you get from
 :meth:`Beaker.image.get() <services.ImageClient.get>`.
 It contains some metadata about the image:
 

@@ -228,7 +228,7 @@ class ImageClient(ServiceClient):
 
         .. important::
             This method returns a Docker :class:`~docker.models.images.Image`, not
-            a Beaker :class:`~beaker.data_model.Image`.
+            a Beaker :class:`~beaker.data_model.image.Image`.
 
         :param image: The Beaker image ID, name, or object.
         :param quiet: If ``True``, progress won't be displayed.
