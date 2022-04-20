@@ -82,6 +82,9 @@ jobs:
 
           - name: Images
             run: |
+              # Clean up local cache.
+              docker system prune --all --force
+              # Build test image for uploading.
               cd test_fixtures/docker \
                 && docker build --build-arg "COMMIT_SHA=$COMMIT_SHA" -t beaker-py-test . \
                 && cd -

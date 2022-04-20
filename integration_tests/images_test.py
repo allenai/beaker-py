@@ -26,4 +26,6 @@ def test_image_create_workflow(
 
 
 def test_image_pull_workflow(client: Beaker, beaker_python_image_name: str):
-    client.image.pull(beaker_python_image_name)
+    print(f"Pulling image '{beaker_python_image_name}' from Beaker")
+    local_image = client.image.pull(beaker_python_image_name)
+    print(f"Pull complete: {local_image}")
