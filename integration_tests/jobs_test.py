@@ -16,7 +16,7 @@ def test_job_stop_and_finalize(client: Beaker, experiment_name: str, beaker_clus
     experiment = client.experiment.create(experiment_name, spec)
     print("Waiting for jobs to register", end="")
     while not experiment.jobs:
-        if time.time() - start > 360:
+        if time.time() - start > (60 * 5):
             raise TimeoutError
         time.sleep(2)
         print(".", end="")

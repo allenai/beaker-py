@@ -134,7 +134,7 @@ Wait for the experiment to complete with
 
 >>> experiment = beaker.experiment.wait_for(
 ...     experiment,
-...     timeout=60 * 3,
+...     timeout=60 * 5,
 ...     quiet=True,
 ... )[0]
 
