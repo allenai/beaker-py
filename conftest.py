@@ -87,16 +87,21 @@ def alternate_beaker_image_name(client: Beaker) -> Generator[str, None, None]:
 
 
 @pytest.fixture()
-def beaker_cluster_name() -> str:
-    return random.choice(
-        [
-            "ai2/general-cirrascale",
-            "ai2/allennlp-cirrascale",
-            "ai2/aristo-cirrascale",
-            "ai2/mosaic-cirrascale",
-            "ai2/s2-cirrascale",
-        ]
-    )
+def beaker_cluster_name(client: Beaker) -> str:
+    choices = [
+        "ai2/general-cirrascale",
+        "ai2/allennlp-cirrascale",
+        "ai2/aristo-cirrascale",
+        "ai2/mosaic-cirrascale",
+        "ai2/s2-cirrascale",
+    ]
+    random.shuffle(choices)
+    for cluster in choices:
+        utilization = client.cluster.utilization(cluster)
+        if utilization.queued_jobs == 0:
+            logger.info("Found suitable on-prem cluster '%s'", cluster)
+            return cluster
+    return "ai2/petew-cpu"
 
 
 @pytest.fixture()

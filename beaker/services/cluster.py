@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Dict, Union
 
 from ..data_model import *
 from ..exceptions import *
@@ -177,7 +177,7 @@ class ClusterClient(ServiceClient):
             ).json()["data"]
         ]
 
-    def utilization(self, cluster: Union[str, Cluster]) -> List[NodeUtilization]:
+    def utilization(self, cluster: Union[str, Cluster]) -> ClusterUtilization:
         """
         Get current utilization stats for each node in a cluster.
 
@@ -189,38 +189,61 @@ class ClusterClient(ServiceClient):
         """
         cluster: Cluster = self.resolve_cluster(cluster)
         nodes = self.nodes(cluster)
-        out: List[NodeUtilization] = []
-        for node in nodes:
-            gpus_used = 0
-            cpus_used = 0.0
-            for job in self.beaker.job.list(node=node, finalized=False):
+
+        running_jobs = 0
+        queued_jobs = 0
+        node_to_util: Dict[str, Dict[str, Union[int, float]]] = {
+            node.id: {"running_jobs": 0, "gpus_used": 0, "cpus_used": 0.0} for node in nodes
+        }
+
+        for job in self.beaker.job.list(cluster=cluster, finalized=False):
+            if job.status.current == CurrentJobStatus.running:
+                running_jobs += 1
+            elif job.status.current == CurrentJobStatus.created:
+                queued_jobs += 1
+
+            if job.node is not None:
+                if job.node not in node_to_util:
+                    continue  # unlikely
+
+                node_util = node_to_util[job.node]
+                node_util["running_jobs"] += 1
                 if job.requests is not None:
                     if job.requests.gpu_count is not None:
-                        gpus_used += job.requests.gpu_count
+                        node_util["gpus_used"] += job.requests.gpu_count
                     if job.requests.cpu_count is not None:
-                        cpus_used += job.requests.cpu_count
-            used = NodeSpecUtil(
-                gpu_count=None if node.limits.gpu_count is None else gpus_used,
-                cpu_count=None if node.limits.cpu_count is None else cpus_used,
-            )
-            free = NodeSpecUtil(
-                gpu_count=None
-                if node.limits.gpu_count is None
-                else node.limits.gpu_count - gpus_used,
-                cpu_count=None
-                if node.limits.cpu_count is None
-                else node.limits.cpu_count - cpus_used,
-            )
-            out.append(
+                        node_util["cpus_used"] += job.requests.cpu_count
+
+        return ClusterUtilization(
+            id=cluster.id,
+            running_jobs=running_jobs,
+            queued_jobs=queued_jobs,
+            nodes=[
                 NodeUtilization(
                     id=node.id,
                     hostname=node.hostname,
                     limits=node.limits,
-                    used=used,
-                    free=free,
+                    running_jobs=node_to_util[node.id]["running_jobs"],
+                    used=NodeSpecUtil(
+                        gpu_count=None
+                        if node.limits.gpu_count is None
+                        else min(node.limits.gpu_count, node_to_util[node.id]["gpus_used"]),
+                        cpu_count=None
+                        if node.limits.cpu_count is None
+                        else min(node.limits.cpu_count, node_to_util[node.id]["cpus_used"]),
+                    ),
+                    free=NodeSpecUtil(
+                        gpu_count=None
+                        if node.limits.gpu_count is None
+                        else max(0, node.limits.gpu_count - node_to_util[node.id]["gpus_used"]),
+                        cpu_count=None
+                        if node.limits.cpu_count is None
+                        else max(0, node.limits.cpu_count - node_to_util[node.id]["cpus_used"]),
+                    ),
                 )
-            )
-        return out
+                for node in nodes
+            ],
+        )
 
     def filter_available(
         self, resources: TaskResources, *clusters: Union[str, Cluster]
@@ -255,7 +278,7 @@ class ClusterClient(ServiceClient):
             if cluster.node_shape is not None and not is_compat(cluster.node_shape):
                 continue
 
-            node_utilization = self.utilization(cluster)
+            node_utilization = self.utilization(cluster).nodes
             if cluster.autoscale and len(node_utilization) < cluster.capacity:
                 available.append(cluster)
             else:

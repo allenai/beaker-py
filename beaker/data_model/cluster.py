@@ -1,11 +1,11 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import validator
 
 from .base import BaseModel
-from .node import NodeShape, NodeSpec
+from .node import NodeShape, NodeSpec, NodeUtilization
 
 
 class ClusterStatus(str, Enum):
@@ -34,3 +34,10 @@ class Cluster(BaseModel):
         if v is not None and v.year == 1:
             return None
         return v
+
+
+class ClusterUtilization(BaseModel):
+    id: str
+    running_jobs: int
+    queued_jobs: int
+    nodes: List[NodeUtilization]
