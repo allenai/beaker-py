@@ -227,7 +227,8 @@ class ExperimentClient(ServiceClient):
         :param quiet: If ``True``, progress won't be displayed.
 
         :raises ValueError: The experiment has no tasks or jobs, or the experiment has multiple tasks but
-            ``task`` is not specified, the given task doesn't exist.
+            ``task`` is not specified.
+        :raises TaskNotFound: If the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
@@ -262,7 +263,8 @@ class ExperimentClient(ServiceClient):
             to fetch metrics for. Required if there are multiple tasks in the experiment.
 
         :raises ValueError: The experiment has no tasks, or the experiment has multiple tasks but
-            ``task`` is not specified, or the given task doesn't exist.
+            ``task`` is not specified.
+        :raises TaskNotFound: If the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
@@ -289,7 +291,8 @@ class ExperimentClient(ServiceClient):
             to fetch results for. Required if there are multiple tasks in the experiment.
 
         :raises ValueError: The experiment has no tasks, or the experiment has multiple tasks but
-            ``task`` is not specified, or the given task doesn't exist.
+            ``task`` is not specified.
+        :raises TaskNotFound: If the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
@@ -531,7 +534,7 @@ class ExperimentClient(ServiceClient):
         :param task: The task ID, name, or object of a specific task from the Beaker experiment
             to get the url for.
 
-        :raises ValueError: If the given task doesn't exist.
+        :raises TaskNotFound: If the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
@@ -550,7 +553,7 @@ class ExperimentClient(ServiceClient):
                         task_id = t.id
                         break
                 else:
-                    raise ValueError(f"No task '{task}' in experiment {experiment.id}")
+                    raise TaskNotFound(f"No task '{task}' in experiment {experiment.id}")
             return f"{experiment_url}/tasks/{task_id}"
 
     def _not_found_err_msg(self, experiment: Union[str, Experiment]) -> str:
@@ -602,8 +605,8 @@ class ExperimentClient(ServiceClient):
                 task_name_or_id = task.id if isinstance(task, Task) else task
                 tasks = [t for t in tasks if t.name == task_name_or_id or t.id == task_name_or_id]
                 if not tasks:
-                    raise ValueError(
-                        f"No task named '{task_name_or_id}' in experiment '{experiment.id}'"
+                    raise TaskNotFound(
+                        f"No task '{task_name_or_id}' in experiment '{experiment.id}'"
                     )
         return self._latest_job(tasks[0].jobs, ensure_finalized=ensure_finalized)
 

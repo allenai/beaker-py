@@ -161,3 +161,7 @@ class DuplicateExperimentError(BeakerError):
     """
     Raised when duplicate experiments are passed into a method that expects unique experiments.
     """
+
+
+class TaskNotFound(BeakerError):
+    pass
