@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from pydantic import Field, root_validator, validator
 
@@ -7,7 +7,7 @@ from ..aliases import PathOrStr
 from .base import BaseModel
 
 
-class ImageSource(BaseModel):
+class ImageSource(BaseModel, frozen=False):
     """
     ImageSource describes where Beaker can find a task's image.
     Beaker will automatically pull, or download, this image immediately before running the task.
@@ -39,7 +39,7 @@ class ImageSource(BaseModel):
         return values
 
 
-class EnvVar(BaseModel):
+class EnvVar(BaseModel, frozen=False):
     """
     An EnvVar defines an environment variable within a task's container.
 
@@ -65,7 +65,7 @@ class EnvVar(BaseModel):
     """
 
 
-class DataSource(BaseModel):
+class DataSource(BaseModel, frozen=False):
     """
     .. attention::
         Exactly one source field must be set.
@@ -120,7 +120,7 @@ class DataSource(BaseModel):
         return values
 
 
-class DataMount(BaseModel):
+class DataMount(BaseModel, frozen=False):
     """
     Describes how to mount a dataset into a task. All datasets are mounted read-only.
 
@@ -188,7 +188,7 @@ class DataMount(BaseModel):
         )
 
 
-class ResultSpec(BaseModel):
+class ResultSpec(BaseModel, frozen=False):
     """
     Describes how to capture a task's results.
 
@@ -202,7 +202,7 @@ class ResultSpec(BaseModel):
     """
 
 
-class TaskResources(BaseModel):
+class TaskResources(BaseModel, frozen=False):
     """
     TaskResources describe minimum external hardware requirements which must be available for a
     task to run. Generally, only a GPU request is necessary.
@@ -239,7 +239,7 @@ class TaskResources(BaseModel):
     """
 
 
-class TaskContext(BaseModel):
+class TaskContext(BaseModel, frozen=False):
     """
     Describes an execution environment, or how a task should be run.
 
@@ -272,7 +272,7 @@ class TaskContext(BaseModel):
         return v
 
 
-class TaskSpec(BaseModel):
+class TaskSpec(BaseModel, frozen=False):
     """
     A :class:`TaskSpec` defines a :class:`~beaker.data_model.experiment.Task` within an :class:`ExperimentSpec`.
 
@@ -304,7 +304,7 @@ class TaskSpec(BaseModel):
     It must be unique among all tasks within its experiment.
     """
 
-    command: Optional[Tuple[str, ...]] = None
+    command: Optional[List[str]] = None
     """
     Command is the full shell command to run as a sequence of separate arguments.
 
@@ -314,7 +314,7 @@ class TaskSpec(BaseModel):
     Example: ``["python", "-u", "main.py"]``
     """
 
-    arguments: Optional[Tuple[str, ...]] = None
+    arguments: Optional[List[str]] = None
     """
     Arguments are appended to the command and replace default arguments such as Docker's ``CMD`` directive.
 
@@ -324,12 +324,12 @@ class TaskSpec(BaseModel):
     ``["--quiet", "some-arg"]`` will run the command ``python -u main.py --quiet some-arg``.
     """
 
-    env_vars: Optional[Tuple[EnvVar, ...]] = None
+    env_vars: Optional[List[EnvVar]] = None
     """
     Sequence of environment variables passed to the container.
     """
 
-    datasets: Optional[Tuple[DataMount, ...]] = None
+    datasets: Optional[List[DataMount]] = None
     """
     External data sources mounted into the task as files.
     """
@@ -461,7 +461,7 @@ class SpecVersion(str, Enum):
     v2_alpha = "v2-alpha"
 
 
-class ExperimentSpec(BaseModel):
+class ExperimentSpec(BaseModel, frozen=False):
     """
     Experiments are the main unit of execution in Beaker.
 
@@ -483,7 +483,7 @@ class ExperimentSpec(BaseModel):
     ... )
     """
 
-    tasks: Tuple[TaskSpec, ...] = Field(default_factory=tuple)
+    tasks: List[TaskSpec] = Field(default_factory=tuple)
     """
     Specifications for each process to run.
     """
@@ -499,7 +499,7 @@ class ExperimentSpec(BaseModel):
     """
 
     @validator("tasks")
-    def _validate_tasks(cls, v: Tuple[TaskSpec, ...]) -> Tuple[TaskSpec, ...]:
+    def _validate_tasks(cls, v: List[TaskSpec]) -> List[TaskSpec]:
         task_names = set()
         for task in v:
             if task.name is None:
