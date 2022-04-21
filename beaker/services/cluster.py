@@ -278,11 +278,11 @@ class ClusterClient(ServiceClient):
             if cluster.node_shape is not None and not is_compat(cluster.node_shape):
                 continue
 
-            node_utilization = self.utilization(cluster).nodes
-            if cluster.autoscale and len(node_utilization) < cluster.capacity:
+            cluster_utilization = self.utilization(cluster)
+            if cluster.autoscale and len(cluster_utilization.nodes) < cluster.capacity:
                 available.append(cluster)
             else:
-                for node_util in node_utilization:
+                for node_util in cluster_utilization.nodes:
                     if is_compat(node_util.free):
                         available.append(cluster)
                         break
