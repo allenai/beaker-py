@@ -38,6 +38,12 @@ class Task(BaseModel):
     def display_name(self) -> str:
         return self.name if self.name is not None else self.id
 
+    @property
+    def latest_job(self) -> Optional[Job]:
+        if not self.jobs:
+            return None
+        return sorted(self.jobs, key=lambda job: job.status.created)[-1]
+
 
 class ExperimentsPage(BaseModel):
     data: List[Experiment]

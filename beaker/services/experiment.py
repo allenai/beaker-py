@@ -205,7 +205,7 @@ class ExperimentClient(ServiceClient):
     def logs(
         self,
         experiment: Union[str, Experiment],
-        task_name: Optional[str] = None,
+        task: Optional[Union[str, Task]] = None,
         quiet: bool = False,
     ) -> Generator[bytes, None, None]:
         """
@@ -222,27 +222,30 @@ class ExperimentClient(ServiceClient):
             :meth:`Beaker.job.logs() <JobClient.logs>`
 
         :param experiment: The experiment ID, name, or object.
-        :param task_name: The name of the task from the Beaker experiment.
-            Required if there are multiple tasks in the experiment.
+        :param task: The task ID, name, or object of a specific task from the Beaker experiment
+            to fetch logs for. Required if there are multiple tasks in the experiment.
         :param quiet: If ``True``, progress won't be displayed.
 
         :raises ValueError: The experiment has no tasks or jobs, or the experiment has multiple tasks but
-            ``task_name`` is not specified, or no task by that name exists.
+            ``task`` is not specified, the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         exp = self.resolve_experiment(experiment)
-        job = self._latest_job_for_task(exp, task_name=task_name, ensure_finalized=False)
+        job = self._latest_job_for_task(exp, task=task, ensure_finalized=False)
         if job is None:
-            if task_name is None:
+            if task is None:
                 raise ValueError(f"Experiment {exp.id} has no jobs")
             else:
-                raise ValueError(f"Experiment {exp.id} has no jobs for task '{task_name}'")
+                raise ValueError(
+                    f"Experiment {exp.id} has no jobs for task "
+                    f"'{task if isinstance(task, str) else task.display_name}'"
+                )
         return self.beaker.job.logs(job.id, quiet=quiet)
 
     def metrics(
-        self, experiment: Union[str, Experiment], task_name: Optional[str] = None
+        self, experiment: Union[str, Experiment], task: Optional[Union[str, Task]] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Get the metrics from a task in an experiment.
@@ -255,21 +258,21 @@ class ExperimentClient(ServiceClient):
             :meth:`Beaker.job.metrics() <JobClient.metrics>`
 
         :param experiment: The experiment ID, name, or object.
-        :param task_name: The name of the task from the Beaker experiment.
-            Required if there are multiple tasks in the experiment.
+        :param task: The task ID, name, or object of a specific task from the Beaker experiment
+            to fetch metrics for. Required if there are multiple tasks in the experiment.
 
         :raises ValueError: The experiment has no tasks, or the experiment has multiple tasks but
-            ``task_name`` is not specified, or no task by that name exists.
+            ``task`` is not specified, or the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         exp = self.resolve_experiment(experiment)
-        job = self._latest_job_for_task(exp, task_name=task_name, ensure_finalized=True)
+        job = self._latest_job_for_task(exp, task=task, ensure_finalized=True)
         return None if job is None else self.beaker.job.metrics(job.id)
 
     def results(
-        self, experiment: Union[str, Experiment], task_name: Optional[str] = None
+        self, experiment: Union[str, Experiment], task: Optional[Union[str, Task]] = None
     ) -> Optional[Dataset]:
         """
         Get the result dataset from a task in an experiment.
@@ -282,17 +285,17 @@ class ExperimentClient(ServiceClient):
             :meth:`Beaker.job.results() <JobClient.results>`
 
         :param experiment: The experiment ID, name, or object.
-        :param task_name: The name of the task from the Beaker experiment.
-            Required if there are multiple tasks in the experiment.
+        :param task: The task ID, name, or object of a specific task from the Beaker experiment
+            to fetch results for. Required if there are multiple tasks in the experiment.
 
         :raises ValueError: The experiment has no tasks, or the experiment has multiple tasks but
-            ``task_name`` is not specified, or no task by that name exists.
+            ``task`` is not specified, or the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         exp = self.resolve_experiment(experiment)
-        job = self._latest_job_for_task(exp, task_name=task_name, ensure_finalized=True)
+        job = self._latest_job_for_task(exp, task=task, ensure_finalized=True)
         if job is None:
             return None
         else:
@@ -518,28 +521,37 @@ class ExperimentClient(ServiceClient):
                             # The newly registered job has already completed.
                             finalized_jobs.add(latest_job.id)
 
-    def url(self, experiment: Union[str, Experiment], task_name: Optional[str] = None) -> str:
+    def url(
+        self, experiment: Union[str, Experiment], task: Optional[Union[str, Task]] = None
+    ) -> str:
         """
         Get the URL for an experiment.
 
         :param experiment: The experiment ID, name, or object.
-        :param task_name: The name of a specific task in the experiment. If given, the URL
-            will point to that task.
+        :param task: The task ID, name, or object of a specific task from the Beaker experiment
+            to get the url for.
 
-        :raises ValueError: If no task by that name exists.
+        :raises ValueError: If the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         experiment = self.resolve_experiment(experiment)
         experiment_url = f"{self.config.agent_address}/ex/{self.url_quote(experiment.id)}"
-        if task_name is None:
+        if task is None:
             return experiment_url
         else:
-            for task in self.tasks(experiment):
-                if task.name == task_name:
-                    return f"{experiment_url}/tasks/{task.id}"
-            raise ValueError(f"No task with name '{task_name}' in experiment {experiment.id}")
+            task_id: str
+            if isinstance(task, Task):
+                task_id = task.id
+            else:
+                for t in self.tasks(experiment):
+                    if t.name == task or t.id == task:
+                        task_id = t.id
+                        break
+                else:
+                    raise ValueError(f"No task '{task}' in experiment {experiment.id}")
+            return f"{experiment_url}/tasks/{task_id}"
 
     def _not_found_err_msg(self, experiment: Union[str, Experiment]) -> str:
         experiment = experiment if isinstance(experiment, str) else experiment.id
@@ -575,25 +587,25 @@ class ExperimentClient(ServiceClient):
     def _latest_job_for_task(
         self,
         experiment: Experiment,
-        task_name: Optional[str] = None,
+        task: Optional[Union[str, Task]] = None,
         ensure_finalized: bool = False,
     ) -> Optional[Job]:
         tasks = self.tasks(experiment)
-
         if not tasks:
             raise ValueError(f"Experiment '{experiment.id}' has no tasks")
         elif len(tasks) > 1:
-            if not task_name:
+            if task is None:
                 raise ValueError(
-                    f"'task_name' required since experiment '{experiment.id}' has multiple tasks"
+                    f"'task' required since experiment '{experiment.id}' has multiple tasks"
                 )
             else:
-                tasks = [task for task in tasks if task.name == task_name]
+                task_name_or_id = task.id if isinstance(task, Task) else task
+                tasks = [t for t in tasks if t.name == task_name_or_id or t.id == task_name_or_id]
                 if not tasks:
-                    raise ValueError(f"No task named '{task_name}' in experiment '{experiment.id}'")
-
-        task = tasks[0]
-        return self._latest_job(task.jobs, ensure_finalized=ensure_finalized)
+                    raise ValueError(
+                        f"No task named '{task_name_or_id}' in experiment '{experiment.id}'"
+                    )
+        return self._latest_job(tasks[0].jobs, ensure_finalized=ensure_finalized)
 
     def _latest_job(self, jobs: List[Job], ensure_finalized: bool = False) -> Optional[Job]:
         if ensure_finalized:
