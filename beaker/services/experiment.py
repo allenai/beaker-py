@@ -427,6 +427,7 @@ class ExperimentClient(ServiceClient):
 
         def complete_experiment(exp_id: str) -> Experiment:
             incomplete_exps.remove(exp_id)
+            experiments_progress.update(exp_to_progress_task[exp_id], completed=total_tasks(exp_id))
             return self.get(exp_id)
 
         with live_display:

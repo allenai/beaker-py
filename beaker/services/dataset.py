@@ -535,6 +535,10 @@ class DatasetClient(ServiceClient):
                 base_url=dataset.storage.address,
                 headers=None if not digest else {self.HEADER_DIGEST: self._encode_digest(digest)},
                 stream=body is not None,
+                exceptions_for_status={
+                    403: DatasetWriteError(dataset.id),
+                    404: DatasetNotFound(self._not_found_err_msg(dataset.id)),
+                },
             )
 
             return source_file_wrapper.total_read
