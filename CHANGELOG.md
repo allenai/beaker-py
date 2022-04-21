@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `Task.latest_job` property.
+
+### Changed
+
+- Changed signature of `Beaker.experiment.(logs|metrics|results)` methods: replaced parameter
+  `task_name: Optional[str]` with `task: Optional[Union[str, Task]]`.
+
 ## [v0.10.0](https://github.com/allenai/beaker-py/releases/tag/v0.10.0) - 2022-04-20
 
 ### Added

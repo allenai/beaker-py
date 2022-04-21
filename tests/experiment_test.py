@@ -13,6 +13,7 @@ from beaker import (
     ResultSpec,
     SecretNotFound,
     TaskContext,
+    TaskNotFound,
     TaskSpec,
 )
 
@@ -172,5 +173,5 @@ def test_experiment_url(client: Beaker, hello_world_experiment_id: str):
         client.experiment.url(hello_world_experiment_id, "main")
         == "https://beaker.org/ex/01FPB5WGRTM33P5AE6A28MT8QF/tasks/01FPB5WGTFQH7K1NM2M1KMZA78"
     )
-    with pytest.raises(ValueError, match="No task with name"):
+    with pytest.raises(TaskNotFound, match="No task"):
         client.experiment.url(hello_world_experiment_id, "foo")
