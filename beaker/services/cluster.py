@@ -249,9 +249,9 @@ class ClusterClient(ServiceClient):
         self, resources: TaskResources, *clusters: Union[str, Cluster]
     ) -> List[Cluster]:
         """
-        Filter clusters with enough free resources to run a job with the requested resources.
+        Filter out the clusters that don't have enough available resources.
 
-        :param resources: The requested task resources.
+        :param resources: The requested resources.
         :param clusters: Clusters to inspect and filter.
 
         :raises ClusterNotFound: If one of the clusters doesn't exist.
