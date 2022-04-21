@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Optional, Tuple
 
 from pydantic import validator
 
@@ -32,7 +32,7 @@ class Image(BaseModel):
 
 
 class ImagesPage(BaseModel):
-    data: List[Image]
+    data: Tuple[Image, ...]
     next_cursor: Optional[str] = None
 
 

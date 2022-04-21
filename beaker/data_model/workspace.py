@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, Optional, Tuple
 
 from .account import Account
 from .base import BaseModel
@@ -31,7 +31,7 @@ class WorkspaceRef(BaseModel):
 
 
 class WorkspacePage(BaseModel):
-    data: List[Workspace]
+    data: Tuple[Workspace, ...]
     next_cursor: Optional[str] = None
 
 

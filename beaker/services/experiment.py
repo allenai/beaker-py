@@ -1,5 +1,5 @@
 import time
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Set, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Sequence, Set, Union
 
 from ..aliases import PathOrStr
 from ..data_model import *
@@ -427,6 +427,7 @@ class ExperimentClient(ServiceClient):
 
         def complete_experiment(exp_id: str) -> Experiment:
             incomplete_exps.remove(exp_id)
+            experiments_progress.update(exp_to_progress_task[exp_id], completed=total_tasks(exp_id))
             return self.get(exp_id)
 
         with live_display:
@@ -610,7 +611,7 @@ class ExperimentClient(ServiceClient):
                     )
         return self._latest_job(tasks[0].jobs, ensure_finalized=ensure_finalized)
 
-    def _latest_job(self, jobs: List[Job], ensure_finalized: bool = False) -> Optional[Job]:
+    def _latest_job(self, jobs: Sequence[Job], ensure_finalized: bool = False) -> Optional[Job]:
         if ensure_finalized:
             jobs = [
                 job

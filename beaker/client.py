@@ -1,7 +1,6 @@
 from typing import Optional
 
 import docker
-from cachetools import TTLCache, cached
 
 from .config import Config
 from .data_model import *
@@ -74,7 +73,6 @@ class Beaker:
         )
 
     @staticmethod
-    @cached(cache=TTLCache(maxsize=10, ttl=5 * 60))
     def _check_for_upgrades():
         import warnings
 
@@ -82,6 +80,9 @@ class Beaker:
         import requests
 
         global _UPGRADE_WARNING_ISSUED
+
+        if _UPGRADE_WARNING_ISSUED:
+            return
 
         try:
             response = requests.get(

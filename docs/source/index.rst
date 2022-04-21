@@ -6,7 +6,7 @@
 **beaker-py**
 ===============
 
-A Python client for `Beaker <https://beaker.org>`_.
+**beaker-py** is a lightweight, pure Python client for `Beaker <https://beaker.org>`_.
 
 Contents
 --------
@@ -19,6 +19,7 @@ Contents
    quickstart
    overview
    api
+   faq
 
 .. toctree::
    :hidden:

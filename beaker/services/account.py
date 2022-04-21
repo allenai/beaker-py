@@ -1,7 +1,5 @@
 from typing import List
 
-from cachetools import TTLCache, cached
-
 from ..data_model import *
 from ..exceptions import *
 from .service_client import ServiceClient
@@ -13,7 +11,6 @@ class AccountClient(ServiceClient):
     """
 
     @property  # type: ignore[misc]
-    @cached(cache=TTLCache(maxsize=10, ttl=5 * 60))
     def name(self):
         """
         A convenience property to get username of your Beaker account.

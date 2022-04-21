@@ -92,14 +92,8 @@ class ServiceClient:
         else:
             org, name = cluster_name.split("/", 1)
             self.validate_beaker_name(name)
-            self.beaker.organization.get(org)
+            self.resolve_org(org)
             return cluster_name
-
-    def resolve_cluster(self, cluster: Union[str, Cluster]) -> Cluster:
-        if isinstance(cluster, Cluster):
-            return cluster
-        else:
-            return self.beaker.cluster.get(cluster)
 
     def resolve_workspace_name(self, workspace_name: str) -> str:
         """
@@ -118,8 +112,14 @@ class ServiceClient:
         else:
             org, name = workspace_name.split("/", 1)
             self.validate_beaker_name(name)
-            self.beaker.organization.get(org)
+            self.resolve_org(org)
             return workspace_name
+
+    def resolve_cluster(self, cluster: Union[str, Cluster]) -> Cluster:
+        if isinstance(cluster, Cluster):
+            return cluster
+        else:
+            return self.beaker.cluster.get(cluster)
 
     def resolve_workspace(
         self,

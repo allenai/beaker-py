@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Optional, Tuple
 
 from pydantic import validator
 
@@ -40,4 +40,4 @@ class ClusterUtilization(BaseModel):
     id: str
     running_jobs: int
     queued_jobs: int
-    nodes: List[NodeUtilization]
+    nodes: Tuple[NodeUtilization, ...]

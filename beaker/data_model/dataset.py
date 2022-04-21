@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional, Tuple
 
 from pydantic import validator
 
@@ -74,10 +74,10 @@ class FileInfo(BaseModel):
 
 
 class DatasetManifest(BaseModel):
-    files: List[FileInfo]
+    files: Tuple[FileInfo, ...]
     cursor: Optional[str] = None
 
 
 class DatasetsPage(BaseModel):
-    data: List[Dataset]
+    data: Tuple[Dataset, ...]
     next_cursor: Optional[str] = None
