@@ -333,6 +333,9 @@ class ExperimentClient(ServiceClient):
         Wait for experiments to finalize, returning the completed experiments as a list
         in the same order they were given as input.
 
+        .. caution::
+            This method is experimental and may change or be removed in future releases.
+
         .. seealso::
             :meth:`as_completed()`
 
@@ -375,6 +378,9 @@ class ExperimentClient(ServiceClient):
         """
         Wait for experiments to finalize, returning an iterator that yields experiments as they
         complete.
+
+        .. caution::
+            This method is experimental and may change or be removed in future releases.
 
         .. seealso::
             :meth:`wait_for()`
@@ -450,14 +456,11 @@ class ExperimentClient(ServiceClient):
                     exp_to_task_to_job[exp_id][task.id] = (
                         None if latest_job is None else latest_job.id
                     )
-                    if latest_job is not None and latest_job.is_finalized:
-                        finalized_jobs.add(latest_job.id)
 
                 # Add to progress tracker.
                 exp_to_progress_task[exp_id] = experiments_progress.add_task(
                     experiment.display_name,
                     total=total_tasks(exp_id),
-                    completed=completed_tasks(exp_id),
                 )
 
             # Now wait for the incomplete experiments to finalize.
@@ -521,9 +524,6 @@ class ExperimentClient(ServiceClient):
                         latest_job = self._latest_job(task.jobs)
                         assert latest_job is not None
                         task_to_job[task.id] = latest_job.id
-                        if latest_job.is_finalized:
-                            # The newly registered job has already completed.
-                            finalized_jobs.add(latest_job.id)
 
     def url(
         self, experiment: Union[str, Experiment], task: Optional[Union[str, Task]] = None

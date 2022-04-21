@@ -229,6 +229,9 @@ class JobClient(ServiceClient):
         Wait for jobs to finalize, returning the completed jobs as a list in the same order
         they were given as input.
 
+        .. caution::
+            This method is experimental and may change or be removed in future releases.
+
         .. seealso::
             :meth:`as_completed()`
 
@@ -270,6 +273,9 @@ class JobClient(ServiceClient):
     ) -> Generator[Job, None, None]:
         """
         Wait for jobs to finalize, returning an iterator that yields jobs as they complete.
+
+        .. caution::
+            This method is experimental and may change or be removed in future releases.
 
         .. seealso::
             :meth:`wait_for()`
