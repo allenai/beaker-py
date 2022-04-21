@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Optional, Tuple
 
 from pydantic import Field, validator
 
@@ -75,7 +75,7 @@ class JobRequests(BaseModel):
 class JobLimits(BaseModel):
     cpu_count: Optional[float] = None
     memory: Optional[str] = None
-    gpus: List[str] = Field(default_factory=list)
+    gpus: Tuple[str, ...] = Field(default_factory=tuple)
 
 
 class JobExecution(BaseModel):
@@ -117,5 +117,5 @@ class Job(BaseModel):
 
 
 class Jobs(BaseModel):
-    data: Optional[List[Job]] = None
+    data: Optional[Tuple[Job, ...]] = None
     next: Optional[str] = None

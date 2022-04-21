@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Union
 
 import docker
 import requests
+from cachetools import TTLCache, cached
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
@@ -92,14 +93,8 @@ class ServiceClient:
         else:
             org, name = cluster_name.split("/", 1)
             self.validate_beaker_name(name)
-            self.beaker.organization.get(org)
+            self.resolve_org(org)
             return cluster_name
-
-    def resolve_cluster(self, cluster: Union[str, Cluster]) -> Cluster:
-        if isinstance(cluster, Cluster):
-            return cluster
-        else:
-            return self.beaker.cluster.get(cluster)
 
     def resolve_workspace_name(self, workspace_name: str) -> str:
         """
@@ -118,9 +113,17 @@ class ServiceClient:
         else:
             org, name = workspace_name.split("/", 1)
             self.validate_beaker_name(name)
-            self.beaker.organization.get(org)
+            self.resolve_org(org)
             return workspace_name
 
+    @cached(cache=TTLCache(maxsize=50, ttl=5 * 60))
+    def resolve_cluster(self, cluster: Union[str, Cluster]) -> Cluster:
+        if isinstance(cluster, Cluster):
+            return cluster
+        else:
+            return self.beaker.cluster.get(cluster)
+
+    @cached(cache=TTLCache(maxsize=50, ttl=5 * 60))
     def resolve_workspace(
         self,
         workspace: Optional[Union[str, Workspace]],
@@ -137,30 +140,35 @@ class ServiceClient:
 
         return out
 
+    @cached(cache=TTLCache(maxsize=50, ttl=5 * 60))
     def resolve_dataset(self, dataset: Union[str, Dataset]) -> Dataset:
         if isinstance(dataset, Dataset):
             return dataset
         else:
             return self.beaker.dataset.get(dataset)
 
+    @cached(cache=TTLCache(maxsize=50, ttl=5 * 60))
     def resolve_experiment(self, experiment: Union[str, Experiment]) -> Experiment:
         if isinstance(experiment, Experiment):
             return experiment
         else:
             return self.beaker.experiment.get(experiment)
 
+    @cached(cache=TTLCache(maxsize=50, ttl=5 * 60))
     def resolve_image(self, image: Union[str, Image]) -> Image:
         if isinstance(image, Image):
             return image
         else:
             return self.beaker.image.get(image)
 
+    @cached(cache=TTLCache(maxsize=50, ttl=5 * 60))
     def resolve_group(self, group: Union[str, Group]) -> Group:
         if isinstance(group, Group):
             return group
         else:
             return self.beaker.group.get(group)
 
+    @cached(cache=TTLCache(maxsize=10, ttl=5 * 60))
     def resolve_org(self, org: Optional[Union[str, Organization]]) -> Organization:
         if isinstance(org, Organization):
             return org

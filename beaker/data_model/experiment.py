@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional, Tuple
 
 from pydantic import Field
 
@@ -17,7 +17,7 @@ class Experiment(BaseModel):
     workspace_ref: WorkspaceRef
     name: Optional[str] = None
     full_name: Optional[str] = None
-    jobs: List[Job] = Field(default_factory=list)
+    jobs: Tuple[Job, ...] = Field(default_factory=tuple)
 
     @property
     def display_name(self) -> str:
@@ -32,7 +32,7 @@ class Task(BaseModel):
     created: datetime
     name: Optional[str] = None
     schedulable: bool = False
-    jobs: List[Job] = Field(default_factory=list)
+    jobs: Tuple[Job, ...] = Field(default_factory=tuple)
 
     @property
     def display_name(self) -> str:
@@ -46,5 +46,5 @@ class Task(BaseModel):
 
 
 class ExperimentsPage(BaseModel):
-    data: List[Experiment]
+    data: Tuple[Experiment, ...]
     next_cursor: Optional[str] = None

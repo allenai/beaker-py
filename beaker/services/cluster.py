@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 from ..data_model import *
 from ..exceptions import *
@@ -250,6 +250,9 @@ class ClusterClient(ServiceClient):
     ) -> List[Cluster]:
         """
         Filter out the clusters that don't have enough available resources.
+
+        .. caution::
+            This method is experimental and may change or be removed in future releases.
 
         :param resources: The requested resources.
         :param clusters: Clusters to inspect and filter.

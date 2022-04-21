@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from pydantic import Field, root_validator, validator
 
@@ -304,9 +304,9 @@ class TaskSpec(BaseModel):
     It must be unique among all tasks within its experiment.
     """
 
-    command: Optional[List[str]] = None
+    command: Optional[Tuple[str, ...]] = None
     """
-    Command is the full shell command to run as a list of separate arguments.
+    Command is the full shell command to run as a sequence of separate arguments.
 
     If omitted, the image's default command is used, for example Docker's ``ENTRYPOINT`` directive.
     If set, default commands such as Docker's ``ENTRYPOINT`` and ``CMD`` directives are ignored.
@@ -314,7 +314,7 @@ class TaskSpec(BaseModel):
     Example: ``["python", "-u", "main.py"]``
     """
 
-    arguments: Optional[List[str]] = None
+    arguments: Optional[Tuple[str, ...]] = None
     """
     Arguments are appended to the command and replace default arguments such as Docker's ``CMD`` directive.
 
@@ -324,12 +324,12 @@ class TaskSpec(BaseModel):
     ``["--quiet", "some-arg"]`` will run the command ``python -u main.py --quiet some-arg``.
     """
 
-    env_vars: Optional[List[EnvVar]] = None
+    env_vars: Optional[Tuple[EnvVar, ...]] = None
     """
-    List of environment variables passed to the container.
+    Sequence of environment variables passed to the container.
     """
 
-    datasets: Optional[List[DataMount]] = None
+    datasets: Optional[Tuple[DataMount, ...]] = None
     """
     External data sources mounted into the task as files.
     """
@@ -483,7 +483,7 @@ class ExperimentSpec(BaseModel):
     ... )
     """
 
-    tasks: List[TaskSpec] = Field(default_factory=list)
+    tasks: Tuple[TaskSpec, ...] = Field(default_factory=tuple)
     """
     Specifications for each process to run.
     """
@@ -499,7 +499,7 @@ class ExperimentSpec(BaseModel):
     """
 
     @validator("tasks")
-    def _validate_tasks(cls, v: List[TaskSpec]) -> List[TaskSpec]:
+    def _validate_tasks(cls, v: Tuple[TaskSpec, ...]) -> Tuple[TaskSpec, ...]:
         task_names = set()
         for task in v:
             if task.name is None:

@@ -20,6 +20,7 @@ class BaseModel(_BaseModel):
         validate_assignment = True
         alias_generator = to_lower_camel
         use_enum_values = True
+        frozen = True
         #  extra = "forbid"
 
     @root_validator(pre=True)
@@ -54,4 +55,17 @@ class BaseModel(_BaseModel):
             raise
 
     def to_json(self) -> Dict[str, Any]:
-        return self.dict(by_alias=True, exclude_none=True)
+        return self.json_safe(self.dict(by_alias=True, exclude_none=True))
+
+    @classmethod
+    def json_safe(cls, x: Any) -> Any:
+        if isinstance(x, BaseModel):
+            return x.to_json()
+        elif isinstance(x, (str, float, int, bool)):
+            return x
+        elif isinstance(x, dict):
+            return {key: cls.json_safe(value) for key, value in x.items()}
+        elif isinstance(x, (list, tuple, set)):
+            return [cls.json_safe(x_i) for x_i in x]
+        else:
+            return x
