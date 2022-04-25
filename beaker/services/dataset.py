@@ -89,7 +89,7 @@ class DatasetClient(ServiceClient):
             the contents of one of the directory's files changes while creating the dataset.
         :raises FileNotFoundError: If a source doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
-            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """

@@ -59,7 +59,7 @@ class GroupClient(ServiceClient):
         :raises GroupConflict: If a group with the given name already exists.
         :raises ExperimentNotFound: If any of the given experiments don't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
-            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
