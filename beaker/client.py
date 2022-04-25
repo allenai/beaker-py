@@ -18,6 +18,8 @@ class Beaker:
     A client for interacting with `Beaker <https://beaker.org>`_.
 
     :param config: The Beaker :class:`Config`.
+    :param check_for_upgrades: Automatically check that beaker-py is up-to-date. You'll see
+            a warning if it isn't.
 
     The easiest way to initialize a Beaker client is with :meth:`.from_env()`:
 
@@ -105,9 +107,13 @@ class Beaker:
             pass
 
     @classmethod
-    def from_env(cls, **overrides) -> "Beaker":
+    def from_env(cls, check_for_upgrades: bool = True, **overrides) -> "Beaker":
         """
         Initialize client from a config file and/or environment variables.
+
+        :param check_for_upgrades: Automatically check that beaker-py is up-to-date. You'll see
+            a warning if it isn't.
+        :param overrides: Fields in the :class:`Config` to override.
 
         .. note::
             This will use the same config file that the `Beaker command-line client
@@ -116,10 +122,8 @@ class Beaker:
 
             If you haven't configured the command-line client, then you can alternately just
             set the environment variable ``BEAKER_TOKEN`` to your Beaker `user token <https://beaker.org/user>`_.
-
-        :param overrides: Fields in the :class:`Config` to override.
         """
-        return cls(Config.from_env(**overrides))
+        return cls(Config.from_env(**overrides), check_for_upgrades=check_for_upgrades)
 
     @property
     def config(self) -> Config:
