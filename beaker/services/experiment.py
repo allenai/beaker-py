@@ -348,7 +348,7 @@ class ExperimentClient(ServiceClient):
             :meth:`Beaker.job.wait_for() <JobClient.wait_for>`
 
         :param experiments: Experiment ID, name, or object.
-        :param timeout: Maximum amount of time to wait for (in seocnds).
+        :param timeout: Maximum amount of time to wait for (in seconds).
         :param poll_interval: Time to wait between polling the experiment (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
 
@@ -394,7 +394,7 @@ class ExperimentClient(ServiceClient):
             :meth:`Beaker.job.as_completed() <JobClient.as_completed>`
 
         :param experiments: Experiment ID, name, or object.
-        :param timeout: Maximum amount of time to wait for (in seocnds).
+        :param timeout: Maximum amount of time to wait for (in seconds).
         :param poll_interval: Time to wait between polling the experiment (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
 

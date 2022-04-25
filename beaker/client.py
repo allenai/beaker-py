@@ -6,12 +6,11 @@ from .config import Config
 from .data_model import *
 from .exceptions import *
 from .services import *
-from .version import VERSION
 
 __all__ = ["Beaker"]
 
 
-_UPGRADE_WARNING_ISSUED = False
+_LATEST_VERSION_CHECK = False
 
 
 class Beaker:
@@ -37,7 +36,7 @@ class Beaker:
 
     def __init__(self, config: Config, check_for_upgrades: bool = True):
         # See if there's a newer version, and if so, suggest that the user upgrades.
-        if check_for_upgrades and not _UPGRADE_WARNING_ISSUED:
+        if check_for_upgrades and not _LATEST_VERSION_CHECK:
             self._check_for_upgrades()
 
         self._config = config
@@ -74,15 +73,17 @@ class Beaker:
 
     @staticmethod
     def _check_for_upgrades():
+        global _LATEST_VERSION_CHECK
+
+        if _LATEST_VERSION_CHECK:
+            return
+
         import warnings
 
         import packaging.version
         import requests
 
-        global _UPGRADE_WARNING_ISSUED
-
-        if _UPGRADE_WARNING_ISSUED:
-            return
+        from .version import VERSION
 
         try:
             response = requests.get(
@@ -90,6 +91,7 @@ class Beaker:
             )
             if response.ok:
                 latest_version = packaging.version.parse(response.json()["tag_name"])
+                _LATEST_VERSION_CHECK = True
                 if latest_version > packaging.version.parse(VERSION):
                     warnings.warn(
                         f"You're using beaker-py v{VERSION}, "
@@ -99,7 +101,6 @@ class Beaker:
                         f"https://github.com/allenai/beaker-py/releases/tag/v{latest_version}\n",
                         UserWarning,
                     )
-                    _UPGRADE_WARNING_ISSUED = True
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             pass
 

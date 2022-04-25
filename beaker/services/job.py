@@ -43,7 +43,7 @@ class JobClient(ServiceClient):
 
         :param cluster: List jobs on a cluster.
         :param experiment: List jobs in an experiment.
-        :param finalized: List only finalized or unfinalized jobs.
+        :param finalized: List only finalized or non-finalized jobs.
         :param kind: List jobs of a certain kind.
         :param node: List jobs on a node.
 
@@ -239,7 +239,7 @@ class JobClient(ServiceClient):
             :meth:`Beaker.experiment.wait_for() <ExperimentClient.wait_for>`
 
         :param jobs: Job ID, name, or object.
-        :param timeout: Maximum amount of time to wait for (in seocnds).
+        :param timeout: Maximum amount of time to wait for (in seconds).
         :param poll_interval: Time to wait between polling each job's status (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
 
@@ -284,7 +284,7 @@ class JobClient(ServiceClient):
             :meth:`Beaker.experiment.as_completed() <ExperimentClient.as_completed>`
 
         :param jobs: Job ID, name, or object.
-        :param timeout: Maximum amount of time to wait for (in seocnds).
+        :param timeout: Maximum amount of time to wait for (in seconds).
         :param poll_interval: Time to wait between polling each job's status (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
 
