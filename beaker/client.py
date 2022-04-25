@@ -69,7 +69,8 @@ class Beaker:
             f"Beaker("
             f"user='{self.account.name}', "
             f"default_workspace='{self.config.default_workspace}', "
-            f"default_org='{self.config.default_org}'"
+            f"default_org='{self.config.default_org}', "
+            f"agent_address='{self.config.agent_address}'"
             f")"
         )
 
