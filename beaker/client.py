@@ -10,7 +10,7 @@ from .services import *
 __all__ = ["Beaker"]
 
 
-_LATEST_VERSION_CHECK = False
+_LATEST_VERSION_CHECKED = False
 
 
 class Beaker:
@@ -36,7 +36,7 @@ class Beaker:
 
     def __init__(self, config: Config, check_for_upgrades: bool = True):
         # See if there's a newer version, and if so, suggest that the user upgrades.
-        if check_for_upgrades and not _LATEST_VERSION_CHECK:
+        if check_for_upgrades:
             self._check_for_upgrades()
 
         self._config = config
@@ -73,9 +73,9 @@ class Beaker:
 
     @staticmethod
     def _check_for_upgrades():
-        global _LATEST_VERSION_CHECK
+        global _LATEST_VERSION_CHECKED
 
-        if _LATEST_VERSION_CHECK:
+        if _LATEST_VERSION_CHECKED:
             return
 
         import warnings
@@ -91,7 +91,7 @@ class Beaker:
             )
             if response.ok:
                 latest_version = packaging.version.parse(response.json()["tag_name"])
-                _LATEST_VERSION_CHECK = True
+                _LATEST_VERSION_CHECKED = True
                 if latest_version > packaging.version.parse(VERSION):
                     warnings.warn(
                         f"You're using beaker-py v{VERSION}, "
