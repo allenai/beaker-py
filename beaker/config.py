@@ -1,5 +1,6 @@
+import logging
 import os
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 from typing import ClassVar, Optional
 
@@ -16,6 +17,8 @@ except RuntimeError:
 
 
 __all__ = ["Config"]
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -44,6 +47,12 @@ class Config:
     ADDRESS_KEY: ClassVar[str] = "BEAKER_ADDR"
     CONFIG_PATH_KEY: ClassVar[str] = "BEAKER_CONFIG"
     TOKEN_KEY: ClassVar[str] = "BEAKER_TOKEN"
+
+    def __str__(self) -> str:
+        fields_str = "user_token=***, " + ", ".join(
+            [f"{f.name}={getattr(self, f.name)}" for f in fields(self) if f.name != "user_token"]
+        )
+        return f"{self.__class__.__name__}({fields_str})"
 
     @classmethod
     def from_env(cls, **overrides) -> "Config":
@@ -92,6 +101,7 @@ class Config:
         Initialize a config from a local config file.
         """
         with open(path) as config_file:
+            logger.debug("Loading beaker config from '%s'", path)
             return cls(**yaml.load(config_file, Loader=yaml.SafeLoader))
 
     def save(self, path: Optional[Path] = None):
