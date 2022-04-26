@@ -6,12 +6,11 @@ from .config import Config
 from .data_model import *
 from .exceptions import *
 from .services import *
-from .version import VERSION
 
 __all__ = ["Beaker"]
 
 
-_UPGRADE_WARNING_ISSUED = False
+_LATEST_VERSION_CHECKED = False
 
 
 class Beaker:
@@ -19,6 +18,8 @@ class Beaker:
     A client for interacting with `Beaker <https://beaker.org>`_.
 
     :param config: The Beaker :class:`Config`.
+    :param check_for_upgrades: Automatically check that beaker-py is up-to-date. You'll see
+            a warning if it isn't.
 
     The easiest way to initialize a Beaker client is with :meth:`.from_env()`:
 
@@ -37,7 +38,7 @@ class Beaker:
 
     def __init__(self, config: Config, check_for_upgrades: bool = True):
         # See if there's a newer version, and if so, suggest that the user upgrades.
-        if check_for_upgrades and not _UPGRADE_WARNING_ISSUED:
+        if check_for_upgrades:
             self._check_for_upgrades()
 
         self._config = config
@@ -68,21 +69,24 @@ class Beaker:
             f"Beaker("
             f"user='{self.account.name}', "
             f"default_workspace='{self.config.default_workspace}', "
-            f"default_org='{self.config.default_org}'"
+            f"default_org='{self.config.default_org}', "
+            f"agent_address='{self.config.agent_address}'"
             f")"
         )
 
     @staticmethod
     def _check_for_upgrades():
+        global _LATEST_VERSION_CHECKED
+
+        if _LATEST_VERSION_CHECKED:
+            return
+
         import warnings
 
         import packaging.version
         import requests
 
-        global _UPGRADE_WARNING_ISSUED
-
-        if _UPGRADE_WARNING_ISSUED:
-            return
+        from .version import VERSION
 
         try:
             response = requests.get(
@@ -90,6 +94,7 @@ class Beaker:
             )
             if response.ok:
                 latest_version = packaging.version.parse(response.json()["tag_name"])
+                _LATEST_VERSION_CHECKED = True
                 if latest_version > packaging.version.parse(VERSION):
                     warnings.warn(
                         f"You're using beaker-py v{VERSION}, "
@@ -99,14 +104,17 @@ class Beaker:
                         f"https://github.com/allenai/beaker-py/releases/tag/v{latest_version}\n",
                         UserWarning,
                     )
-                    _UPGRADE_WARNING_ISSUED = True
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
             pass
 
     @classmethod
-    def from_env(cls, **overrides) -> "Beaker":
+    def from_env(cls, check_for_upgrades: bool = True, **overrides) -> "Beaker":
         """
         Initialize client from a config file and/or environment variables.
+
+        :param check_for_upgrades: Automatically check that beaker-py is up-to-date. You'll see
+            a warning if it isn't.
+        :param overrides: Fields in the :class:`Config` to override.
 
         .. note::
             This will use the same config file that the `Beaker command-line client
@@ -115,10 +123,8 @@ class Beaker:
 
             If you haven't configured the command-line client, then you can alternately just
             set the environment variable ``BEAKER_TOKEN`` to your Beaker `user token <https://beaker.org/user>`_.
-
-        :param overrides: Fields in the :class:`Config` to override.
         """
-        return cls(Config.from_env(**overrides))
+        return cls(Config.from_env(**overrides), check_for_upgrades=check_for_upgrades)
 
     @property
     def config(self) -> Config:

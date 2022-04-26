@@ -61,7 +61,7 @@ class ExperimentClient(ServiceClient):
         :raises ValueError: If the name is invalid.
         :raises ExperimentConflict: If an experiment with the given name already exists.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
-            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
 
@@ -137,21 +137,26 @@ class ExperimentClient(ServiceClient):
             exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment))},
         )
 
-    def delete(self, experiment: Union[str, Experiment]):
+    def delete(self, experiment: Union[str, Experiment], delete_results_dataset: bool = True):
         """
         Delete an experiment.
 
         :param experiment: The experiment ID, name, or object.
+        :param delete_results_dataset: Also delete the experiment's results dataset.
 
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        experiment_id = self.resolve_experiment(experiment).id
+        experiment: Experiment = self.resolve_experiment(experiment)
+        if delete_results_dataset:
+            dataset = self.results(experiment)
+            if dataset is not None:
+                self.beaker.dataset.delete(dataset)
         self.request(
-            f"experiments/{self.url_quote(experiment_id)}",
+            f"experiments/{self.url_quote(experiment.id)}",
             method="DELETE",
-            exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment))},
+            exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment.id))},
         )
 
     def rename(self, experiment: Union[str, Experiment], name: str) -> Experiment:
@@ -333,6 +338,9 @@ class ExperimentClient(ServiceClient):
         Wait for experiments to finalize, returning the completed experiments as a list
         in the same order they were given as input.
 
+        .. caution::
+            This method is experimental and may change or be removed in future releases.
+
         .. seealso::
             :meth:`as_completed()`
 
@@ -340,7 +348,7 @@ class ExperimentClient(ServiceClient):
             :meth:`Beaker.job.wait_for() <JobClient.wait_for>`
 
         :param experiments: Experiment ID, name, or object.
-        :param timeout: Maximum amount of time to wait for (in seocnds).
+        :param timeout: Maximum amount of time to wait for (in seconds).
         :param poll_interval: Time to wait between polling the experiment (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
 
@@ -376,6 +384,9 @@ class ExperimentClient(ServiceClient):
         Wait for experiments to finalize, returning an iterator that yields experiments as they
         complete.
 
+        .. caution::
+            This method is experimental and may change or be removed in future releases.
+
         .. seealso::
             :meth:`wait_for()`
 
@@ -383,7 +394,7 @@ class ExperimentClient(ServiceClient):
             :meth:`Beaker.job.as_completed() <JobClient.as_completed>`
 
         :param experiments: Experiment ID, name, or object.
-        :param timeout: Maximum amount of time to wait for (in seocnds).
+        :param timeout: Maximum amount of time to wait for (in seconds).
         :param poll_interval: Time to wait between polling the experiment (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
 
@@ -450,14 +461,11 @@ class ExperimentClient(ServiceClient):
                     exp_to_task_to_job[exp_id][task.id] = (
                         None if latest_job is None else latest_job.id
                     )
-                    if latest_job is not None and latest_job.is_finalized:
-                        finalized_jobs.add(latest_job.id)
 
                 # Add to progress tracker.
                 exp_to_progress_task[exp_id] = experiments_progress.add_task(
                     experiment.display_name,
                     total=total_tasks(exp_id),
-                    completed=completed_tasks(exp_id),
                 )
 
             # Now wait for the incomplete experiments to finalize.
@@ -521,9 +529,6 @@ class ExperimentClient(ServiceClient):
                         latest_job = self._latest_job(task.jobs)
                         assert latest_job is not None
                         task_to_job[task.id] = latest_job.id
-                        if latest_job.is_finalized:
-                            # The newly registered job has already completed.
-                            finalized_jobs.add(latest_job.id)
 
     def url(
         self, experiment: Union[str, Experiment], task: Optional[Union[str, Task]] = None

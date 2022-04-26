@@ -66,7 +66,7 @@ class ImageClient(ServiceClient):
         :raises ValueError: If the image name is invalid.
         :raises ImageConflict: If an image with the given name already exists.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
-            :data:`Beaker.config.defeault_workspace <beaker.Config.default_workspace>` are set.
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
 
