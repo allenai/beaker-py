@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Improved performance of `Beaker.cluster.filter_available()` by using a `ThreadPoolExecutor` for concurrency.
+- Changed behavior of `Beaker.dataset.create()` and `Beaker.dataset.sync()` with respect to source files. By default now, source files and directories will be uploading as their given path, instead of just their name. You can still get the old behavior by passing `strip_paths=True`.
 
 ## [v0.12.0](https://github.com/allenai/beaker-py/releases/tag/v0.12.0) - 2022-04-26
 

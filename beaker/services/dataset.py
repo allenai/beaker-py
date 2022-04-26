@@ -68,6 +68,7 @@ class DatasetClient(ServiceClient):
         max_workers: int = 8,
         quiet: bool = False,
         commit: bool = True,
+        strip_paths: bool = False,
     ) -> Dataset:
         """
         Create a dataset with the source file(s).
@@ -82,6 +83,9 @@ class DatasetClient(ServiceClient):
         :param max_workers: The maximum number of thread pool workers to use to upload files concurrently.
         :param quiet: If ``True``, progress won't be displayed.
         :param commit: Whether to commit the dataset after successful upload.
+        :param strip_paths: If ``True``, all source files and directories will be uploaded under their name,
+            not their path. E.g. the file "docs/source/index.rst" would be uploaded as just "index.rst",
+            instead of "docs/source/index.rst".
 
         :raises ValueError: If the name is invalid.
         :raises DatasetConflict: If a dataset by that name already exists and ``force=False``.
@@ -122,7 +126,14 @@ class DatasetClient(ServiceClient):
         assert dataset_info.storage is not None
 
         # Upload the file(s).
-        self.sync(dataset_info, *sources, target=target, quiet=quiet, max_workers=max_workers)
+        self.sync(
+            dataset_info,
+            *sources,
+            target=target,
+            quiet=quiet,
+            max_workers=max_workers,
+            strip_paths=strip_paths,
+        )
 
         # Commit the dataset.
         if commit:
@@ -311,6 +322,7 @@ class DatasetClient(ServiceClient):
         target: Optional[PathOrStr] = None,
         quiet: bool = False,
         max_workers: int = 8,
+        strip_paths: bool = False,
     ) -> None:
         """
         Sync local files or directories to an uncommitted dataset.
@@ -321,6 +333,9 @@ class DatasetClient(ServiceClient):
             a directory of this name.
         :param max_workers: The maximum number of thread pool workers to use to upload files concurrently.
         :param quiet: If ``True``, progress won't be displayed.
+        :param strip_paths: If ``True``, all source files and directories will be uploaded under their name,
+            not their path. E.g. the file "docs/source/index.rst" would be uploaded as just "index.rst",
+            instead of "docs/source/index.rst".
 
         :raises DatasetNotFound: If the dataset can't be found.
         :raises DatasetWriteError: If the dataset was already committed.
@@ -344,19 +359,19 @@ class DatasetClient(ServiceClient):
             for name in sources:
                 source = Path(name)
                 if source.is_file():
-                    target_path = Path(source.name)
+                    target_path = Path(source.name) if strip_paths else source
                     if target is not None:
                         target_path = Path(target) / target_path
                     size = source.lstat().st_size
                     if size == 0:
-                        raise UnexpectedEOFError(str(source))
+                        raise UnexpectedEOFError(f"'{source}', empty files are not allowed")
                     path_info[source] = (target_path, size)
                     total_bytes += size
                 elif source.is_dir():
                     for path in source.glob("**/*"):
                         if path.is_dir():
                             continue
-                        target_path = path.relative_to(source)
+                        target_path = path.relative_to(source) if strip_paths else path
                         if target is not None:
                             target_path = Path(target) / target_path
                         size = path.lstat().st_size
