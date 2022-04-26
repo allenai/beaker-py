@@ -4,14 +4,7 @@ from typing import Optional
 from .base import BaseModel
 
 
-class NodeSpec(BaseModel):
-    cpu_count: Optional[float] = None
-    memory: Optional[str] = None
-    gpu_count: Optional[int] = None
-    gpu_type: Optional[str] = None
-
-
-class NodeShape(BaseModel):
+class NodeResources(BaseModel):
     cpu_count: Optional[float] = None
     memory: Optional[str] = None
     gpu_count: Optional[int] = None
@@ -23,18 +16,13 @@ class Node(BaseModel):
     hostname: str
     created: datetime
     expiry: datetime
-    limits: NodeSpec
-
-
-class NodeSpecUtil(BaseModel):
-    cpu_count: Optional[float] = None
-    gpu_count: Optional[int] = None
+    limits: NodeResources
 
 
 class NodeUtilization(BaseModel):
     id: str
     hostname: str
-    limits: NodeSpec
+    limits: NodeResources
     running_jobs: int
-    used: NodeSpecUtil
-    free: NodeSpecUtil
+    used: NodeResources
+    free: NodeResources

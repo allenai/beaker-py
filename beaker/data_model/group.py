@@ -8,10 +8,10 @@ from .workspace import WorkspaceRef
 
 class Group(BaseModel):
     id: str
+    name: Optional[str] = None
+    full_name: Optional[str] = None
     owner: Account
     author: Account
     created: datetime
     modified: datetime
-    name: Optional[str] = None
-    full_name: Optional[str] = None
     workspace_ref: Optional[WorkspaceRef] = None

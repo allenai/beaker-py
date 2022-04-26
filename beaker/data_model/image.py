@@ -11,14 +11,14 @@ from .workspace import WorkspaceRef
 
 class Image(BaseModel):
     id: str
+    name: Optional[str] = None
+    full_name: Optional[str] = None
     original_tag: str
     owner: Account
     author: Account
     created: datetime
-    workspace_ref: WorkspaceRef
-    name: Optional[str] = None
-    full_name: Optional[str] = None
     committed: Optional[datetime] = None
+    workspace_ref: WorkspaceRef
 
     @property
     def display_name(self) -> str:

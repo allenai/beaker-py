@@ -64,7 +64,7 @@ intersphinx_mapping = {
 }
 
 # By default, sort documented members by type within classes and modules.
-autodoc_member_order = "groupwise"
+autodoc_member_order = "bysource"
 
 # Include default values when documenting parameter types.
 typehints_defaults = "comma"

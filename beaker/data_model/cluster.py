@@ -5,10 +5,14 @@ from typing import Optional, Tuple
 from pydantic import validator
 
 from .base import BaseModel
-from .node import NodeShape, NodeSpec, NodeUtilization
+from .node import NodeResources, NodeUtilization
 
 
 class ClusterStatus(str, Enum):
+    """
+    Current status of a cluster.
+    """
+
     pending = "pending"
     active = "active"
     terminated = "terminated"
@@ -23,9 +27,15 @@ class Cluster(BaseModel):
     autoscale: bool
     capacity: int
     preemptible: bool
-    status: str
-    node_spec: NodeSpec
-    node_shape: Optional[NodeShape] = None
+    status: ClusterStatus
+    node_spec: Optional[NodeResources] = None
+    """
+    The requested node configuration.
+    """
+    node_shape: Optional[NodeResources] = None
+    """
+    The actual node configuration.
+    """
     nodeCost: Optional[str] = None
     validated: Optional[datetime] = None
 
@@ -34,6 +44,26 @@ class Cluster(BaseModel):
         if v is not None and v.year == 1:
             return None
         return v
+
+    @validator("node_spec")
+    def _validate_node_spec(cls, v: Optional[NodeResources]) -> Optional[NodeResources]:
+        if v is not None and not v.to_json():
+            return None
+        return v
+
+    @property
+    def is_cloud(self) -> bool:
+        """
+        Returns ``True`` is the cluster is a cloud cluster, otherwise ``False``.
+        """
+        return self.node_shape is not None and self.node_spec is not None
+
+    @property
+    def is_active(self) -> bool:
+        """
+        Returns ``True`` if the cluster is ready to be used.
+        """
+        return not self.is_cloud or self.status == ClusterStatus.active
 
 
 class ClusterUtilization(BaseModel):

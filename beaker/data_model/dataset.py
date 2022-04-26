@@ -24,13 +24,13 @@ class DatasetSize(BaseModel):
 
 class Dataset(BaseModel):
     id: str
+    name: Optional[str] = None
+    full_name: Optional[str] = None
     owner: Account
     author: Account
     created: datetime
-    workspace_ref: WorkspaceRef
     committed: Optional[datetime] = None
-    name: Optional[str] = None
-    full_name: Optional[str] = None
+    workspace_ref: WorkspaceRef
     storage: Optional[DatasetStorage] = None
 
     @property

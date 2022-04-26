@@ -109,50 +109,73 @@ Organization
 Workspace
 ~~~~~~~~~
 
-.. automodule:: beaker.data_model.workspace
+.. autoclass:: beaker.data_model.workspace.Workspace
    :members:
+   :undoc-members:
+
+.. automodule:: beaker.data_model.workspace
+   :members: WorkspaceSize, WorkspaceRef, WorkspacePermissions
    :undoc-members:
 
 Cluster
 ~~~~~~~
 
+.. autoclass:: beaker.data_model.cluster.Cluster
+   :members:
+   :undoc-members:
+
 .. automodule:: beaker.data_model.cluster
    :members:
    :undoc-members:
+   :exclude-members: Cluster
 
 Node
 ~~~~
 
+.. autoclass:: beaker.data_model.node.Node
+   :members:
+   :undoc-members:
+
 .. automodule:: beaker.data_model.node
    :members:
    :undoc-members:
+   :exclude-members: Node
 
 Dataset
 ~~~~~~~
 
-.. automodule:: beaker.data_model.dataset
+.. autoclass:: beaker.data_model.dataset.Dataset
    :members:
+   :undoc-members:
+
+.. automodule:: beaker.data_model.dataset
+   :members: DatasetStorage, FileInfo
    :undoc-members:
 
 Image
 ~~~~~
 
 .. automodule:: beaker.data_model.image
-   :members:
+   :members: Image
    :undoc-members:
 
 Job
 ~~~
 
+.. autoclass:: beaker.data_model.job.Job
+   :members:
+   :undoc-members:
+
 .. automodule:: beaker.data_model.job
    :members:
    :undoc-members:
+   :exclude-members: Job, Jobs
 
 Experiment
 ~~~~~~~~~~
 
 .. automodule:: beaker.data_model.experiment
-   :members:
+   :members: Experiment, Task
    :undoc-members:
 
 Secret
