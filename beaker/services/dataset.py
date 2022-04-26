@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Deque, Dict, Generator, Optional, Tuple, Union
 from ..aliases import PathOrStr
 from ..data_model import *
 from ..exceptions import *
+from ..util import path_is_relative_to
 from .service_client import ServiceClient
 
 if TYPE_CHECKING:
@@ -368,7 +369,7 @@ class DatasetClient(ServiceClient):
             path_info: Dict[Path, Tuple[Path, int]] = {}
             for name in sources:
                 source = Path(name)
-                strip_path = strip_paths or not source.is_relative_to(".")
+                strip_path = strip_paths or not path_is_relative_to(source, ".")
                 if source.is_file():
                     target_path = Path(source.name) if strip_path else source
                     if target is not None:
