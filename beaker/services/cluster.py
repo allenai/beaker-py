@@ -269,7 +269,7 @@ class ClusterClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
         """
 
-        def is_compat(node_shape: NodeResources) -> bool:
+        def node_is_compat(node_shape: NodeResources) -> bool:
             if resources.gpu_count and (
                 node_shape.gpu_count is None or node_shape.gpu_count < resources.gpu_count
             ):
@@ -281,21 +281,34 @@ class ClusterClient(ServiceClient):
             # TODO: check memory too
             return True
 
-        available: List[ClusterUtilization] = []
-        for cluster_ in clusters:
+        def cluster_is_available(cluster_: Union[str, Cluster]) -> Optional[ClusterUtilization]:
             cluster: Cluster = self.resolve_cluster(cluster_)
 
-            if cluster.node_shape is not None and not is_compat(cluster.node_shape):
-                continue
+            if cluster.node_shape is not None and not node_is_compat(cluster.node_shape):
+                return None
 
             cluster_utilization = self.utilization(cluster)
             if cluster.autoscale and len(cluster_utilization.nodes) < cluster.capacity:
                 available.append(cluster_utilization)
             else:
                 for node_util in cluster_utilization.nodes:
-                    if is_compat(node_util.free):
-                        available.append(cluster_utilization)
-                        break
+                    if node_is_compat(node_util.free):
+                        return cluster_utilization
+
+            return None
+
+        available: List[ClusterUtilization] = []
+
+        import concurrent.futures
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = []
+            for cluster_ in clusters:
+                futures.append(executor.submit(cluster_is_available, cluster_))
+            for future in concurrent.futures.as_completed(futures):
+                cluster_util = future.result()
+                if cluster_util is not None:
+                    available.append(cluster_util)
 
         return sorted(available, key=lambda util: (util.queued_jobs, util.running_jobs))
 
