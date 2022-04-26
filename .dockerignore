@@ -1,17 +1,40 @@
 .dockerignore
+
+# Cache files:
 **.pyc
-**/__pycache__
+**__pycache__
+**.mypy_cache
+.pytest_cache
+.coverage
+
+# Config files:
+mypy.ini
+pytest.ini
+.flake8
+.readthedocs.yaml
+beaker.yml
+
+# Git/github stuff:
 .gitignore
 .git
 .github
-.coverage
-.mypy_cache
+
+# Docs, tests, examples:
 docs
 examples
 tests
 test_fixtures
 integration_tests
+scripts
+conftest.py
+*.md
+!README.md
+
+# Build:
 dist
 *.egg-info
-scripts
 .venv
+Makefile
+
+# Scratch:
+tmp*.py
