@@ -87,6 +87,11 @@ class DatasetClient(ServiceClient):
             not their path. E.g. the file "docs/source/index.rst" would be uploaded as just "index.rst",
             instead of "docs/source/index.rst".
 
+            .. note::
+                This only applies to source paths that are children of the current working directory.
+                If a source path is outside of the current working directory, it will always
+                be uploaded under its name only.
+
         :raises ValueError: If the name is invalid.
         :raises DatasetConflict: If a dataset by that name already exists and ``force=False``.
         :raises UnexpectedEOFError: If a source file is an empty file, or if a source is a directory and
@@ -337,6 +342,11 @@ class DatasetClient(ServiceClient):
             not their path. E.g. the file "docs/source/index.rst" would be uploaded as just "index.rst",
             instead of "docs/source/index.rst".
 
+            .. note::
+                This only applies to source paths that are children of the current working directory.
+                If a source path is outside of the current working directory, it will always
+                be uploaded under its name only.
+
         :raises DatasetNotFound: If the dataset can't be found.
         :raises DatasetWriteError: If the dataset was already committed.
         :raises FileNotFoundError: If a source doesn't exist.
@@ -358,8 +368,9 @@ class DatasetClient(ServiceClient):
             path_info: Dict[Path, Tuple[Path, int]] = {}
             for name in sources:
                 source = Path(name)
+                strip_path = strip_paths or not source.is_relative_to(".")
                 if source.is_file():
-                    target_path = Path(source.name) if strip_paths else source
+                    target_path = Path(source.name) if strip_path else source
                     if target is not None:
                         target_path = Path(target) / target_path
                     size = source.lstat().st_size
@@ -371,7 +382,7 @@ class DatasetClient(ServiceClient):
                     for path in source.glob("**/*"):
                         if path.is_dir():
                             continue
-                        target_path = path.relative_to(source) if strip_paths else path
+                        target_path = path.relative_to(source) if strip_path else path
                         if target is not None:
                             target_path = Path(target) / target_path
                         size = path.lstat().st_size
