@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Deque, Dict, Generator, Optional, Tuple, Union
 from ..aliases import PathOrStr
 from ..data_model import *
 from ..exceptions import *
+from ..util import path_is_relative_to
 from .service_client import ServiceClient
 
 if TYPE_CHECKING:
@@ -65,9 +66,10 @@ class DatasetClient(ServiceClient):
         target: Optional[PathOrStr] = None,
         workspace: Optional[str] = None,
         force: bool = False,
-        max_workers: int = 8,
+        max_workers: Optional[int] = None,
         quiet: bool = False,
         commit: bool = True,
+        strip_paths: bool = False,
     ) -> Dataset:
         """
         Create a dataset with the source file(s).
@@ -82,6 +84,14 @@ class DatasetClient(ServiceClient):
         :param max_workers: The maximum number of thread pool workers to use to upload files concurrently.
         :param quiet: If ``True``, progress won't be displayed.
         :param commit: Whether to commit the dataset after successful upload.
+        :param strip_paths: If ``True``, all source files and directories will be uploaded under their name,
+            not their path. E.g. the file "docs/source/index.rst" would be uploaded as just "index.rst",
+            instead of "docs/source/index.rst".
+
+            .. note::
+                This only applies to source paths that are children of the current working directory.
+                If a source path is outside of the current working directory, it will always
+                be uploaded under its name only.
 
         :raises ValueError: If the name is invalid.
         :raises DatasetConflict: If a dataset by that name already exists and ``force=False``.
@@ -122,7 +132,14 @@ class DatasetClient(ServiceClient):
         assert dataset_info.storage is not None
 
         # Upload the file(s).
-        self.sync(dataset_info, *sources, target=target, quiet=quiet, max_workers=max_workers)
+        self.sync(
+            dataset_info,
+            *sources,
+            target=target,
+            quiet=quiet,
+            max_workers=max_workers,
+            strip_paths=strip_paths,
+        )
 
         # Commit the dataset.
         if commit:
@@ -156,7 +173,7 @@ class DatasetClient(ServiceClient):
         dataset: Union[str, Dataset],
         target: Optional[PathOrStr] = None,
         force: bool = False,
-        max_workers: int = 8,
+        max_workers: Optional[int] = None,
         quiet: bool = False,
     ):
         """
@@ -310,7 +327,8 @@ class DatasetClient(ServiceClient):
         *sources: PathOrStr,
         target: Optional[PathOrStr] = None,
         quiet: bool = False,
-        max_workers: int = 8,
+        max_workers: Optional[int] = None,
+        strip_paths: bool = False,
     ) -> None:
         """
         Sync local files or directories to an uncommitted dataset.
@@ -321,6 +339,14 @@ class DatasetClient(ServiceClient):
             a directory of this name.
         :param max_workers: The maximum number of thread pool workers to use to upload files concurrently.
         :param quiet: If ``True``, progress won't be displayed.
+        :param strip_paths: If ``True``, all source files and directories will be uploaded under their name,
+            not their path. E.g. the file "docs/source/index.rst" would be uploaded as just "index.rst",
+            instead of "docs/source/index.rst".
+
+            .. note::
+                This only applies to source paths that are children of the current working directory.
+                If a source path is outside of the current working directory, it will always
+                be uploaded under its name only.
 
         :raises DatasetNotFound: If the dataset can't be found.
         :raises DatasetWriteError: If the dataset was already committed.
@@ -343,20 +369,21 @@ class DatasetClient(ServiceClient):
             path_info: Dict[Path, Tuple[Path, int]] = {}
             for name in sources:
                 source = Path(name)
+                strip_path = strip_paths or not path_is_relative_to(source, ".")
                 if source.is_file():
-                    target_path = Path(source.name)
+                    target_path = Path(source.name) if strip_path else source
                     if target is not None:
                         target_path = Path(target) / target_path
                     size = source.lstat().st_size
                     if size == 0:
-                        raise UnexpectedEOFError(str(source))
+                        raise UnexpectedEOFError(f"'{source}', empty files are not allowed")
                     path_info[source] = (target_path, size)
                     total_bytes += size
                 elif source.is_dir():
                     for path in source.glob("**/*"):
                         if path.is_dir():
                             continue
-                        target_path = path.relative_to(source)
+                        target_path = path.relative_to(source) if strip_path else path
                         if target is not None:
                             target_path = Path(target) / target_path
                         size = path.lstat().st_size

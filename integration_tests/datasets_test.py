@@ -125,12 +125,9 @@ class TestManyFilesDataset:
         download_dir = tmp_path / "download"
         client.dataset.fetch(dataset, target=download_dir)
 
-        base_dir = download_dir / target if target is not None else download_dir
+        base_dir = (download_dir / target) if target is not None else download_dir
         for i in range(100):
-            if target:
-                downloaded = base_dir / f"file{i}.txt"
-            else:
-                downloaded = base_dir / f"file{i}.txt"
+            downloaded = base_dir / f"file{i}.txt"
             assert downloaded.is_file()
             assert downloaded.open("r").read() == str(i)
         assert (base_dir / "dataset_file.txt").is_file()
