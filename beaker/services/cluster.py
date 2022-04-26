@@ -88,7 +88,7 @@ class ClusterClient(ServiceClient):
                     "name": cluster_name,
                     "capacity": max_size,
                     "preemptible": preemptible,
-                    "spec": NodeSpec(
+                    "spec": NodeResources(
                         cpu_count=cpus, gpu_count=gpus, gpu_type=gpu_type, memory=memory
                     ).to_json(),
                 },
@@ -224,21 +224,23 @@ class ClusterClient(ServiceClient):
                     hostname=node.hostname,
                     limits=node.limits,
                     running_jobs=node_to_util[node.id]["running_jobs"],
-                    used=NodeSpecUtil(
+                    used=NodeResources(
                         gpu_count=None
                         if node.limits.gpu_count is None
                         else min(node.limits.gpu_count, node_to_util[node.id]["gpus_used"]),
                         cpu_count=None
                         if node.limits.cpu_count is None
                         else min(node.limits.cpu_count, node_to_util[node.id]["cpus_used"]),
+                        gpu_type=node.limits.gpu_type,
                     ),
-                    free=NodeSpecUtil(
+                    free=NodeResources(
                         gpu_count=None
                         if node.limits.gpu_count is None
                         else max(0, node.limits.gpu_count - node_to_util[node.id]["gpus_used"]),
                         cpu_count=None
                         if node.limits.cpu_count is None
                         else max(0, node.limits.cpu_count - node_to_util[node.id]["cpus_used"]),
+                        gpu_type=node.limits.gpu_type,
                     ),
                 )
                 for node in nodes
@@ -247,9 +249,14 @@ class ClusterClient(ServiceClient):
 
     def filter_available(
         self, resources: TaskResources, *clusters: Union[str, Cluster]
-    ) -> List[Cluster]:
+    ) -> List[ClusterUtilization]:
         """
-        Filter out the clusters that don't have enough available resources.
+        Filter out clusters that don't have enough available resources, returning
+        a list of :class:`ClusterUtilization <beaker.data_model.cluster.ClusterUtilization>` for each
+        cluster that has sufficient resources.
+
+        This can be used, for example, to automatically find an on-premise cluster with enough
+        free resources to run a particular task.
 
         .. caution::
             This method is experimental and may change or be removed in future releases.
@@ -262,19 +269,19 @@ class ClusterClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
         """
 
-        def is_compat(node_spec: Union[NodeSpec, NodeShape, NodeSpecUtil]) -> bool:
+        def is_compat(node_shape: NodeResources) -> bool:
             if resources.gpu_count and (
-                node_spec.gpu_count is None or node_spec.gpu_count < resources.gpu_count
+                node_shape.gpu_count is None or node_shape.gpu_count < resources.gpu_count
             ):
                 return False
             if resources.cpu_count and (
-                node_spec.cpu_count is None or node_spec.cpu_count < resources.cpu_count
+                node_shape.cpu_count is None or node_shape.cpu_count < resources.cpu_count
             ):
                 return False
             # TODO: check memory too
             return True
 
-        available: List[Cluster] = []
+        available: List[ClusterUtilization] = []
         for cluster_ in clusters:
             cluster: Cluster = self.resolve_cluster(cluster_)
 
@@ -283,14 +290,14 @@ class ClusterClient(ServiceClient):
 
             cluster_utilization = self.utilization(cluster)
             if cluster.autoscale and len(cluster_utilization.nodes) < cluster.capacity:
-                available.append(cluster)
+                available.append(cluster_utilization)
             else:
                 for node_util in cluster_utilization.nodes:
                     if is_compat(node_util.free):
-                        available.append(cluster)
+                        available.append(cluster_utilization)
                         break
 
-        return available
+        return sorted(available, key=lambda util: (util.queued_jobs, util.running_jobs))
 
     def _not_found_err_msg(self, cluster: Union[str, Cluster]) -> str:
         cluster = cluster if isinstance(cluster, str) else cluster.id

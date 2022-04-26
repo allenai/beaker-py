@@ -11,12 +11,12 @@ from .workspace import WorkspaceRef
 
 class Experiment(BaseModel):
     id: str
+    name: Optional[str] = None
+    full_name: Optional[str] = None
     owner: Account
     author: Account
     created: datetime
     workspace_ref: WorkspaceRef
-    name: Optional[str] = None
-    full_name: Optional[str] = None
     jobs: Tuple[Job, ...] = Field(default_factory=tuple)
 
     @property
@@ -26,11 +26,11 @@ class Experiment(BaseModel):
 
 class Task(BaseModel):
     id: str
+    name: Optional[str] = None
     experiment_id: str
     owner: Account
     author: Account
     created: datetime
-    name: Optional[str] = None
     schedulable: bool = False
     jobs: Tuple[Job, ...] = Field(default_factory=tuple)
 

@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added FAQ section to the docs.
 - All data models are now hashable and faux immutable, and use tuples instead of lists.
 - Added `delete_results_dataset: bool = True` parameter to `Beaker.experiment.delete()`.
+- Added `Cluster.is_cloud` and `Cluster.is_active` properties.
+
+### Changed
+
+- Changed the return type of `Beaker.cluster.filter_available()` from `List[Cluster]` to
+  `List[ClusterUtilization]`.
+- Renamed and consolidated `NodeSpec` and `NodeShape` to `NodeResources`.
 
 ## [v0.11.0](https://github.com/allenai/beaker-py/releases/tag/v0.11.0) - 2022-04-21
 

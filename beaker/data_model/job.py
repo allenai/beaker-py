@@ -10,6 +10,10 @@ from .experiment_spec import TaskSpec
 
 
 class CurrentJobStatus(str, Enum):
+    """
+    The status of a job.
+    """
+
     created = "created"
     scheduled = "scheduled"
     running = "running"
@@ -86,6 +90,10 @@ class JobExecution(BaseModel):
 
 
 class JobKind(str, Enum):
+    """
+    The kind of job.
+    """
+
     execution = "execution"
     session = "session"
 
@@ -96,13 +104,13 @@ class Job(BaseModel):
     """
 
     id: str
+    name: Optional[str] = None
     kind: JobKind
     author: Account
     workspace: str
     cluster: str
     status: JobStatus
     execution: Optional[JobExecution] = None
-    name: Optional[str] = None
     node: Optional[str] = None
     requests: Optional[JobRequests] = None
     limits: Optional[JobLimits] = None
