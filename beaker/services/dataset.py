@@ -65,7 +65,7 @@ class DatasetClient(ServiceClient):
         target: Optional[PathOrStr] = None,
         workspace: Optional[str] = None,
         force: bool = False,
-        max_workers: int = 8,
+        max_workers: Optional[int] = None,
         quiet: bool = False,
         commit: bool = True,
         strip_paths: bool = False,
@@ -172,7 +172,7 @@ class DatasetClient(ServiceClient):
         dataset: Union[str, Dataset],
         target: Optional[PathOrStr] = None,
         force: bool = False,
-        max_workers: int = 8,
+        max_workers: Optional[int] = None,
         quiet: bool = False,
     ):
         """
@@ -326,7 +326,7 @@ class DatasetClient(ServiceClient):
         *sources: PathOrStr,
         target: Optional[PathOrStr] = None,
         quiet: bool = False,
-        max_workers: int = 8,
+        max_workers: Optional[int] = None,
         strip_paths: bool = False,
     ) -> None:
         """
