@@ -4,9 +4,11 @@ from beaker import Beaker
 
 
 def test_warn_for_newer_version(monkeypatch):
-    from beaker import version
+    import beaker.client
+    import beaker.version
 
-    monkeypatch.setattr(version, "VERSION", "0.1.0")
+    monkeypatch.setattr(beaker.version, "VERSION", "0.1.0")
+    monkeypatch.setattr(beaker.client, "_LATEST_VERSION_CHECKED", False)
 
     with pytest.warns(UserWarning, match="Please upgrade with"):
         Beaker.from_env()
