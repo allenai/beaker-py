@@ -24,7 +24,7 @@ from rich.text import Text
 
 class DownloadUploadColumn(DownloadColumn):
     def render(self, task: Task) -> Text:
-        if int(task.total) == 1:
+        if task.total is None or int(task.total) == 1:
             return Text("")
         else:
             return super().render(task)
@@ -39,7 +39,7 @@ class TaskStatusColumn(ProgressColumn):
         self.last_updated = time.time()
 
     def render(self, task: Task) -> Text:
-        total = max(0, task.total)
+        total = max(0, task.total or 0)
         completed = max(0, task.completed)
         if completed < total:
             now = time.time()
