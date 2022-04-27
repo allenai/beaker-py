@@ -175,6 +175,7 @@ class DatasetClient(ServiceClient):
         force: bool = False,
         max_workers: Optional[int] = None,
         quiet: bool = False,
+        validate_checksum: bool = True,
     ):
         """
         Download a dataset.
@@ -184,13 +185,14 @@ class DatasetClient(ServiceClient):
         :param max_workers: The maximum number of thread pool workers to use to download files concurrently.
         :param force: If ``True``, existing local files will be overwritten.
         :param quiet: If ``True``, progress won't be displayed.
+        :param validate_checksum: If ``True``, the checksum of every file downloaded will be verified.
 
         :raises DatasetNotFound: If the dataset can't be found.
         :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
         :raises FileExistsError: If ``force=False`` and an existing local file clashes with a file
             in the Beaker dataset.
-        :raises ChecksumFailedError: If the digest of one of the downloaded files doesn't match the
-            expected digest.
+        :raises ChecksumFailedError: If ``validate_checksum=True`` and the digest of one of the
+            downloaded files doesn't match the expected digest.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -249,6 +251,7 @@ class DatasetClient(ServiceClient):
                         target_path,
                         progress,
                         bytes_task,
+                        validate_checksum,
                     )
                     download_futures.append(future)
 
@@ -265,6 +268,7 @@ class DatasetClient(ServiceClient):
         offset: int = 0,
         length: int = -1,
         max_retries: int = 5,
+        validate_checksum: bool = True,
     ) -> Generator[bytes, None, None]:
         """
         Stream download the contents of a single file from a dataset.
@@ -275,11 +279,13 @@ class DatasetClient(ServiceClient):
         :param length: Number of bytes to read.
         :param max_retries: Number of times to restart the download when HTTP errors occur.
             Errors can be expected for very large files.
+        :param validate_checksum: If ``True``, the checksum of the downloaded bytes will be verified.
 
         :raises DatasetNotFound: If the dataset can't be found.
         :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
         :raises FileNotFoundError: If the file doesn't exist in the dataset.
-        :raises ChecksumFailedError: If the digest of the downloaded bytes don't match the expected digest.
+        :raises ChecksumFailedError: If ``validate_checksum=True`` and the digest of the downloaded
+            bytes don't match the expected digest.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -304,7 +310,12 @@ class DatasetClient(ServiceClient):
             ),
         )
         yield from self._stream_file(
-            dataset.storage, file_info, offset=offset, length=length, max_retries=max_retries
+            dataset.storage,
+            file_info,
+            offset=offset,
+            length=length,
+            max_retries=max_retries,
+            validate_checksum=validate_checksum,
         )
 
     def delete(self, dataset: Union[str, Dataset]):
@@ -592,7 +603,10 @@ class DatasetClient(ServiceClient):
     def _decode_digest(self, encoded_digest: str) -> bytes:
         import base64
 
-        _, encoded = encoded_digest.split(" ", 2)
+        if self.SHA256 in encoded_digest:
+            _, encoded = encoded_digest.split(" ", 2)
+        else:
+            encoded = encoded_digest
         return base64.standard_b64decode(encoded)
 
     def _iter_files(self, storage: DatasetStorage) -> Generator[FileInfo, None, None]:
@@ -623,10 +637,11 @@ class DatasetClient(ServiceClient):
         self,
         storage: DatasetStorage,
         file_info: FileInfo,
-        chunk_size: int = 1,
+        chunk_size: int = 1024,
         offset: int = 0,
         length: int = -1,
         max_retries: int = 5,
+        validate_checksum: bool = True,
     ) -> Generator[bytes, None, None]:
         import hashlib
 
@@ -648,26 +663,29 @@ class DatasetClient(ServiceClient):
             for chunk in response.iter_content(chunk_size=chunk_size):
                 yield chunk
 
-        sha256_hash = hashlib.sha256()
+        sha256_hash = hashlib.sha256() if (offset == 0 and validate_checksum) else None
         retries = 0
         while True:
             try:
                 for chunk in stream_file(offset, length):
                     offset += len(chunk)
-                    sha256_hash.update(chunk)
+                    if sha256_hash is not None:
+                        sha256_hash.update(chunk)
                     yield chunk
                 break
             except HTTPError:
                 if retries >= max_retries:
                     raise
                 retries += 1
+
         # Validate digest.
-        digest = sha256_hash.digest()
-        if self._decode_digest(file_info.digest) != digest:
-            raise ChecksumFailedError(
-                f"Checksum for '{file_info.path}' failed. "
-                f"Expected '{file_info.digest}', got '{self._encode_digest(digest)}'."
-            )
+        if sha256_hash is not None:
+            digest = sha256_hash.digest()
+            if self._decode_digest(file_info.digest) != digest:
+                raise ChecksumFailedError(
+                    f"Checksum for '{file_info.path}' failed. "
+                    f"Expected '{file_info.digest}', got '{self._encode_digest(digest)}'."
+                )
 
     def _download_file(
         self,
@@ -676,6 +694,7 @@ class DatasetClient(ServiceClient):
         target_path: Path,
         progress: "Progress",
         task_id: "TaskID",
+        validate_checksum: bool = True,
     ) -> int:
         import tempfile
 
@@ -684,7 +703,7 @@ class DatasetClient(ServiceClient):
         target_dir.mkdir(exist_ok=True, parents=True)
         tmp_target = tempfile.NamedTemporaryFile("w+b", dir=target_dir, delete=False, suffix=".tmp")
         try:
-            for chunk in self._stream_file(storage, file_info):
+            for chunk in self._stream_file(storage, file_info, validate_checksum=validate_checksum):
                 total_bytes += len(chunk)
                 tmp_target.write(chunk)
                 progress.update(task_id, advance=len(chunk))
