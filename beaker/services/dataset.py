@@ -268,6 +268,7 @@ class DatasetClient(ServiceClient):
         offset: int = 0,
         length: int = -1,
         max_retries: int = 5,
+        quiet: bool = False,
         validate_checksum: bool = True,
     ) -> Generator[bytes, None, None]:
         """
@@ -279,6 +280,7 @@ class DatasetClient(ServiceClient):
         :param length: Number of bytes to read.
         :param max_retries: Number of times to restart the download when HTTP errors occur.
             Errors can be expected for very large files.
+        :param quiet: If ``True``, progress won't be displayed.
         :param validate_checksum: If ``True``, the checksum of the downloaded bytes will be verified.
 
         :raises DatasetNotFound: If the dataset can't be found.
@@ -309,14 +311,20 @@ class DatasetClient(ServiceClient):
                 response.headers[self.HEADER_LAST_MODIFIED], "%a, %d %b %Y %H:%M:%S %Z"
             ),
         )
-        yield from self._stream_file(
-            dataset.storage,
-            file_info,
-            offset=offset,
-            length=length,
-            max_retries=max_retries,
-            validate_checksum=validate_checksum,
-        )
+        from ..progress import get_unsized_dataset_fetch_progress
+
+        with get_unsized_dataset_fetch_progress(quiet=quiet) as progress:
+            task_id = progress.add_task("Downloading", total=None)
+            for bytes_chunk in self._stream_file(
+                dataset.storage,
+                file_info,
+                offset=offset,
+                length=length,
+                max_retries=max_retries,
+                validate_checksum=validate_checksum,
+            ):
+                progress.update(task_id, advance=len(bytes_chunk))
+                yield bytes_chunk
 
     def delete(self, dataset: Union[str, Dataset]):
         """
