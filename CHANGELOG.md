@@ -7,9 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- `Beaker.dataset.fetch()` and `Beaker.dataset.stream_file()` now verify the digest of the downloaded bytes
+  against the expected digest by default. A `ChecksumFailedError` is raised if they don't match.
+  You can skip validating the checksum by passing `validate_checksum=False`.
+
+## [v0.13.0](https://github.com/allenai/beaker-py/releases/tag/v0.13.0) - 2022-04-27
+
 ### Added
 
 - Added `Beaker.dataset.url()` method.
+- Added `Beaker.image.url()` method.
+- Added `Beaker.group.url()` method.
+- Added `Beaker.workspace.url()` method.
+- Added `Beaker.cluster.url()` method.
 
 ### Changed
 
@@ -17,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed behavior of `Beaker.dataset.create()` and `Beaker.dataset.sync()` with respect to source files. By default now, source files and directories will be uploading as their given path, instead of just their name. You can still get the old behavior by passing `strip_paths=True`.
 - Changed default value of `max_workers` to `None` in `Beaker.dataset.create()` and `.sync()`.
   When left as `None`, the number of workers will be determined by the [`ThreadPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor).
+- "." now allowed in beaker names.
 
 ## [v0.12.0](https://github.com/allenai/beaker-py/releases/tag/v0.12.0) - 2022-04-26
 

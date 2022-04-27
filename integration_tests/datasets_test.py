@@ -14,11 +14,13 @@ class TestDataset:
         self.file_a = tempfile.NamedTemporaryFile(delete=False)
         self.file_a_contents = b"a" * 10
         self.file_a.write(self.file_a_contents)
+        self.file_a.seek(0)
         self.file_a.close()
 
         self.file_b = tempfile.NamedTemporaryFile(delete=False)
         self.file_b_contents = b"b" * 10
         self.file_b.write(self.file_b_contents)
+        self.file_b.seek(0)
         self.file_b.close()
 
     def teardown_method(self):

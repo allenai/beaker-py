@@ -312,6 +312,17 @@ class ClusterClient(ServiceClient):
 
         return sorted(available, key=lambda util: (util.queued_jobs, util.running_jobs))
 
+    def url(self, cluster: Union[str, Cluster]) -> str:
+        """
+        Get the URL for a cluster.
+
+        :param cluster: The cluster ID, full name, or object.
+
+        :raises ClusterNotFound: If the cluster doesn't exist.
+        """
+        cluster_name = self.resolve_cluster(cluster).full_name
+        return f"{self.config.agent_address}/cl/{cluster_name}/details"
+
     def _not_found_err_msg(self, cluster: Union[str, Cluster]) -> str:
         cluster = cluster if isinstance(cluster, str) else cluster.id
         return (

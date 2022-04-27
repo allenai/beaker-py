@@ -190,6 +190,17 @@ class GroupClient(ServiceClient):
         # TODO: make these requests concurrently.
         return [self.beaker.experiment.get(exp_id) for exp_id in exp_ids or []]
 
+    def url(self, group: Union[str, Group]) -> str:
+        """
+        Get the URL for a group.
+
+        :param group: The group ID, name, or object.
+
+        :raises GroupNotFound: If the group can't be found.
+        """
+        group_id = self.resolve_group(group).id
+        return f"{self.config.agent_address}/gr/{self.url_quote(group_id)}/compare"
+
     def _not_found_err_msg(self, group: Union[str, Group]) -> str:
         group = group if isinstance(group, str) else group.id
         return (

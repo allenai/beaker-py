@@ -29,3 +29,10 @@ def test_cluster_list(client: Beaker, beaker_org: Organization):
 
 def test_cluster_nodes(client: Beaker, beaker_on_prem_cluster_name: str):
     client.cluster.nodes(beaker_on_prem_cluster_name)
+
+
+def test_cluster_url(client: Beaker):
+    assert (
+        client.cluster.url("ai2/allennlp-cirrascale")
+        == "https://beaker.org/cl/ai2/allennlp-cirrascale/details"
+    )

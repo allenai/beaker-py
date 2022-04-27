@@ -308,6 +308,17 @@ class ImageClient(ServiceClient):
         local_image = self.docker.images.get(repo.image_tag)
         return local_image
 
+    def url(self, image: Union[str, Image]) -> str:
+        """
+        Get the URL for an image.
+
+        :param image: The Beaker image ID, name, or object.
+
+        :raises ImageNotFound: If the image can't be found on Beaker.
+        """
+        image_id = self.resolve_image(image).id
+        return f"{self.config.agent_address}/im/{self.url_quote(image_id)}/details"
+
     def _not_found_err_msg(self, image: Union[str, Image]) -> str:
         image = image if isinstance(image, str) else image.id
         return (
