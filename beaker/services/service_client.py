@@ -171,7 +171,8 @@ class ServiceClient:
         return urllib.parse.quote(id, safe="")
 
     def validate_beaker_name(self, name: str):
-        if not name.replace("-", "").replace("_", "").isalnum():
+        if not name.replace("-", "").replace("_", "").replace(".", "").isalnum():
             raise ValueError(
-                f"Invalid name '{name}'. Beaker names can only contain letters, digits, dashes, and underscores."
+                f"Invalid name '{name}'. Beaker names can only contain letters, "
+                f"digits, periods, dashes, and underscores."
             )
