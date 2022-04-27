@@ -189,6 +189,8 @@ class DatasetClient(ServiceClient):
         :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
         :raises FileExistsError: If ``force=False`` and an existing local file clashes with a file
             in the Beaker dataset.
+        :raises ChecksumFailedError: If the digest of one of the downloaded files doesn't match the
+            expected digest.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -277,6 +279,7 @@ class DatasetClient(ServiceClient):
         :raises DatasetNotFound: If the dataset can't be found.
         :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
         :raises FileNotFoundError: If the file doesn't exist in the dataset.
+        :raises ChecksumFailedError: If the digest of the downloaded bytes don't match the expected digest.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -625,6 +628,8 @@ class DatasetClient(ServiceClient):
         length: int = -1,
         max_retries: int = 5,
     ) -> Generator[bytes, None, None]:
+        import hashlib
+
         def stream_file(offset: int, length: int) -> Generator[bytes, None, None]:
             headers = {}
             if offset > 0 and length > 0:
@@ -643,17 +648,26 @@ class DatasetClient(ServiceClient):
             for chunk in response.iter_content(chunk_size=chunk_size):
                 yield chunk
 
+        sha256_hash = hashlib.sha256()
         retries = 0
         while True:
             try:
                 for chunk in stream_file(offset, length):
                     offset += len(chunk)
+                    sha256_hash.update(chunk)
                     yield chunk
                 break
             except HTTPError:
                 if retries >= max_retries:
                     raise
                 retries += 1
+        # Validate digest.
+        digest = sha256_hash.digest()
+        if self._decode_digest(file_info.digest) != digest:
+            raise ChecksumFailedError(
+                f"Checksum for '{file_info.path}' failed. "
+                f"Expected '{file_info.digest}', got '{self._encode_digest(digest)}'."
+            )
 
     def _download_file(
         self,
