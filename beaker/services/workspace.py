@@ -577,6 +577,20 @@ class WorkspaceClient(ServiceClient):
         )
         return self.get_permissions(workspace=workspace_name)
 
+    def url(self, workspace: Optional[Union[str, Workspace]] = None) -> str:
+        """
+        Get the URL for a workspace.
+
+        :param workspace: The Beaker workspace name, or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
+        """
+        workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
+        return f"{self.config.agent_address}/ws/{workspace_name}"
+
     def _not_found_err_msg(self, workspace: str) -> str:
         return (
             f"'{workspace}': Make sure you're using the workspace ID or *full* name "

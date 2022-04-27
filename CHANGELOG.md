@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added `Beaker.dataset.url()` method.
+- Added `Beaker.image.url()` method.
+- Added `Beaker.group.url()` method.
+- Added `Beaker.workspace.url()` method.
+- Added `Beaker.cluster.url()` method.
 
 ### Changed
 
