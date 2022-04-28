@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v0.13.1](https://github.com/allenai/beaker-py/releases/tag/v0.13.1) - 2022-04-28
+
 ### Changed
 
 - `Beaker.dataset.fetch()` and `Beaker.dataset.stream_file()` now verify the digest of the downloaded bytes
