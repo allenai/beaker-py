@@ -36,7 +36,7 @@ class Cluster(BaseModel):
     """
     The actual node configuration.
     """
-    nodeCost: Optional[str] = None
+    node_cost: Optional[str] = None
     validated: Optional[datetime] = None
 
     @validator("validated")

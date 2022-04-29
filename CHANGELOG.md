@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The `Beaker.account.name` property is now cached for performance reasons with a TTL cache.
+- Renamed `Cluster.nodeCost` to `Cluster.node_cost` for consistency.
 
 ## [v0.13.1](https://github.com/allenai/beaker-py/releases/tag/v0.13.1) - 2022-04-28
 
