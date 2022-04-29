@@ -2,6 +2,7 @@ from typing import List
 
 from ..data_model import *
 from ..exceptions import *
+from ..util import cached_property
 from .service_client import ServiceClient
 
 
@@ -10,8 +11,8 @@ class AccountClient(ServiceClient):
     Accessed via :data:`Beaker.account <beaker.Beaker.account>`.
     """
 
-    @property  # type: ignore[misc]
-    def name(self):
+    @cached_property(ttl=3 * 60)
+    def name(self) -> str:
         """
         A convenience property to get username of your Beaker account.
         """
