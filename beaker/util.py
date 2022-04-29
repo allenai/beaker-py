@@ -43,7 +43,7 @@ def path_is_relative_to(path: Path, other: PathOrStr) -> bool:
 
 T = TypeVar("T")
 
-_property_cache: OrderedDict[Tuple[str, str], Tuple[float, Any]] = OrderedDict()
+_property_cache: "OrderedDict[Tuple[str, str], Tuple[float, Any]]" = OrderedDict()
 _property_cache_max_size = 50
 
 
