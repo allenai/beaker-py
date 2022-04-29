@@ -1,6 +1,12 @@
+import time
+from collections import OrderedDict
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Callable, Tuple, TypeVar
 
 from .aliases import PathOrStr
+
+if TYPE_CHECKING:
+    from .services.service_client import ServiceClient
 
 
 def to_lower_camel(s: str) -> str:
@@ -33,3 +39,40 @@ def path_is_relative_to(path: Path, other: PathOrStr) -> bool:
         return True
     except ValueError:
         return False
+
+
+T = TypeVar("T")
+
+_property_cache: "OrderedDict[Tuple[str, str], Tuple[float, Any]]" = OrderedDict()
+_property_cache_max_size = 50
+
+
+def cached_property(ttl: float = 60):
+    """
+    This is used to create a cached property on a :class:`~beaker.services.service_client.ServiceClient`
+    subclass.
+
+    :param ttl: The time-to-live in seconds. The cached value will be evicted from the cache
+        after this many seconds to ensure it stays fresh.
+
+    See :meth:`~beaker.services.account.AccountClient.name`, for example.
+    """
+
+    def ttl_cached_property(prop: Callable[[Any], T]):
+        @property  # type: ignore[misc]
+        def prop_with_cache(self: "ServiceClient") -> T:
+            key = (prop.__qualname__, repr(self.config))
+            cached = _property_cache.get(key)
+            if cached is not None:
+                time_cached, value = cached
+                if time.monotonic() - time_cached <= ttl:
+                    return value
+            value = prop(self)
+            _property_cache[key] = (time.monotonic(), value)
+            while len(_property_cache) > _property_cache_max_size:
+                _property_cache.popitem(last=False)
+            return value
+
+        return prop_with_cache
+
+    return ttl_cached_property
