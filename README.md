@@ -24,13 +24,13 @@
 ## Quick links
 
 - [Documentation](https://beaker-py.readthedocs.io/)
-- [PyPI Package](https://pypi.org/project/beaker-py/)
+- [PyPI package](https://pypi.org/project/beaker-py/)
 - [Contributing](https://github.com/allenai/beaker-py/blob/main/CONTRIBUTING.md)
 - [License](https://github.com/allenai/beaker-py/blob/main/LICENSE)
 
 ## See also
 
-- [Beaker Dashboard](https://beaker.org)
+- [Beaker dashboard](https://beaker.org)
 - [Beaker command-line client](https://github.com/allenai/beaker)
 - *GitHub Actions:*
   - [setup-beaker](https://github.com/marketplace/actions/setup-beaker)
