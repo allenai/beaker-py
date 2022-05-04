@@ -71,3 +71,14 @@ class ClusterUtilization(BaseModel):
     running_jobs: int
     queued_jobs: int
     nodes: Tuple[NodeUtilization, ...]
+
+
+class ClusterSpec(BaseModel):
+    name: str
+    capacity: int
+    preemptible: bool
+    spec: NodeResources
+
+
+class ClusterPatch(BaseModel):
+    capacity: int

@@ -1,3 +1,4 @@
+import io
 import json
 import urllib.parse
 from contextlib import contextmanager
@@ -58,9 +59,12 @@ class ServiceClient:
         stream: bool = False,
     ) -> requests.Response:
         with self._session_with_backoff() as session:
+            # Build URL.
             url = f"{base_url or self._base_url}/{resource}"
             if query is not None:
                 url = url + "?" + urllib.parse.urlencode(query)
+
+            # Populate headers.
             default_headers = {
                 "Authorization": f"Bearer {token or self.config.user_token}",
                 "Content-Type": "application/json",
@@ -68,15 +72,42 @@ class ServiceClient:
             }
             if headers is not None:
                 default_headers.update(headers)
+
+            # Validate request data.
+            request_data: Optional[Union[str, bytes, io.BufferedReader]] = None
+            if isinstance(data, BaseModel):
+                request_data = json.dumps(data.to_json())
+            elif isinstance(data, dict):
+                request_data = json.dumps(data)
+            elif isinstance(data, (str, bytes, io.BufferedReader)):
+                request_data = data
+            elif data is not None:
+                raise TypeError(
+                    f"Unexpected type for 'data'. Expected 'dict' or 'BaseModel', got {type(data)}"
+                )
+
+            # Make request.
             response = getattr(session, method.lower())(
                 url,
                 headers=default_headers,
-                data=json.dumps(data) if isinstance(data, dict) else data,
+                data=request_data,
                 stream=stream,
             )
+
             if exceptions_for_status is not None and response.status_code in exceptions_for_status:
                 raise exceptions_for_status[response.status_code]
-            response.raise_for_status()
+
+            try:
+                response.raise_for_status()
+            except requests.exceptions.HTTPError:
+                if response.text:
+                    try:
+                        msg = json.loads(response.text)["message"]
+                        raise BeakerError(msg)
+                    except (TypeError, KeyError, json.JSONDecodeError):
+                        pass
+                raise
+
             return response
 
     def resolve_cluster_name(self, cluster_name: str) -> str:

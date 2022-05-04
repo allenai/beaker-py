@@ -84,14 +84,14 @@ class ClusterClient(ServiceClient):
             self.request(
                 f"clusters/{self.url_quote(organization)}",
                 method="POST",
-                data={
-                    "name": cluster_name,
-                    "capacity": max_size,
-                    "preemptible": preemptible,
-                    "spec": NodeResources(
+                data=ClusterSpec(
+                    name=cluster_name,
+                    capacity=max_size,
+                    preemptible=preemptible,
+                    spec=NodeResources(
                         cpu_count=cpus, gpu_count=gpus, gpu_type=gpu_type, memory=memory
-                    ).to_json(),
-                },
+                    ),
+                ),
                 exceptions_for_status={409: ClusterConflict(cluster_name)},
             ).json()
         )
@@ -112,7 +112,7 @@ class ClusterClient(ServiceClient):
             self.request(
                 f"clusters/{cluster_name}",
                 method="PATCH",
-                data={"capacity": max_size},
+                data=ClusterPatch(capacity=max_size),
                 exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster))},
             ).json()
         )

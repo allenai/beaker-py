@@ -71,12 +71,12 @@ class GroupClient(ServiceClient):
         group_data = self.request(
             "groups",
             method="POST",
-            data={
-                "name": name,
-                "description": description,
-                "workspace": workspace.full_name,
-                "experiments": exp_ids,
-            },
+            data=GroupSpec(
+                name=name,
+                descriptio=description,
+                workspace=workspace.full_name,
+                experiments=exp_ids,
+            ),
             exceptions_for_status={409: GroupConflict(name)},
         ).json()
         return self.get(group_data["id"])
@@ -117,7 +117,7 @@ class GroupClient(ServiceClient):
             self.request(
                 f"groups/{self.url_quote(group_id)}",
                 method="PATCH",
-                data={"name": name},
+                data=GroupPatch(name=name),
                 exceptions_for_status={
                     404: GroupNotFound(self._not_found_err_msg(group)),
                     409: GroupConflict(name),
@@ -144,7 +144,7 @@ class GroupClient(ServiceClient):
         self.request(
             f"groups/{self.url_quote(group_id)}",
             method="PATCH",
-            data={"addExperiments": exp_ids},
+            data=GroupPatch(add_experiments=exp_ids),
             exceptions_for_status={404: GroupNotFound(self._not_found_err_msg(group))},
         )
 
@@ -167,7 +167,7 @@ class GroupClient(ServiceClient):
         self.request(
             f"groups/{self.url_quote(group_id)}",
             method="PATCH",
-            data={"removeExperiments": exp_ids},
+            data=GroupPatch(remove_experiments=exp_ids),
             exceptions_for_status={404: GroupNotFound(self._not_found_err_msg(group))},
         )
 

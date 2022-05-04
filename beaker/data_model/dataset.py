@@ -81,3 +81,15 @@ class DatasetManifest(BaseModel):
 class DatasetsPage(BaseModel):
     data: Tuple[Dataset, ...]
     next_cursor: Optional[str] = None
+
+
+class DatasetSpec(BaseModel):
+    workspace: Optional[str] = None
+    description: Optional[str] = None
+    fileheap: Optional[bool] = None
+
+
+class DatasetPatch(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    commit: Optional[bool] = None

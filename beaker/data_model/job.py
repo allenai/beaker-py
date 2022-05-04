@@ -6,7 +6,7 @@ from pydantic import Field, validator
 
 from .account import Account
 from .base import BaseModel
-from .experiment_spec import TaskSpec
+from .experiment_spec import Priority, TaskSpec
 
 
 class CurrentJobStatus(str, Enum):
@@ -127,3 +127,28 @@ class Job(BaseModel):
 class Jobs(BaseModel):
     data: Optional[Tuple[Job, ...]] = None
     next: Optional[str] = None
+
+
+class CanceledCode(int, Enum):
+    not_set = 0
+    system_preemption = 1
+    user_preemption = 2
+    idle = 3
+
+
+class JobStatusUpdate(BaseModel):
+    scheduled: Optional[bool] = None
+    started: Optional[bool] = None
+    exit_code: Optional[int] = None
+    failed: Optional[bool] = None
+    finalized: Optional[bool] = None
+    canceled: Optional[bool] = None
+    canceled_for: Optional[CanceledCode] = None
+    idle: Optional[bool] = None
+    message: Optional[str] = None
+
+
+class JobPatch(BaseModel):
+    status: Optional[JobStatusUpdate] = None
+    limits: Optional[JobLimits] = None
+    priority: Optional[Priority] = None

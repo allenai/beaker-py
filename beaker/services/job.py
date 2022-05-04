@@ -195,7 +195,7 @@ class JobClient(ServiceClient):
                 f"jobs/{job_id}",
                 method="PATCH",
                 exceptions_for_status={404: JobNotFound(job_id)},
-                data={"status": {"finalized": True}},
+                data=JobPatch(status=JobStatusUpdate(finalized=True)),
             ).json()
         )
 
@@ -214,7 +214,7 @@ class JobClient(ServiceClient):
                 f"jobs/{job_id}",
                 method="PATCH",
                 exceptions_for_status={404: JobNotFound(job_id)},
-                data={"status": {"canceled": True}},
+                data=JobPatch(status=JobStatusUpdate(canceled=True)),
             ).json()
         )
 

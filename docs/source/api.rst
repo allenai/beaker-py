@@ -114,7 +114,7 @@ Workspace
    :undoc-members:
 
 .. automodule:: beaker.data_model.workspace
-   :members: WorkspaceSize, WorkspaceRef, WorkspacePermissions
+   :members: WorkspaceSize, WorkspaceRef, Permission, WorkspacePermissions
    :undoc-members:
 
 Cluster

@@ -239,6 +239,14 @@ class TaskResources(BaseModel, frozen=False):
     """
 
 
+class Priority(str, Enum):
+    urgent = "urgent"
+    high = "high"
+    normal = "normal"
+    low = "low"
+    preemptible = "preemptible"
+
+
 class TaskContext(BaseModel, frozen=False):
     """
     Describes an execution environment, or how a task should be run.
@@ -253,7 +261,7 @@ class TaskContext(BaseModel, frozen=False):
     The full name or ID of a Beaker cluster on which the task should run.
     """
 
-    priority: Optional[str] = None
+    priority: Optional[Priority] = None
     """
     Set priority to change the urgency with which a task will run.
 

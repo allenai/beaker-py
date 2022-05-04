@@ -65,6 +65,7 @@ class DatasetClient(ServiceClient):
         *sources: PathOrStr,
         target: Optional[PathOrStr] = None,
         workspace: Optional[str] = None,
+        description: Optional[str] = None,
         force: bool = False,
         max_workers: Optional[int] = None,
         quiet: bool = False,
@@ -80,6 +81,7 @@ class DatasetClient(ServiceClient):
             a directory of this name.
         :param workspace: The workspace to upload the dataset to. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param description: Text description for the dataset.
         :param force: If ``True`` and a dataset by the given name already exists, it will be overwritten.
         :param max_workers: The maximum number of thread pool workers to use to upload files concurrently.
         :param quiet: If ``True``, progress won't be displayed.
@@ -104,7 +106,7 @@ class DatasetClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         self.validate_beaker_name(name)
-        workspace: Workspace = self.resolve_workspace(workspace)
+        workspace_id = self.resolve_workspace(workspace).id
 
         # Create the dataset.
         def make_dataset() -> Dataset:
@@ -113,10 +115,9 @@ class DatasetClient(ServiceClient):
                     "datasets",
                     method="POST",
                     query={"name": name},
-                    data={
-                        "workspace": workspace.id,  # type: ignore
-                        "fileheap": True,
-                    },
+                    data=DatasetSpec(
+                        workspace=workspace_id, description=description, fileheap=True
+                    ),
                     exceptions_for_status={409: DatasetConflict(name)},
                 ).json()
             )
@@ -132,14 +133,15 @@ class DatasetClient(ServiceClient):
         assert dataset_info.storage is not None
 
         # Upload the file(s).
-        self.sync(
-            dataset_info,
-            *sources,
-            target=target,
-            quiet=quiet,
-            max_workers=max_workers,
-            strip_paths=strip_paths,
-        )
+        if sources:
+            self.sync(
+                dataset_info,
+                *sources,
+                target=target,
+                quiet=quiet,
+                max_workers=max_workers,
+                strip_paths=strip_paths,
+            )
 
         # Commit the dataset.
         if commit:
@@ -163,7 +165,7 @@ class DatasetClient(ServiceClient):
             self.request(
                 f"datasets/{self.url_quote(dataset_id)}",
                 method="PATCH",
-                data={"commit": True},
+                data=DatasetPatch(commit=True),
                 exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset))},
             ).json()
         )
@@ -483,7 +485,7 @@ class DatasetClient(ServiceClient):
             total += file_info.size
         return total
 
-    def rename(self, dataset: Union[str, Dataset], new_name: str) -> Dataset:
+    def rename(self, dataset: Union[str, Dataset], name: str) -> Dataset:
         """
         Rename a dataset.
 
@@ -496,15 +498,15 @@ class DatasetClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        self.validate_beaker_name(new_name)
+        self.validate_beaker_name(name)
         dataset_id = self.resolve_dataset(dataset).id
         return Dataset.from_json(
             self.request(
                 f"datasets/{self.url_quote(dataset_id)}",
                 method="PATCH",
-                data={"name": new_name},
+                data=DatasetPatch(name=name),
                 exceptions_for_status={
-                    409: DatasetConflict(new_name),
+                    409: DatasetConflict(name),
                     404: DatasetNotFound(dataset_id),
                 },
             ).json()
