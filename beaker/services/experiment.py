@@ -177,7 +177,7 @@ class ExperimentClient(ServiceClient):
             self.request(
                 f"experiments/{self.url_quote(experiment_id)}",
                 method="PATCH",
-                data={"name": name},
+                data=ExperimentPatch(name=name),
                 exceptions_for_status={
                     404: ExperimentNotFound(self._not_found_err_msg(experiment)),
                     409: ExperimentConflict(name),

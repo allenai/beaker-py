@@ -482,7 +482,7 @@ class DatasetClient(ServiceClient):
             total += file_info.size
         return total
 
-    def rename(self, dataset: Union[str, Dataset], new_name: str) -> Dataset:
+    def rename(self, dataset: Union[str, Dataset], name: str) -> Dataset:
         """
         Rename a dataset.
 
@@ -495,15 +495,15 @@ class DatasetClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        self.validate_beaker_name(new_name)
+        self.validate_beaker_name(name)
         dataset_id = self.resolve_dataset(dataset).id
         return Dataset.from_json(
             self.request(
                 f"datasets/{self.url_quote(dataset_id)}",
                 method="PATCH",
-                data=DatasetPatch(name=new_name),
+                data=DatasetPatch(name=name),
                 exceptions_for_status={
-                    409: DatasetConflict(new_name),
+                    409: DatasetConflict(name),
                     404: DatasetNotFound(dataset_id),
                 },
             ).json()

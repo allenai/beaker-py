@@ -48,11 +48,15 @@ class WorkspaceClient(ServiceClient):
                 pass
             raise
 
-    def create(self, workspace: str) -> Workspace:
+    def create(
+        self, workspace: str, description: Optional[str] = None, public: bool = False
+    ) -> Workspace:
         """
         Create a workspace.
 
         :param workspace: The workspace name.
+        :param description: Text description for the workspace.
+        :param public: If the workspace should be public.
 
         :raises ValueError: If the workspace name is invalid.
         :raises WorkspaceConflict: If a workspace by that name already exists.
@@ -65,7 +69,7 @@ class WorkspaceClient(ServiceClient):
             self.request(
                 "workspaces",
                 method="POST",
-                data={"name": name, "org": org},
+                data=WorkspaceSpec(name=name, org=org, description=description, public=public),
                 exceptions_for_status={
                     409: WorkspaceConflict(workspace_name),
                 },
@@ -104,7 +108,7 @@ class WorkspaceClient(ServiceClient):
             self.request(
                 f"workspaces/{self.url_quote(workspace_name)}",
                 method="PATCH",
-                data={"archive": True},
+                data=WorkspacePatch(archive=True),
                 exceptions_for_status={
                     403: WorkspaceWriteError(workspace_name),
                     404: WorkspaceNotFound(self._not_found_err_msg(workspace_name)),
@@ -129,19 +133,19 @@ class WorkspaceClient(ServiceClient):
             self.request(
                 f"workspaces/{self.url_quote(workspace_name)}",
                 method="PATCH",
-                data={"archive": False},
+                data=WorkspacePatch(archive=False),
                 exceptions_for_status={
                     404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
                 },
             ).json()
         )
 
-    def rename(self, workspace: Union[str, Workspace], new_name: str) -> Workspace:
+    def rename(self, workspace: Union[str, Workspace], name: str) -> Workspace:
         """
         Rename a workspace.
 
         :param workspace: The workspace to rename.
-        :param new_name: The new name to assign to the workspace.
+        :param name: The new name to assign to the workspace.
             This should only *not* include the organization.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
@@ -149,7 +153,7 @@ class WorkspaceClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        self.validate_beaker_name(new_name)
+        self.validate_beaker_name(name)
         if workspace is None:  # could accidentally rename default workspace if None
             raise TypeError("Expected 'str', got 'NoneType'")
         workspace_name = self.resolve_workspace(workspace).full_name
@@ -157,11 +161,11 @@ class WorkspaceClient(ServiceClient):
             self.request(
                 f"workspaces/{self.url_quote(workspace_name)}",
                 method="PATCH",
-                data={"name": new_name},
+                data=WorkspacePatch(name=name),
                 exceptions_for_status={
                     403: WorkspaceWriteError(workspace_name),
                     404: WorkspaceNotFound(self._not_found_err_msg(workspace_name)),
-                    409: WorkspaceConflict(new_name),
+                    409: WorkspaceConflict(name),
                 },
             ).json()
         )
@@ -188,7 +192,9 @@ class WorkspaceClient(ServiceClient):
         self.request(
             f"workspaces/{self.url_quote(workspace_name)}/transfer",
             method="POST",
-            data={"ids": [item if isinstance(item, str) else item.id for item in items]},
+            data=WorkspaceTransferSpec(
+                ids=[item if isinstance(item, str) else item.id for item in items]
+            ),
             exceptions_for_status={
                 403: WorkspaceWriteError(workspace_name),
                 404: WorkspaceNotFound(self._not_found_err_msg(workspace_name)),
@@ -487,7 +493,7 @@ class WorkspaceClient(ServiceClient):
 
     def grant_permissions(
         self,
-        auth: str,
+        auth: Permission,
         *accounts: Union[str, Account],
         workspace: Optional[Union[str, Workspace]] = None,
     ) -> WorkspacePermissions:
@@ -507,7 +513,7 @@ class WorkspaceClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        if auth not in {"read", "write", "all"}:
+        if auth not in set(Permission):
             raise ValueError(f"Authorization '{auth}' is invalid")
         account_ids = [
             account.id if isinstance(account, Account) else self.beaker.account.get(account).id
@@ -517,7 +523,9 @@ class WorkspaceClient(ServiceClient):
         self.request(
             f"workspaces/{self.url_quote(workspace_name)}/auth",
             method="PATCH",
-            data={"authorizations": {account_id: auth for account_id in account_ids}},
+            data=WorkspacePermissionsPatch(
+                authorizations={account_id: auth for account_id in account_ids}
+            ),
             exceptions_for_status={404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))},
         )
         return self.get_permissions(workspace=workspace_name)
@@ -542,7 +550,7 @@ class WorkspaceClient(ServiceClient):
         self.request(
             f"workspaces/{self.url_quote(workspace_name)}/auth",
             method="PATCH",
-            data={"public": public},
+            data=WorkspacePermissionsPatch(public=public),
             exceptions_for_status={404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))},
         )
         return self.get_permissions(workspace=workspace_name)
@@ -572,7 +580,9 @@ class WorkspaceClient(ServiceClient):
         self.request(
             f"workspaces/{self.url_quote(workspace_name)}/auth",
             method="PATCH",
-            data={"authorizations": {account_id: "none" for account_id in account_ids}},
+            data=WorkspacePermissionsPatch(
+                authorizations={account_id: Permission.no_permission for account_id in account_ids}
+            ),
             exceptions_for_status={404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))},
         )
         return self.get_permissions(workspace=workspace_name)

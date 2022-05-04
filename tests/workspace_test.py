@@ -2,7 +2,14 @@ from typing import Optional, Union
 
 import pytest
 
-from beaker import Account, Beaker, Workspace, WorkspaceNotFound, WorkspaceWriteError
+from beaker import (
+    Account,
+    Beaker,
+    Permission,
+    Workspace,
+    WorkspaceNotFound,
+    WorkspaceWriteError,
+)
 
 
 def test_ensure_workspace_invalid_name(client: Beaker):
@@ -104,7 +111,7 @@ def test_workspace_get_permissions(client: Beaker):
 
 
 def test_workspace_grant_and_revoke_permissions(client: Beaker, alternate_user: Account):
-    client.workspace.grant_permissions("read", alternate_user)
+    client.workspace.grant_permissions(Permission.read, alternate_user)
     client.workspace.revoke_permissions(alternate_user)
 
 

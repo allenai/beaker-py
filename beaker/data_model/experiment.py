@@ -48,3 +48,8 @@ class Task(BaseModel):
 class ExperimentsPage(BaseModel):
     data: Tuple[Experiment, ...]
     next_cursor: Optional[str] = None
+
+
+class ExperimentPatch(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
