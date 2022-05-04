@@ -86,10 +86,10 @@ class DatasetsPage(BaseModel):
 class DatasetSpec(BaseModel):
     workspace: Optional[str] = None
     description: Optional[str] = None
-    file_heap: Optional[bool] = None
+    fileheap: Optional[bool] = None
 
 
 class DatasetPatch(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    commit: Optional[str] = None
+    commit: Optional[bool] = None

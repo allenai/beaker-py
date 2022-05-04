@@ -526,7 +526,6 @@ class WorkspaceClient(ServiceClient):
             data=WorkspacePermissionsPatch(
                 authorizations={account_id: auth for account_id in account_ids}
             ),
-            exceptions_for_status={404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))},
         )
         return self.get_permissions(workspace=workspace_name)
 

@@ -115,7 +115,9 @@ class DatasetClient(ServiceClient):
                     "datasets",
                     method="POST",
                     query={"name": name},
-                    data=DatasetSpec(workspace=workspace_id, description=description),
+                    data=DatasetSpec(
+                        workspace=workspace_id, description=description, fileheap=True
+                    ),
                     exceptions_for_status={409: DatasetConflict(name)},
                 ).json()
             )
@@ -131,14 +133,15 @@ class DatasetClient(ServiceClient):
         assert dataset_info.storage is not None
 
         # Upload the file(s).
-        self.sync(
-            dataset_info,
-            *sources,
-            target=target,
-            quiet=quiet,
-            max_workers=max_workers,
-            strip_paths=strip_paths,
-        )
+        if sources:
+            self.sync(
+                dataset_info,
+                *sources,
+                target=target,
+                quiet=quiet,
+                max_workers=max_workers,
+                strip_paths=strip_paths,
+            )
 
         # Commit the dataset.
         if commit:

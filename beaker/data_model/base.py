@@ -53,16 +53,18 @@ class BaseModel(_BaseModel):
             raise
 
     def to_json(self) -> Dict[str, Any]:
-        return self.jsonify(self.dict(exclude_none=True))
+        return self.jsonify(self)
 
     @classmethod
     def jsonify(cls, x: Any) -> Any:
         if isinstance(x, BaseModel):
-            return x.to_json()
+            return {
+                to_lower_camel(key): cls.jsonify(value) for key, value in x if value is not None
+            }
         elif isinstance(x, (str, float, int, bool)):
             return x
         elif isinstance(x, dict):
-            return {to_lower_camel(key): cls.jsonify(value) for key, value in x.items()}
+            return {key: cls.jsonify(value) for key, value in x.items()}
         elif isinstance(x, (list, tuple, set)):
             return [cls.jsonify(x_i) for x_i in x]
         else:

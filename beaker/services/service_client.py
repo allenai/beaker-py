@@ -95,6 +95,12 @@ class ServiceClient:
             )
             if exceptions_for_status is not None and response.status_code in exceptions_for_status:
                 raise exceptions_for_status[response.status_code]
+            elif response.text:
+                try:
+                    msg = json.loads(response.text)["message"]
+                    raise BeakerError(msg)
+                except (KeyError, json.JSONDecodeError):
+                    pass
             response.raise_for_status()
             return response
 
