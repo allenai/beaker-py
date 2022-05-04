@@ -34,7 +34,11 @@ class TestDataset:
 
     def test_dataset_basics(self, client: Beaker, dataset_name: str, alternate_dataset_name: str):
         dataset = client.dataset.create(
-            dataset_name, self.file_a.name, self.file_b.name, commit=True
+            dataset_name,
+            self.file_a.name,
+            self.file_b.name,
+            commit=True,
+            description="Testing dataset",
         )
         assert dataset.name == dataset_name
 

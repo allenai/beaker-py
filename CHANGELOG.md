@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `description` parameter to `Beaker.dataset.create()`.
+
 ## [v0.13.2](https://github.com/allenai/beaker-py/releases/tag/v0.13.2) - 2022-04-29
 
 ### Changed

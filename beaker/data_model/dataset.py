@@ -81,3 +81,9 @@ class DatasetManifest(BaseModel):
 class DatasetsPage(BaseModel):
     data: Tuple[Dataset, ...]
     next_cursor: Optional[str] = None
+
+
+class DatasetSpec(BaseModel):
+    workspace: Optional[str] = None
+    description: Optional[str] = None
+    file_heap: Optional[bool] = None

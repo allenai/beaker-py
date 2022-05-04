@@ -65,6 +65,7 @@ class DatasetClient(ServiceClient):
         *sources: PathOrStr,
         target: Optional[PathOrStr] = None,
         workspace: Optional[str] = None,
+        description: Optional[str] = None,
         force: bool = False,
         max_workers: Optional[int] = None,
         quiet: bool = False,
@@ -80,6 +81,7 @@ class DatasetClient(ServiceClient):
             a directory of this name.
         :param workspace: The workspace to upload the dataset to. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param description: Text description for the dataset.
         :param force: If ``True`` and a dataset by the given name already exists, it will be overwritten.
         :param max_workers: The maximum number of thread pool workers to use to upload files concurrently.
         :param quiet: If ``True``, progress won't be displayed.
@@ -104,7 +106,7 @@ class DatasetClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         self.validate_beaker_name(name)
-        workspace: Workspace = self.resolve_workspace(workspace)
+        workspace_id = self.resolve_workspace(workspace).id
 
         # Create the dataset.
         def make_dataset() -> Dataset:
@@ -113,10 +115,7 @@ class DatasetClient(ServiceClient):
                     "datasets",
                     method="POST",
                     query={"name": name},
-                    data={
-                        "workspace": workspace.id,  # type: ignore
-                        "fileheap": True,
-                    },
+                    data=DatasetSpec(workspace=workspace_id, description=description),
                     exceptions_for_status={409: DatasetConflict(name)},
                 ).json()
             )
