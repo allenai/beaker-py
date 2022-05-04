@@ -50,6 +50,7 @@ class ImageClient(ServiceClient):
         name: str,
         image_tag: str,
         workspace: Optional[str] = None,
+        description: Optional[str] = None,
         quiet: bool = False,
         commit: bool = True,
     ) -> Image:
@@ -60,6 +61,7 @@ class ImageClient(ServiceClient):
         :param image_tag: The tag of the local image you're uploading.
         :param workspace: The workspace to upload the image to. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param description: Text description of the image.
         :param quiet: If ``True``, progress won't be displayed.
         :param commit: Whether to commit the image after successful upload.
 
@@ -81,7 +83,12 @@ class ImageClient(ServiceClient):
         image_id = self.request(
             "images",
             method="POST",
-            data={"Workspace": workspace.id, "ImageID": image.id, "ImageTag": image_tag},
+            data=ImageSpec(
+                workspace=workspace.id,
+                image_id=image.id,
+                image_tag=image_tag,
+                description=description,
+            ),
             query={"name": name},
             exceptions_for_status={409: ImageConflict(name)},
         ).json()["id"]
@@ -176,7 +183,7 @@ class ImageClient(ServiceClient):
             self.request(
                 f"images/{image_id}",
                 method="PATCH",
-                data={"commit": True},
+                data=ImagePatch(commit=True),
                 exceptions_for_status={404: ImageNotFound(self._not_found_err_msg(image))},
             ).json()
         )
@@ -217,7 +224,7 @@ class ImageClient(ServiceClient):
             self.request(
                 f"images/{image_id}",
                 method="PATCH",
-                data={"name": name},
+                data=ImagePatch(name=name),
                 exceptions_for_status={404: ImageNotFound(self._not_found_err_msg(image))},
             ).json()
         )

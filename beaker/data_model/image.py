@@ -88,3 +88,16 @@ class DockerLayerDownloadState(BaseModel):
     @validator("status", pre=True)
     def _validate_status(cls, v: str) -> str:
         return v.lower()
+
+
+class ImageSpec(BaseModel):
+    workspace: Optional[str] = None
+    image_id: Optional[str] = None
+    image_tag: Optional[str] = None
+    description: Optional[str] = None
+
+
+class ImagePatch(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    commit: Optional[bool] = None

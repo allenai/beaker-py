@@ -162,7 +162,7 @@ class DatasetClient(ServiceClient):
             self.request(
                 f"datasets/{self.url_quote(dataset_id)}",
                 method="PATCH",
-                data={"commit": True},
+                data=DatasetPatch(commit=True),
                 exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset))},
             ).json()
         )
@@ -501,7 +501,7 @@ class DatasetClient(ServiceClient):
             self.request(
                 f"datasets/{self.url_quote(dataset_id)}",
                 method="PATCH",
-                data={"name": new_name},
+                data=DatasetPatch(name=new_name),
                 exceptions_for_status={
                     409: DatasetConflict(new_name),
                     404: DatasetNotFound(dataset_id),
