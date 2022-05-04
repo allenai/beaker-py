@@ -93,15 +93,21 @@ class ServiceClient:
                 data=request_data,
                 stream=stream,
             )
+
             if exceptions_for_status is not None and response.status_code in exceptions_for_status:
                 raise exceptions_for_status[response.status_code]
-            elif response.text:
-                try:
-                    msg = json.loads(response.text)["message"]
-                    raise BeakerError(msg)
-                except (KeyError, json.JSONDecodeError):
-                    pass
-            response.raise_for_status()
+
+            try:
+                response.raise_for_status()
+            except requests.exceptions.HTTPError:
+                if response.text:
+                    try:
+                        msg = json.loads(response.text)["message"]
+                        raise BeakerError(msg)
+                    except (TypeError, KeyError, json.JSONDecodeError):
+                        pass
+                raise
+
             return response
 
     def resolve_cluster_name(self, cluster_name: str) -> str:
