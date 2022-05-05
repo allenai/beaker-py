@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v0.14.1](https://github.com/allenai/beaker-py/releases/tag/v0.14.1) - 2022-05-05
+
 ### Changed
 
 - Replaced `id: str` field of `ClusterUtilization` with `cluster: Cluster`. `id` is still available
