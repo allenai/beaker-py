@@ -67,10 +67,14 @@ class Cluster(BaseModel):
 
 
 class ClusterUtilization(BaseModel):
-    id: str
+    cluster: Cluster
     running_jobs: int
     queued_jobs: int
     nodes: Tuple[NodeUtilization, ...]
+
+    @property
+    def id(self) -> str:
+        return self.cluster.id
 
 
 class ClusterSpec(BaseModel):

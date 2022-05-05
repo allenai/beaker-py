@@ -23,6 +23,10 @@ def test_cluster_get_on_prem(client: Beaker, beaker_on_prem_cluster_name: str):
     assert cluster.node_shape is None
 
 
+def test_cluster_utilization(client: Beaker, beaker_on_prem_cluster_name: str):
+    client.cluster.utilization(beaker_on_prem_cluster_name)
+
+
 def test_cluster_list(client: Beaker, beaker_org: Organization):
     client.cluster.list(beaker_org)
 

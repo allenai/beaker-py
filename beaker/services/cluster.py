@@ -215,7 +215,7 @@ class ClusterClient(ServiceClient):
                         node_util["cpus_used"] += job.requests.cpu_count
 
         return ClusterUtilization(
-            id=cluster.id,
+            cluster=cluster,
             running_jobs=running_jobs,
             queued_jobs=queued_jobs,
             nodes=[
