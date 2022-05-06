@@ -394,6 +394,108 @@ class TaskSpec(BaseModel, frozen=False):
             **kwargs,
         )
 
+    def with_image(self, **kwargs) -> "TaskSpec":
+        """
+        Return a new :class:`TaskSpec` with the given :data:`image`.
+
+        :param kwargs: Key-word arguments that are passed directly to :class:`ImageSource`.
+
+        :examples:
+
+        >>> task_spec = TaskSpec.new(
+        ...     "hello-world",
+        ...     "ai2/gpu-cluster",
+        ...     docker_image="hello-world",
+        ... ).with_image(beaker_image="hello-world")
+        >>> assert task_spec.image.beaker == "hello-world"
+        """
+        return self.copy(deep=True, update={"image": ImageSource(**kwargs)})
+
+    def with_result(self, **kwargs) -> "TaskSpec":
+        """
+        Return a new :class:`TaskSpec` with the given :data:`result`.
+
+        :param kwargs: Key-word arguments that are passed directly to :class:`ResultSpec`.
+
+        :examples:
+
+        >>> task_spec = TaskSpec.new(
+        ...     "hello-world",
+        ...     "ai2/gpu-cluster",
+        ...     docker_image="hello-world",
+        ... ).with_result(path="/output")
+        >>> assert task_spec.result.path == "/output"
+        """
+        return self.copy(deep=True, update={"result": ResultSpec(**kwargs)})
+
+    def with_context(self, **kwargs) -> "TaskSpec":
+        """
+        Return a new :class:`TaskSpec` with the given :data:`context`.
+
+        :param kwargs: Key-word arguments that are passed directly to :class:`TaskContext`.
+
+        :examples:
+
+        >>> task_spec = TaskSpec.new(
+        ...     "hello-world",
+        ...     "ai2/gpu-cluster",
+        ...     docker_image="hello-world",
+        ... ).with_context(cluster="ai2/general-cirrascale")
+        >>> assert task_spec.context.cluster == "ai2/general-cirrascale"
+        """
+        return self.copy(deep=True, update={"context": TaskContext(**kwargs)})
+
+    def with_name(self, name: str) -> "TaskSpec":
+        """
+        Return a new :class:`TaskSpec` with the given :data:`name`.
+
+        :param name: The new name.
+
+        :examples:
+
+        >>> task_spec = TaskSpec.new(
+        ...     "hello-world",
+        ...     "ai2/gpu-cluster",
+        ...     docker_image="hello-world",
+        ... ).with_name("Hi there!")
+        >>> assert task_spec.name == "Hi there!"
+        """
+        return self.copy(deep=True, update={"name": name})
+
+    def with_command(self, command: List[str]) -> "TaskSpec":
+        """
+        Return a new :class:`TaskSpec` with the given :data:`command`.
+
+        :param command: The new command.
+
+        :examples:
+
+        >>> task_spec = TaskSpec.new(
+        ...     "hello-world",
+        ...     "ai2/gpu-cluster",
+        ...     docker_image="hello-world",
+        ... ).with_command(["echo"])
+        >>> assert task_spec.command == ["echo"]
+        """
+        return self.copy(deep=True, update={"command": command})
+
+    def with_arguments(self, arguments: List[str]) -> "TaskSpec":
+        """
+        Return a new :class:`TaskSpec` with the given :data:`arguments`.
+
+        :param arguments: The new arguments.
+
+        :examples:
+
+        >>> task_spec = TaskSpec.new(
+        ...     "hello-world",
+        ...     "ai2/gpu-cluster",
+        ...     docker_image="hello-world",
+        ... ).with_arguments(["Hello", "World!"])
+        >>> assert task_spec.arguments == ["Hello", "World!"]
+        """
+        return self.copy(deep=True, update={"arguments": arguments})
+
     def with_resources(self, **kwargs) -> "TaskSpec":
         """
         Return a new :class:`TaskSpec` with the given :data:`resources`.
@@ -411,9 +513,9 @@ class TaskSpec(BaseModel, frozen=False):
         """
         return self.copy(deep=True, update={"resources": TaskResources(**kwargs)})
 
-    def with_data(self, mount_path: str, **kwargs) -> "TaskSpec":
+    def with_dataset(self, mount_path: str, **kwargs) -> "TaskSpec":
         """
-        Return a new :class:`TaskSpec` with an additional input :data:`data <datasets>`.
+        Return a new :class:`TaskSpec` with an additional input :data:`dataset <datasets>`.
 
         :param mount_path: The :data:`mount_path <DataMount>` of the :class:`DataMount`.
         :param kwargs: Additional kwargs are passed as-is to :meth:`DataMount.new()`.
@@ -424,7 +526,7 @@ class TaskSpec(BaseModel, frozen=False):
         ...     "hello-world",
         ...     "ai2/cpu-cluster",
         ...     docker_image="hello-world",
-        ... ).with_data("/data/foo", beaker="foo")
+        ... ).with_dataset("/data/foo", beaker="foo")
         >>> assert task_spec.datasets
         """
         return self.copy(
@@ -552,3 +654,18 @@ class ExperimentSpec(BaseModel, frozen=False):
         return self.copy(
             deep=True, update={"tasks": [d.copy(deep=True) for d in self.tasks or []] + [task]}
         )
+
+    def with_description(self, description: str) -> "ExperimentSpec":
+        """
+        Return a new :class:`ExperimentSpec` with a different description.
+
+        :param description: The new description.
+
+        :examples:
+
+        >>> ExperimentSpec(description="Hello, World!").with_description(
+        ...     "Hello, Mars!"
+        ... ).description
+        'Hello, Mars!'
+        """
+        return self.copy(deep=True, update={"description": description})

@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `ExperimentSpec.with_description()`.
+- Added `TaskSpec.with_image()`, `.with_result()`, `.with_context()`, `.with_name()`, `.with_command()`, and `.with_arguments()`.
+
 ### Changed
 
 - Renamed `delete_results_dataset` param to `delete_results_datasets` in `Beaker.experiment.delete()`.
+- Renamed `TaskSpec.with_data()` to `TaskSpec.with_dataset()`.
 
 ### Fixed
 
