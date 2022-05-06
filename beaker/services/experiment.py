@@ -142,7 +142,7 @@ class ExperimentClient(ServiceClient):
         Delete an experiment.
 
         :param experiment: The experiment ID, name, or object.
-        :param delete_results_dataset: Also delete the experiment's results datasets.
+        :param delete_results_datasets: Also delete the experiment's results datasets.
 
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
