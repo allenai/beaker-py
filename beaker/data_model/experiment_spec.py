@@ -406,7 +406,7 @@ class TaskSpec(BaseModel, frozen=False):
         ...     "hello-world",
         ...     "ai2/gpu-cluster",
         ...     docker_image="hello-world",
-        ... ).with_image(beaker_image="hello-world")
+        ... ).with_image(beaker="hello-world")
         >>> assert task_spec.image.beaker == "hello-world"
         """
         return self.copy(deep=True, update={"image": ImageSource(**kwargs)})
