@@ -46,7 +46,7 @@ sphinx-autobuild==2021.3.14
 sphinx-autodoc-typehints
 
 # Simple inline tabs
-sphinx-inline-tabs==2022.1.2b11
+sphinx-inline-tabs
 
 # Generating cute names for test fixtures.
 petname==2.6
