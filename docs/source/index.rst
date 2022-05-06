@@ -18,6 +18,7 @@ Contents
    installation
    quickstart
    overview
+   examples
    api
    faq
 
