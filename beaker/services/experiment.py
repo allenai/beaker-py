@@ -287,8 +287,8 @@ class ExperimentClient(ServiceClient):
         Get the result dataset from a task in an experiment.
 
         .. important::
-            When there are multiple jobs for the given experiment / task, the metrics for
-            the latest finalized job will be returned.
+            When there are multiple jobs for the given experiment / task, the results for
+            dataset the latest finalized job will be returned.
 
         .. seealso::
             :meth:`Beaker.job.results() <JobClient.results>`
