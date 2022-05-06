@@ -137,22 +137,24 @@ class ExperimentClient(ServiceClient):
             exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment))},
         )
 
-    def delete(self, experiment: Union[str, Experiment], delete_results_dataset: bool = True):
+    def delete(self, experiment: Union[str, Experiment], delete_results_datasets: bool = True):
         """
         Delete an experiment.
 
         :param experiment: The experiment ID, name, or object.
-        :param delete_results_dataset: Also delete the experiment's results dataset.
+        :param delete_results_dataset: Also delete the experiment's results datasets.
 
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         experiment: Experiment = self.resolve_experiment(experiment)
-        if delete_results_dataset:
-            dataset = self.results(experiment)
-            if dataset is not None:
-                self.beaker.dataset.delete(dataset)
+        if delete_results_datasets:
+            for task in self.tasks(experiment):
+                for job in task.jobs:
+                    dataset = self.beaker.job.results(job)
+                    if dataset is not None:
+                        self.beaker.dataset.delete(dataset)
         self.request(
             f"experiments/{self.url_quote(experiment.id)}",
             method="DELETE",
