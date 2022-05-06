@@ -102,6 +102,14 @@ jobs:
             run: |
               pytest -rP -v --color=yes integration_tests/datasets_test.py
 
+          - name: Sweep example
+            run: |
+              cd examples/sweep
+              # NOTE: anytime you change something here, make sure the run instructions
+              # in 'examples/sweep/README.md' are still up-to-date.
+              docker build -t sweep .
+              python run.py "sweep" "ai2/beaker-py-sweep-example" "ai2/petew-cpu"
+
           - name: Build
             run: |
               python setup.py check
