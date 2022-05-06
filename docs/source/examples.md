@@ -37,3 +37,5 @@ Add the following files to a directory of your choosing:
 :start-after: <!-- start run it -->
 :end-before: <!-- end run it -->
 ```
+
+<script id="asciicast-492700" src="https://asciinema.org/a/492700.js" async data-speed=2 data-loop=1 data-autoplay=1 data-i=1></script>
