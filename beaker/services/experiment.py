@@ -518,7 +518,8 @@ class ExperimentClient(ServiceClient):
                         # Ensure job was successful if `strict==True`.
                         if strict and job.status.exit_code != 0:
                             raise JobFailedError(
-                                f"Job '{job.id}' from experiment '{exp_id}' failed with exit code '{job.status.exit_code}'"
+                                f"Job '{job.id}' from experiment '{exp_id}' failed "
+                                f"with exit code '{job.status.exit_code}'"
                             )
 
                         # Update progress display.
