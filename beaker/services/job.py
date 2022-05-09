@@ -224,6 +224,7 @@ class JobClient(ServiceClient):
         timeout: Optional[float] = None,
         poll_interval: float = 1.0,
         quiet: bool = False,
+        strict: bool = False,
     ) -> List[Job]:
         """
         Wait for jobs to finalize, returning the completed jobs as a list in the same order
@@ -242,10 +243,13 @@ class JobClient(ServiceClient):
         :param timeout: Maximum amount of time to wait for (in seconds).
         :param poll_interval: Time to wait between polling each job's status (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
+        :param strict: If ``True``, the exit code of each job will be checked, and a
+            :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
 
         :raises JobNotFound: If any job can't be found.
         :raises TimeoutError: If the ``timeout`` expires.
         :raises DuplicateJobError: If the same job is given as an argument more than once.
+        :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -259,7 +263,11 @@ class JobClient(ServiceClient):
             job_id_to_position[job.id] = i
         completed_jobs: List[Job] = list(
             self.as_completed(
-                *jobs_to_wait_on, timeout=timeout, poll_interval=poll_interval, quiet=quiet
+                *jobs_to_wait_on,
+                timeout=timeout,
+                poll_interval=poll_interval,
+                quiet=quiet,
+                strict=strict,
             )
         )
         return sorted(completed_jobs, key=lambda job: job_id_to_position[job.id])
@@ -270,6 +278,7 @@ class JobClient(ServiceClient):
         timeout: Optional[float] = None,
         poll_interval: float = 1.0,
         quiet: bool = False,
+        strict: bool = False,
     ) -> Generator[Job, None, None]:
         """
         Wait for jobs to finalize, returning an iterator that yields jobs as they complete.
@@ -287,15 +296,22 @@ class JobClient(ServiceClient):
         :param timeout: Maximum amount of time to wait for (in seconds).
         :param poll_interval: Time to wait between polling each job's status (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
+        :param strict: If ``True``, the exit code of each job will be checked, and a
+            :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
 
         :raises JobNotFound: If any job can't be found.
         :raises TimeoutError: If the ``timeout`` expires.
         :raises DuplicateJobError: If the same job is given as an argument more than once.
+        :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         yield from self._as_completed(
-            *jobs, timeout=timeout, poll_interval=poll_interval, quiet=quiet
+            *jobs,
+            timeout=timeout,
+            poll_interval=poll_interval,
+            quiet=quiet,
+            strict=strict,
         )
 
     def _as_completed(
@@ -304,6 +320,7 @@ class JobClient(ServiceClient):
         timeout: Optional[float] = None,
         poll_interval: float = 1.0,
         quiet: bool = False,
+        strict: bool = False,
         _progress: Optional["Progress"] = None,
     ) -> Generator[Job, None, None]:
         if timeout is not None and timeout <= 0:
@@ -362,6 +379,11 @@ class JobClient(ServiceClient):
                     if not job.is_finalized:
                         progress.update(task_id, total=polls + 1, advance=1)
                     else:
+                        # Ensure job was successful if `strict==True`.
+                        if strict and job.status.exit_code != 0:
+                            raise JobFailedError(
+                                f"Job '{job.id}' failed with exit code '{job.status.exit_code}'"
+                            )
                         progress.update(
                             task_id,
                             total=polls + 1,

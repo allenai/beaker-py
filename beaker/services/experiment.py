@@ -241,7 +241,7 @@ class ExperimentClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         exp = self.resolve_experiment(experiment)
-        job = self._latest_job_for_task(exp, task=task, ensure_finalized=False)
+        job = self.latest_job(exp, task=task, ensure_finalized=False)
         if job is None:
             if task is None:
                 raise ValueError(f"Experiment {exp.id} has no jobs")
@@ -277,7 +277,7 @@ class ExperimentClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         exp = self.resolve_experiment(experiment)
-        job = self._latest_job_for_task(exp, task=task, ensure_finalized=True)
+        job = self.latest_job(exp, task=task, ensure_finalized=True)
         return None if job is None else self.beaker.job.metrics(job.id)
 
     def results(
@@ -305,7 +305,7 @@ class ExperimentClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         exp = self.resolve_experiment(experiment)
-        job = self._latest_job_for_task(exp, task=task, ensure_finalized=True)
+        job = self.latest_job(exp, task=task, ensure_finalized=True)
         if job is None:
             return None
         else:
@@ -335,6 +335,7 @@ class ExperimentClient(ServiceClient):
         timeout: Optional[float] = None,
         poll_interval: float = 1.0,
         quiet: bool = False,
+        strict: bool = False,
     ) -> List[Experiment]:
         """
         Wait for experiments to finalize, returning the completed experiments as a list
@@ -353,10 +354,13 @@ class ExperimentClient(ServiceClient):
         :param timeout: Maximum amount of time to wait for (in seconds).
         :param poll_interval: Time to wait between polling the experiment (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
+        :param strict: If ``True``, the exit code of each job will be checked, and a
+            :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
 
         :raises ExperimentNotFound: If any experiment can't be found.
         :raises TimeoutError: If the ``timeout`` expires.
         :raises DuplicateExperimentError: If the same experiment is given as an argument more than once.
+        :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -370,7 +374,11 @@ class ExperimentClient(ServiceClient):
             exp_id_to_position[exp.id] = i
         completed_exps: List[Experiment] = list(
             self.as_completed(
-                *exps_to_wait_on, timeout=timeout, poll_interval=poll_interval, quiet=quiet
+                *exps_to_wait_on,
+                timeout=timeout,
+                poll_interval=poll_interval,
+                quiet=quiet,
+                strict=strict,
             )
         )
         return sorted(completed_exps, key=lambda exp: exp_id_to_position[exp.id])
@@ -381,6 +389,7 @@ class ExperimentClient(ServiceClient):
         timeout: Optional[float] = None,
         poll_interval: float = 1.0,
         quiet: bool = False,
+        strict: bool = False,
     ) -> Generator[Experiment, None, None]:
         """
         Wait for experiments to finalize, returning an iterator that yields experiments as they
@@ -399,10 +408,13 @@ class ExperimentClient(ServiceClient):
         :param timeout: Maximum amount of time to wait for (in seconds).
         :param poll_interval: Time to wait between polling the experiment (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
+        :param strict: If ``True``, the exit code of each job will be checked, and a
+            :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
 
         :raises ExperimentNotFound: If any experiment can't be found.
         :raises TimeoutError: If the ``timeout`` expires.
         :raises DuplicateExperimentError: If the same experiment is given as an argument more than once.
+        :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -503,6 +515,13 @@ class ExperimentClient(ServiceClient):
                         assert job.execution is not None
                         exp_id = job.execution.experiment
 
+                        # Ensure job was successful if `strict==True`.
+                        if strict and job.status.exit_code != 0:
+                            raise JobFailedError(
+                                f"Job '{job.id}' from experiment '{exp_id}' failed "
+                                f"with exit code '{job.status.exit_code}'"
+                            )
+
                         # Update progress display.
                         experiments_progress.advance(exp_to_progress_task[exp_id])
 
@@ -564,6 +583,40 @@ class ExperimentClient(ServiceClient):
                     raise TaskNotFound(f"No task '{task}' in experiment {experiment.id}")
             return f"{experiment_url}/tasks/{task_id}"
 
+    def latest_job(
+        self,
+        experiment: Union[str, Experiment],
+        task: Optional[Union[str, Task]] = None,
+        ensure_finalized: bool = False,
+    ) -> Optional[Job]:
+        """
+        Get the latest job that ran for a task in an experiment.
+
+        :param experiment: The experiment ID, name, or object.
+        :param task: The take ID, name, or object.
+        :param ensure_finalized: Consider only finalized jobs.
+
+        :raises ValueError: The experiment has no tasks, or the experiment has multiple tasks but
+            ``task`` is not specified.
+        :raises TaskNotFound: If the given task doesn't exist.
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        tasks = self.tasks(experiment)
+        exp_id = experiment if isinstance(experiment, str) else experiment.id
+        if not tasks:
+            raise ValueError(f"Experiment '{exp_id}' has no tasks")
+        elif len(tasks) > 1:
+            if task is None:
+                raise ValueError(f"'task' required since experiment '{exp_id}' has multiple tasks")
+            else:
+                task_name_or_id = task.id if isinstance(task, Task) else task
+                tasks = [t for t in tasks if t.name == task_name_or_id or t.id == task_name_or_id]
+                if not tasks:
+                    raise TaskNotFound(f"No task '{task_name_or_id}' in experiment '{exp_id}'")
+        return self._latest_job(tasks[0].jobs, ensure_finalized=ensure_finalized)
+
     def _not_found_err_msg(self, experiment: Union[str, Experiment]) -> str:
         experiment = experiment if isinstance(experiment, str) else experiment.id
         return (
@@ -594,29 +647,6 @@ class ExperimentClient(ServiceClient):
                     self.beaker.secret.get(env_var.secret, workspace=workspace)
             # Make sure cluster exists.
             self.beaker.cluster.get(task.context.cluster)
-
-    def _latest_job_for_task(
-        self,
-        experiment: Experiment,
-        task: Optional[Union[str, Task]] = None,
-        ensure_finalized: bool = False,
-    ) -> Optional[Job]:
-        tasks = self.tasks(experiment)
-        if not tasks:
-            raise ValueError(f"Experiment '{experiment.id}' has no tasks")
-        elif len(tasks) > 1:
-            if task is None:
-                raise ValueError(
-                    f"'task' required since experiment '{experiment.id}' has multiple tasks"
-                )
-            else:
-                task_name_or_id = task.id if isinstance(task, Task) else task
-                tasks = [t for t in tasks if t.name == task_name_or_id or t.id == task_name_or_id]
-                if not tasks:
-                    raise TaskNotFound(
-                        f"No task '{task_name_or_id}' in experiment '{experiment.id}'"
-                    )
-        return self._latest_job(tasks[0].jobs, ensure_finalized=ensure_finalized)
 
     def _latest_job(self, jobs: Sequence[Job], ensure_finalized: bool = False) -> Optional[Job]:
         if ensure_finalized:

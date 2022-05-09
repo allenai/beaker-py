@@ -101,6 +101,9 @@ class JobKind(str, Enum):
 class Job(BaseModel):
     """
     A :class:`Job` is an execution of a :class:`Task`.
+
+    .. tip::
+        You can check a job's exit code with :data:`job.status.exit_code <JobStatus.exit_code>`.
     """
 
     id: str
