@@ -171,3 +171,7 @@ class ChecksumFailedError(BeakerError):
     """
     Raised when a downloaded file from a Beaker dataset is corrupted.
     """
+
+
+class JobFailedError(BeakerError):
+    pass

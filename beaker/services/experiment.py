@@ -335,6 +335,7 @@ class ExperimentClient(ServiceClient):
         timeout: Optional[float] = None,
         poll_interval: float = 1.0,
         quiet: bool = False,
+        strict: bool = False,
     ) -> List[Experiment]:
         """
         Wait for experiments to finalize, returning the completed experiments as a list
@@ -353,10 +354,13 @@ class ExperimentClient(ServiceClient):
         :param timeout: Maximum amount of time to wait for (in seconds).
         :param poll_interval: Time to wait between polling the experiment (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
+        :param strict: If ``True``, the exit code of each job will be checked, and a
+            :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
 
         :raises ExperimentNotFound: If any experiment can't be found.
         :raises TimeoutError: If the ``timeout`` expires.
         :raises DuplicateExperimentError: If the same experiment is given as an argument more than once.
+        :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -370,7 +374,11 @@ class ExperimentClient(ServiceClient):
             exp_id_to_position[exp.id] = i
         completed_exps: List[Experiment] = list(
             self.as_completed(
-                *exps_to_wait_on, timeout=timeout, poll_interval=poll_interval, quiet=quiet
+                *exps_to_wait_on,
+                timeout=timeout,
+                poll_interval=poll_interval,
+                quiet=quiet,
+                strict=strict,
             )
         )
         return sorted(completed_exps, key=lambda exp: exp_id_to_position[exp.id])
@@ -381,6 +389,7 @@ class ExperimentClient(ServiceClient):
         timeout: Optional[float] = None,
         poll_interval: float = 1.0,
         quiet: bool = False,
+        strict: bool = False,
     ) -> Generator[Experiment, None, None]:
         """
         Wait for experiments to finalize, returning an iterator that yields experiments as they
@@ -399,10 +408,13 @@ class ExperimentClient(ServiceClient):
         :param timeout: Maximum amount of time to wait for (in seconds).
         :param poll_interval: Time to wait between polling the experiment (in seconds).
         :param quiet: If ``True``, progress won't be displayed.
+        :param strict: If ``True``, the exit code of each job will be checked, and a
+            :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
 
         :raises ExperimentNotFound: If any experiment can't be found.
         :raises TimeoutError: If the ``timeout`` expires.
         :raises DuplicateExperimentError: If the same experiment is given as an argument more than once.
+        :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -502,6 +514,12 @@ class ExperimentClient(ServiceClient):
 
                         assert job.execution is not None
                         exp_id = job.execution.experiment
+
+                        # Ensure job was successful if `strict==True`.
+                        if strict and job.status.exit_code != 0:
+                            raise JobFailedError(
+                                f"Job '{job.id}' from experiment '{exp_id}' failed with exit code '{job.status.exit_code}'"
+                            )
 
                         # Update progress display.
                         experiments_progress.advance(exp_to_progress_task[exp_id])
