@@ -19,3 +19,8 @@
 ```
 
 > Yes, just pass `check_for_upgrades=False` to {class}`~beaker.Beaker()` or {meth}`Beaker.from_env() <beaker.Beaker.from_env>`.
+
+```{rubric} What's the different between a task and a job?
+```
+
+> In Beaker, tasks are the fundamental unit of work. A {class}`~beaker.data_model.job.Job` is just an execution of a task. So a {class}`~beaker.data_model.experiment.Task` can have any number of {data}`~beaker.data_model.experiment.Task.jobs` associated with it, but a job is always associated with at most a single task (only "session" type jobs won't be associated with a task).
