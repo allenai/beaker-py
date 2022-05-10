@@ -24,8 +24,6 @@ class DatasetClient(ServiceClient):
     HEADER_DIGEST = "Digest"
     HEADER_LAST_MODIFIED = "Last-Modified"
 
-    SHA256 = "SHA256"
-
     REQUEST_SIZE_LIMIT = 32 * 1024 * 1024
 
     def get(self, dataset: str) -> Dataset:
@@ -550,7 +548,7 @@ class DatasetClient(ServiceClient):
 
             source_file_wrapper = BufferedReaderWithProgress(source_file, progress, task_id)
             body: Optional[BufferedReaderWithProgress] = source_file_wrapper
-            digest: Optional[bytes] = None
+            digest: Optional[str] = None
 
             if size > self.REQUEST_SIZE_LIMIT:
                 response = self.request(
@@ -579,9 +577,8 @@ class DatasetClient(ServiceClient):
                     )
                     written += len(chunk)
 
-                    encoded_digest = response.headers.get(self.HEADER_DIGEST)
-                    if encoded_digest:
-                        digest = self._decode_digest(encoded_digest)
+                    digest = response.headers.get(self.HEADER_DIGEST)
+                    if digest:
                         break
 
                 if written != size:
@@ -595,7 +592,7 @@ class DatasetClient(ServiceClient):
                 data=body,
                 token=dataset.storage.token,
                 base_url=dataset.storage.address,
-                headers=None if not digest else {self.HEADER_DIGEST: self._encode_digest(digest)},
+                headers=None if not digest else {self.HEADER_DIGEST: digest},
                 stream=body is not None,
                 exceptions_for_status={
                     403: DatasetWriteError(dataset.id),
@@ -604,20 +601,6 @@ class DatasetClient(ServiceClient):
             )
 
             return source_file_wrapper.total_read
-
-    def _encode_digest(self, digest: bytes) -> str:
-        import base64
-
-        return f"{self.SHA256} {base64.standard_b64encode(digest).decode()}"
-
-    def _decode_digest(self, encoded_digest: str) -> bytes:
-        import base64
-
-        if self.SHA256 in encoded_digest:
-            _, encoded = encoded_digest.split(" ", 2)
-        else:
-            encoded = encoded_digest
-        return base64.standard_b64decode(encoded)
 
     def _iter_files(self, storage: DatasetStorage) -> Generator[FileInfo, None, None]:
         from collections import deque
@@ -690,11 +673,11 @@ class DatasetClient(ServiceClient):
 
         # Validate digest.
         if sha256_hash is not None:
-            digest = sha256_hash.digest()
-            if self._decode_digest(file_info.digest) != digest:
+            digest = Digest(sha256_hash.digest())
+            if file_info.digest != digest:
                 raise ChecksumFailedError(
                     f"Checksum for '{file_info.path}' failed. "
-                    f"Expected '{file_info.digest}', got '{self._encode_digest(digest)}'."
+                    f"Expected '{file_info.digest}', got '{digest}'."
                 )
 
     def _download_file(

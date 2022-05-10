@@ -149,7 +149,7 @@ Dataset
    :undoc-members:
 
 .. automodule:: beaker.data_model.dataset
-   :members: DatasetStorage, FileInfo
+   :members: DatasetStorage, FileInfo, Digest
    :undoc-members:
 
 Image
