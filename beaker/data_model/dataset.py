@@ -59,7 +59,23 @@ class DatasetStorageInfo(BaseModel):
         return v
 
 
-class Digest(str):
+class Digest:
+    SHA256 = "SHA256"
+
+    def __init__(self, digest: Union[str, bytes]):
+        def encode(b: bytes) -> str:
+            import base64
+
+            return f"{self.SHA256} {base64.standard_b64encode(b).decode()}"
+
+        encoded: str
+        if isinstance(digest, bytes):
+            encoded = encode(digest)
+        else:
+            encoded = digest
+
+        self._encoded = encoded
+
     def __eq__(self, other) -> bool:
         if isinstance(other, Digest):
             return self.decode() == other.decode()
@@ -73,13 +89,19 @@ class Digest(str):
     def __ne__(self, other) -> bool:
         return not self == other
 
+    def __str__(self) -> str:
+        return self._encoded
+
+    def __repr__(self) -> str:
+        return self._encoded
+
     def decode(self) -> bytes:
         """
         Decode a digest into its raw bytes form.
         """
         import base64
 
-        encoded = self.split(" ", 1)[-1]
+        encoded = self._encoded.split(" ", 1)[-1]
         return base64.standard_b64decode(encoded)
 
 

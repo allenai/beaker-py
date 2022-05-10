@@ -24,8 +24,6 @@ class DatasetClient(ServiceClient):
     HEADER_DIGEST = "Digest"
     HEADER_LAST_MODIFIED = "Last-Modified"
 
-    SHA256 = "SHA256"
-
     REQUEST_SIZE_LIMIT = 32 * 1024 * 1024
 
     def get(self, dataset: str) -> Dataset:
@@ -604,11 +602,6 @@ class DatasetClient(ServiceClient):
 
             return source_file_wrapper.total_read
 
-    def _encode_digest(self, digest: bytes) -> str:
-        import base64
-
-        return f"{self.SHA256} {base64.standard_b64encode(digest).decode()}"
-
     def _iter_files(self, storage: DatasetStorage) -> Generator[FileInfo, None, None]:
         from collections import deque
 
@@ -680,11 +673,11 @@ class DatasetClient(ServiceClient):
 
         # Validate digest.
         if sha256_hash is not None:
-            digest = sha256_hash.digest()
+            digest = Digest(sha256_hash.digest())
             if file_info.digest != digest:
                 raise ChecksumFailedError(
                     f"Checksum for '{file_info.path}' failed. "
-                    f"Expected '{file_info.digest}', got '{self._encode_digest(digest)}'."
+                    f"Expected '{file_info.digest}', got '{digest}'."
                 )
 
     def _download_file(
