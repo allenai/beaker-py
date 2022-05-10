@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 from pydantic import validator
 
@@ -59,9 +59,33 @@ class DatasetStorageInfo(BaseModel):
         return v
 
 
+class Digest(str):
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Digest):
+            return self.decode() == other.decode()
+        elif isinstance(other, str):
+            return self == Digest(other)
+        elif isinstance(other, bytes):
+            return self.decode() == other
+        else:
+            return False
+
+    def __ne__(self, other) -> bool:
+        return not self == other
+
+    def decode(self) -> bytes:
+        """
+        Decode a digest into its raw bytes form.
+        """
+        import base64
+
+        encoded = self.split(" ", 1)[-1]
+        return base64.standard_b64decode(encoded)
+
+
 class FileInfo(BaseModel):
     path: str
-    digest: str
+    digest: Digest
     updated: datetime
 
     size: Optional[int] = None
@@ -73,6 +97,13 @@ class FileInfo(BaseModel):
     """
     A URL that can be used to directly download the file.
     """
+
+    @validator("digest")
+    def _validate_digest(cls, v: Union[str, Digest]) -> Digest:
+        if isinstance(v, Digest):
+            return v
+        else:
+            return Digest(v)
 
 
 class DatasetManifest(BaseModel):
