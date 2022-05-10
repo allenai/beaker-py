@@ -105,7 +105,7 @@ class Digest:
         return base64.standard_b64decode(encoded)
 
 
-class FileInfo(BaseModel):
+class FileInfo(BaseModel, arbitrary_types_allowed=True):
     path: str
     digest: Digest
     updated: datetime
@@ -120,7 +120,7 @@ class FileInfo(BaseModel):
     A URL that can be used to directly download the file.
     """
 
-    @validator("digest")
+    @validator("digest", pre=True)
     def _validate_digest(cls, v: Union[str, Digest]) -> Digest:
         if isinstance(v, Digest):
             return v
