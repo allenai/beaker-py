@@ -682,7 +682,6 @@ class DatasetClient(ServiceClient):
         if sha256_hash is not None:
             digest = sha256_hash.digest()
             if file_info.digest != digest:
-                print(file_info.digest, type(file_info.digest))
                 raise ChecksumFailedError(
                     f"Checksum for '{file_info.path}' failed. "
                     f"Expected '{file_info.digest}', got '{self._encode_digest(digest)}'."
