@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v0.15.3](https://github.com/allenai/beaker-py/releases/tag/v0.15.3) - 2022-05-10
+
 ### Added
 
 - Added `Digest` type and changed type of `FileInfo.digest` from `str` to `Digest`.
