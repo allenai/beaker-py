@@ -13,6 +13,7 @@ class Experiment(BaseModel):
     id: str
     name: Optional[str] = None
     full_name: Optional[str] = None
+    description: Optional[str] = None
     owner: Account
     author: Account
     created: datetime
