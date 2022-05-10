@@ -13,6 +13,7 @@ class Image(BaseModel):
     id: str
     name: Optional[str] = None
     full_name: Optional[str] = None
+    description: Optional[str] = None
     original_tag: str
     owner: Account
     author: Account

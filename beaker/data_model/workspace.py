@@ -17,6 +17,7 @@ class Workspace(BaseModel):
     id: str
     name: str
     full_name: str
+    description: Optional[str] = None
     size: WorkspaceSize
     owner: Account
     author: Account
