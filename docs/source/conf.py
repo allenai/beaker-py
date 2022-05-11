@@ -108,7 +108,7 @@ html_theme_options = {
     ],
 }
 
-# -- Hack to get rid of stupid warnigns from sphinx_autodoc_typehints --------
+# -- Hack to get rid of stupid warnings from sphinx_autodoc_typehints --------
 
 
 class ShutupSphinxAutodocTypehintsFilter(logging.Filter):
