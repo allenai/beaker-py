@@ -4,7 +4,7 @@
 <br>
 <br>
 <h1>beaker-py</h1>
-<p>A <a href="https://beaker.org">Beaker</a> client for Python</p>
+<p>A lightweight, standalone, pure Python client for <a href="https://beaker.org">Beaker</a></p>
 <hr/>
 <a href="https://github.com/allenai/beaker-py/actions">
     <img alt="CI" src="https://github.com/allenai/beaker-py/workflows/Main/badge.svg?event=push&branch=main">
@@ -21,6 +21,29 @@
 <br/>
 </div>
 
+## Features
+
+<!-- start features -->
+
+🪶 *Lightweight*
+
+- Minimal dependencies.
+- Only pure-Python dependencies.
+- Communicates directly with the Beaker server via HTTP requests (Beaker CLI not required).
+
+💪 *Robust*
+
+- Automatically retries failed HTTP requests with exponential backoff.
+- Runtime data validation.
+- High test coverage.
+
+📓 *Exhaustively-typed and documented*
+
+- Thorough data model for all input / output types.
+- Every expected HTTP error from the Beaker server is translated into a specific exception type.
+
+<!-- end features -->
+
 ## Quick links
 
 - [Documentation](https://beaker-py.readthedocs.io/)
@@ -28,11 +51,11 @@
 - [Contributing](https://github.com/allenai/beaker-py/blob/main/CONTRIBUTING.md)
 - [License](https://github.com/allenai/beaker-py/blob/main/LICENSE)
 
-## See also
+*See also 👇*
 
 - [Beaker dashboard](https://beaker.org)
 - [Beaker command-line client](https://github.com/allenai/beaker)
-- *GitHub Actions:*
+- Beaker-relevant *GitHub Actions*
   - [setup-beaker](https://github.com/marketplace/actions/setup-beaker)
   - [beaker-command](https://github.com/marketplace/actions/beaker-command)
   - [beaker-run](https://github.com/marketplace/actions/beaker-run)
@@ -76,6 +99,19 @@ Either way, you should then instantiate the Beaker client with `.from_env()`:
 from beaker import Beaker
 
 beaker = Beaker.from_env(default_workspace="my_org/my_workspace")
+```
+
+The API of **beaker-py** is meant to mirror - as closely as possible - the API of the Beaker CLI.
+For example, when you do this with the CLI:
+
+```bash
+beaker dataset create --name foo .
+```
+
+The **beaker-py** equivalent would be:
+
+```python
+beaker.dataset.create("foo", ".")
 ```
 <!-- end quickstart -->
 

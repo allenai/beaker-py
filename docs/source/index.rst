@@ -6,7 +6,14 @@
 **beaker-py**
 ===============
 
-**beaker-py** is a lightweight, pure Python client for `Beaker <https://beaker.org>`_.
+**beaker-py** is a lightweight, standalone, pure Python client for `Beaker <https://beaker.org>`_.
+
+Features
+--------
+
+.. include:: ../../README.md
+   :start-after: <!-- start features -->
+   :end-before: <!-- end features -->
 
 Contents
 --------
