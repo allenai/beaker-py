@@ -312,23 +312,6 @@ class ExperimentClient(ServiceClient):
             assert job.execution is not None  # for mypy
             return self.beaker.dataset.get(job.execution.result.beaker)
 
-    def await_all(
-        self,
-        *experiments: Union[str, Experiment],
-        timeout: Optional[float] = None,
-        poll_interval: float = 1.0,
-        quiet: bool = False,
-    ) -> List[Experiment]:
-        import warnings
-
-        warnings.warn(
-            "'ExperimentClient.await_all()' is deprecated. Please use 'ExperimentClient.wait_for()' instead.",
-            DeprecationWarning,
-        )
-        return self.wait_for(
-            *experiments, timeout=timeout, poll_interval=poll_interval, quiet=quiet
-        )
-
     def wait_for(
         self,
         *experiments: Union[str, Experiment],
