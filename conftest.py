@@ -101,7 +101,7 @@ def beaker_cluster_name(client: Beaker) -> str:
         if utilization.queued_jobs == 0:
             logger.info("Found suitable on-prem cluster '%s'", cluster)
             return cluster
-    return "ai2/petew-cpu"
+    return "ai2/tiny-cpu-testing"
 
 
 @pytest.fixture()
