@@ -41,7 +41,7 @@ Contents
 Team
 ----
 
-**beaker-py** is developed and maintained by the `AllenNLP <https://allenai.org/allennlp>`_ and ReViz teams at
+**beaker-py** is developed and maintained at
 `the Allen Institute for Artificial Intelligence (AI2) <https://allenai.org/>`_.
 AI2 is a non-profit institute with the mission to contribute to humanity through high-impact AI research and engineering.
 
