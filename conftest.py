@@ -39,7 +39,7 @@ def workspace_name() -> str:
 
 @pytest.fixture()
 def alternate_workspace_name() -> str:
-    name = "ai2/beaker-py-testing-alternate"
+    name = "ai2/beaker-py-testing-alternative"
     return name
 
 
