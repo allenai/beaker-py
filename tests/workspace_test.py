@@ -124,4 +124,7 @@ def test_workspace_set_visibility_archived(client: Beaker, archived_workspace_na
 
 
 def test_workspace_url(client: Beaker):
-    assert client.workspace.url("ai2/petew-testing") == "https://beaker.org/ws/ai2/petew-testing"
+    assert (
+        client.workspace.url("ai2/beaker-py-testing")
+        == "https://beaker.org/ws/ai2/beaker-py-testing"
+    )

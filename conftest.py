@@ -33,13 +33,13 @@ def beaker_object_fixture(client: Beaker, service: str):
 
 @pytest.fixture()
 def workspace_name() -> str:
-    name = "ai2/petew-testing"
+    name = "ai2/beaker-py-testing"
     return name
 
 
 @pytest.fixture()
 def alternate_workspace_name() -> str:
-    name = "ai2/petew-testing-alternate"
+    name = "ai2/beaker-py-testing-alternate"
     return name
 
 
@@ -106,7 +106,7 @@ def beaker_cluster_name(client: Beaker) -> str:
 
 @pytest.fixture()
 def beaker_cloud_cluster_name() -> str:
-    return "ai2/petew-cpu"
+    return "ai2/tiny-cpu-testing"
 
 
 @pytest.fixture()
@@ -172,7 +172,7 @@ def secret_name(client: Beaker) -> Generator[str, None, None]:
 
 @pytest.fixture()
 def archived_workspace_name() -> str:
-    return "ai2/petew-testing-archived"
+    return "ai2/beaker-py-testing-archived"
 
 
 @pytest.fixture()
@@ -206,9 +206,9 @@ def alternate_group_name(client: Beaker) -> Generator[str, None, None]:
 
 @pytest.fixture()
 def experiment_id_with_metrics() -> str:
-    return "ex_1l1an142rn9l"
+    return "01G371J03VGJGK720TMZWFQNV3"
 
 
 @pytest.fixture()
 def experiment_id_with_results() -> str:
-    return "ex_1l1an142rn9l"
+    return "01G371J03VGJGK720TMZWFQNV3"
