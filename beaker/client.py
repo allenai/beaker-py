@@ -29,7 +29,7 @@ class Beaker:
     property. For example, to manage workspaces, use :data:`Beaker.workspace`:
 
     >>> beaker.workspace.get(workspace_name).full_name
-    'ai2/petew-testing'
+    'ai2/beaker-py-testing'
 
     .. tip::
         Use the right side nav to browse through the API docs for all of the different services.

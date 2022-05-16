@@ -43,7 +43,7 @@ For example, you can create a workspace with :meth:`Beaker.workspace.ensure() <s
 You can retreive metadata about a workspace with :meth:`Beaker.workspace.get() <services.WorkspaceClient.get>`:
 
 >>> beaker.workspace.get(workspace_name).id
-'01FPB5S64Y649S1948QHQHVCVE'
+'01G370GVHJQZYF50XYXM7VB53N'
 
 You can list datasets in a workspace with
 :meth:`Beaker.workspace.datasets() <services.WorkspaceClient.datasets>`:
