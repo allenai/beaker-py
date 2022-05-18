@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `ExperimentSpec.to_file()` method.
+
 ## [v1.0.0](https://github.com/allenai/beaker-py/releases/tag/v1.0.0) - 2022-05-13
 
 ### Removed

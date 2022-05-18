@@ -631,6 +631,16 @@ class ExperimentSpec(BaseModel, frozen=False):
             raw_spec = yaml.load(spec_file, Loader=yaml.SafeLoader)
             return cls.from_json(raw_spec)
 
+    def to_file(self, path: PathOrStr) -> None:
+        """
+        Write the experiment spec to a YAML file.
+        """
+        import yaml
+
+        raw_spec = self.to_json()
+        with open(path, "wt") as spec_file:
+            yaml.dump(raw_spec, spec_file, Dumper=yaml.SafeDumper)
+
     def with_task(self, task: TaskSpec) -> "ExperimentSpec":
         """
         Return a new :class:`ExperimentSpec` with an additional task.
