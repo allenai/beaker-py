@@ -1,4 +1,5 @@
 import logging
+from enum import Enum
 from typing import Any, Dict, Type, TypeVar
 
 from pydantic import BaseModel as _BaseModel
@@ -61,6 +62,8 @@ class BaseModel(_BaseModel):
             return {
                 to_lower_camel(key): cls.jsonify(value) for key, value in x if value is not None
             }
+        elif isinstance(x, Enum):
+            return cls.jsonify(x.value)
         elif isinstance(x, (str, float, int, bool)):
             return x
         elif isinstance(x, dict):
