@@ -53,8 +53,8 @@
 
 *See also 👇*
 
-- [Beaker dashboard](https://beaker.org)
-- [Beaker command-line client](https://github.com/allenai/beaker)
+- [Beaker (CLI)](https://github.com/allenai/beaker)
+- [Beaker Gantry](https://github.com/allenai/beaker-gantry)
 - Beaker-relevant *GitHub Actions*
   - [setup-beaker](https://github.com/marketplace/actions/setup-beaker)
   - [beaker-command](https://github.com/marketplace/actions/beaker-command)
