@@ -17,6 +17,10 @@ class Group(BaseModel):
     modified: datetime
     workspace_ref: Optional[WorkspaceRef] = None
 
+    @property
+    def workspace(self) -> Optional[WorkspaceRef]:
+        return self.workspace_ref
+
 
 class GroupSpec(BaseModel):
     workspace: Optional[str] = None

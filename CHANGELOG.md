@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `.workspace` (`WorkspaceRef`) property to `Dataset`, `Image`, `Group`, and `Experiment`.
+  This is just an alias for the `.workspace_ref` property.
+
 ## [v1.1.0](https://github.com/allenai/beaker-py/releases/tag/v1.1.0) - 2022-05-18
 
 ### Added

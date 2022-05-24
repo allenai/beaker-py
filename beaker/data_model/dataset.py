@@ -39,6 +39,10 @@ class Dataset(BaseModel):
     def display_name(self) -> str:
         return self.name if self.name is not None else self.id
 
+    @property
+    def workspace(self) -> WorkspaceRef:
+        return self.workspace_ref
+
     @validator("committed")
     def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
         if v is not None and v.year == 1:
