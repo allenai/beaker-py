@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `Beaker.dataset.stream_file()` now can also take a `FileInfo` object as the 2nd argument instead of a file path.
+- `Digest` class is now hashable.
 
 ## [v1.1.0](https://github.com/allenai/beaker-py/releases/tag/v1.1.0) - 2022-05-18
 
