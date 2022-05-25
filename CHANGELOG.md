@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v1.2.0](https://github.com/allenai/beaker-py/releases/tag/v1.2.0) - 2022-05-25
+
 ### Added
 
 - Added `Beaker.dataset.file_info()` method.
