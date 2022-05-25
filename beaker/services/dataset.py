@@ -23,6 +23,7 @@ class DatasetClient(ServiceClient):
     HEADER_UPLOAD_OFFSET = "Upload-Offset"
     HEADER_DIGEST = "Digest"
     HEADER_LAST_MODIFIED = "Last-Modified"
+    HEADER_CONTENT_LENGTH = "Content-Length"
 
     REQUEST_SIZE_LIMIT = 32 * 1024 * 1024
 
@@ -333,12 +334,15 @@ class DatasetClient(ServiceClient):
             base_url=dataset.storage.address,
             exceptions_for_status={404: FileNotFoundError(file_name)},
         )
+        size_str = response.headers.get(self.HEADER_CONTENT_LENGTH)
+        size = int(size_str) if size_str else None
         return FileInfo(
             path=file_name,
             digest=response.headers[self.HEADER_DIGEST],
             updated=datetime.strptime(
                 response.headers[self.HEADER_LAST_MODIFIED], "%a, %d %b %Y %H:%M:%S %Z"
             ),
+            size=size,
         )
 
     def delete(self, dataset: Union[str, Dataset]):
