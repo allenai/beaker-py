@@ -168,11 +168,21 @@ class ServiceClient:
 
         return out
 
-    def resolve_dataset(self, dataset: Union[str, Dataset]) -> Dataset:
+    def resolve_dataset(
+        self, dataset: Union[str, Dataset], ensure_storage: bool = False
+    ) -> Dataset:
         if isinstance(dataset, Dataset):
+            if ensure_storage and dataset.storage is None:
+                # Might need to get dataset again if 'storage' hasn't been set yet.
+                dataset = self.beaker.dataset.get(dataset.id)
+                if dataset.storage is None:
+                    raise DatasetReadError(dataset.id)
             return dataset
         else:
-            return self.beaker.dataset.get(dataset)
+            dataset = self.beaker.dataset.get(dataset)
+            if ensure_storage and dataset.storage is None:
+                raise DatasetReadError(dataset.id)
+            return dataset
 
     def resolve_experiment(self, experiment: Union[str, Experiment]) -> Experiment:
         if isinstance(experiment, Experiment):

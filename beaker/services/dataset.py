@@ -23,6 +23,7 @@ class DatasetClient(ServiceClient):
     HEADER_UPLOAD_OFFSET = "Upload-Offset"
     HEADER_DIGEST = "Digest"
     HEADER_LAST_MODIFIED = "Last-Modified"
+    HEADER_CONTENT_LENGTH = "Content-Length"
 
     REQUEST_SIZE_LIMIT = 32 * 1024 * 1024
 
@@ -264,7 +265,7 @@ class DatasetClient(ServiceClient):
     def stream_file(
         self,
         dataset: Union[str, Dataset],
-        file_name: str,
+        file: Union[str, FileInfo],
         offset: int = 0,
         length: int = -1,
         max_retries: int = 5,
@@ -275,7 +276,8 @@ class DatasetClient(ServiceClient):
         Stream download the contents of a single file from a dataset.
 
         :param dataset: The dataset ID, name, or object.
-        :param file_name: The path of the file within the dataset.
+        :param file: The path of the file within the dataset or the corresponding
+            :class:`~beaker.data_model.dataset.FileInfo` object.
         :param offset: Offset to start from, in bytes.
         :param length: Number of bytes to read.
         :param max_retries: Number of times to restart the download when HTTP errors occur.
@@ -291,26 +293,11 @@ class DatasetClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        dataset: Dataset = self.resolve_dataset(dataset)
-        if dataset.storage is None:
-            # Might need to get dataset again if 'storage' hasn't been set yet.
-            dataset = self.get(dataset.id)
-        if dataset.storage is None:
-            raise DatasetReadError(dataset.id)
-        response = self.request(
-            f"datasets/{dataset.storage.id}/files/{file_name}",
-            method="HEAD",
-            token=dataset.storage.token,
-            base_url=dataset.storage.address,
-            exceptions_for_status={404: FileNotFoundError(file_name)},
-        )
-        file_info = FileInfo(
-            path=file_name,
-            digest=response.headers[self.HEADER_DIGEST],
-            updated=datetime.strptime(
-                response.headers[self.HEADER_LAST_MODIFIED], "%a, %d %b %Y %H:%M:%S %Z"
-            ),
-        )
+        dataset: Dataset = self.resolve_dataset(dataset, ensure_storage=True)
+        assert dataset.storage is not None
+
+        file_info = file if isinstance(file, FileInfo) else self.file_info(dataset, file)
+
         from ..progress import get_unsized_dataset_fetch_progress
 
         with get_unsized_dataset_fetch_progress(quiet=quiet) as progress:
@@ -325,6 +312,39 @@ class DatasetClient(ServiceClient):
             ):
                 progress.update(task_id, advance=len(bytes_chunk))
                 yield bytes_chunk
+
+    def file_info(self, dataset: Union[str, Dataset], file_name: str) -> FileInfo:
+        """
+        Get the :class:`~beaker.data_model.dataset.FileInfo` for a file in a dataset.
+
+        :param dataset: The dataset ID, name, or object.
+        :param file_name: The path of the file within the dataset.
+
+        :raises DatasetNotFound: If the dataset can't be found.
+        :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
+        :raises FileNotFoundError: If the file doesn't exist in the dataset.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        dataset: Dataset = self.resolve_dataset(dataset, ensure_storage=True)
+        assert dataset.storage is not None
+        response = self.request(
+            f"datasets/{dataset.storage.id}/files/{file_name}",
+            method="HEAD",
+            token=dataset.storage.token,
+            base_url=dataset.storage.address,
+            exceptions_for_status={404: FileNotFoundError(file_name)},
+        )
+        size_str = response.headers.get(self.HEADER_CONTENT_LENGTH)
+        size = int(size_str) if size_str else None
+        return FileInfo(
+            path=file_name,
+            digest=response.headers[self.HEADER_DIGEST],
+            updated=datetime.strptime(
+                response.headers[self.HEADER_LAST_MODIFIED], "%a, %d %b %Y %H:%M:%S %Z"
+            ),
+            size=size,
+        )
 
     def delete(self, dataset: Union[str, Dataset]):
         """

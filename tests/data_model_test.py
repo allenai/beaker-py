@@ -100,3 +100,9 @@ def test_snake_case_vs_lower_camel_case():
         x.host_path = "/tmp/bar"
         assert str(x) == "beaker=None host_path='/tmp/bar' result=None url=None secret=None"
         x.to_json() == {"hostPath": "/tmp/bar"}
+
+
+def test_digest_hashable():
+    digest = Digest("0Q/XIPetp+QFDce6EIYNVcNTCZSlPqmEfVs1eFEMK0Y=")
+    d = {digest: 1}
+    assert digest in d

@@ -99,6 +99,9 @@ class Digest:
     def __repr__(self) -> str:
         return self._encoded
 
+    def __hash__(self):
+        return hash(self._encoded)
+
     def decode(self) -> bytes:
         """
         Decode a digest into its raw bytes form.
