@@ -7,3 +7,7 @@ def test_dataset_get(client: Beaker, squad_dataset_name: str):
     client.dataset.get(dataset.id)
     # Try with just name (without account prefix).
     client.dataset.get(dataset.name)
+
+
+def test_file_info(client: Beaker, squad_dataset_name: str, squad_dataset_file_name: str):
+    client.dataset.file_info(squad_dataset_name, squad_dataset_file_name)

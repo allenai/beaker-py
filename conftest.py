@@ -185,8 +185,13 @@ def archived_workspace(client: Beaker, archived_workspace_name: str) -> Workspac
 
 
 @pytest.fixture()
-def squad_dataset_name(client: Beaker) -> str:
+def squad_dataset_name() -> str:
     return "petew/squad-train"
+
+
+@pytest.fixture()
+def squad_dataset_file_name() -> str:
+    return "squad-train.arrow"
 
 
 @pytest.fixture()

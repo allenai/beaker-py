@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added `Beaker.dataset.file_info()` method.
 - Added `.workspace` (`WorkspaceRef`) property to `Dataset`, `Image`, `Group`, and `Experiment`.
   This is just an alias for the `.workspace_ref` property.
 
