@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `.workspace` (`WorkspaceRef`) property to `Dataset`, `Image`, `Group`, and `Experiment`.
   This is just an alias for the `.workspace_ref` property.
 
+### Changed
+
+- `Beaker.dataset.stream_file()` now can also take a `FileInfo` object as the 2nd argument instead of a file path.
+
 ## [v1.1.0](https://github.com/allenai/beaker-py/releases/tag/v1.1.0) - 2022-05-18
 
 ### Added

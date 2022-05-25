@@ -265,7 +265,7 @@ class DatasetClient(ServiceClient):
     def stream_file(
         self,
         dataset: Union[str, Dataset],
-        file_name: str,
+        file: Union[str, FileInfo],
         offset: int = 0,
         length: int = -1,
         max_retries: int = 5,
@@ -276,7 +276,8 @@ class DatasetClient(ServiceClient):
         Stream download the contents of a single file from a dataset.
 
         :param dataset: The dataset ID, name, or object.
-        :param file_name: The path of the file within the dataset.
+        :param file: The path of the file within the dataset or the corresponding
+            :class:`~beaker.data_model.dataset.FileInfo` object.
         :param offset: Offset to start from, in bytes.
         :param length: Number of bytes to read.
         :param max_retries: Number of times to restart the download when HTTP errors occur.
@@ -295,7 +296,7 @@ class DatasetClient(ServiceClient):
         dataset: Dataset = self.resolve_dataset(dataset, ensure_storage=True)
         assert dataset.storage is not None
 
-        file_info = self.file_info(dataset, file_name)
+        file_info = file if isinstance(file, FileInfo) else self.file_info(dataset, file)
 
         from ..progress import get_unsized_dataset_fetch_progress
 
