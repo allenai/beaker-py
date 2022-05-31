@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import Generator, List, Optional, Union
 
 from ..data_model import *
 from ..exceptions import *
@@ -189,6 +189,41 @@ class GroupClient(ServiceClient):
         ).json()
         # TODO: make these requests concurrently.
         return [self.beaker.experiment.get(exp_id) for exp_id in exp_ids or []]
+
+    def export_experiments(
+        self, group: Union[str, Group], quiet: bool = False
+    ) -> Generator[bytes, None, None]:
+        """
+        Export all experiments and metrics in a group as a CSV.
+
+        Returns a generator that should be exhausted to get the complete file.
+
+        :param group: The group ID, name, or object.
+        :param quiet: If ``True``, progress won't be displayed.
+
+        :raises GroupNotFound: If the group can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        group_id = self.resolve_group(group).id
+        resp = self.request(
+            f"groups/{self.url_quote(group_id)}/export.csv",
+            method="GET",
+            exceptions_for_status={404: GroupNotFound(self._not_found_err_msg(group))},
+            stream=True,
+        ).iter_content(chunk_size=1024)
+
+        from ..progress import get_group_experiments_progress
+
+        with get_group_experiments_progress(quiet) as progress:
+            task_id = progress.add_task("Downloading:")
+            total = 0
+            for chunk in resp:
+                if chunk:
+                    advance = len(chunk)
+                    total += advance
+                    progress.update(task_id, total=total + 1, advance=advance)
+                    yield chunk
 
     def url(self, group: Union[str, Group]) -> str:
         """

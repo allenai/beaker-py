@@ -106,6 +106,16 @@ def get_logs_progress(quiet: bool = False) -> Progress:
     )
 
 
+def get_group_experiments_progress(quiet: bool = False) -> Progress:
+    return Progress(
+        "[progress.description]{task.description}",
+        SpinnerColumn(),
+        FileSizeColumn(),
+        TimeElapsedColumn(),
+        disable=quiet,
+    )
+
+
 def get_exps_and_jobs_progress(quiet: bool = False) -> Tuple[Live, Progress, Progress]:
     experiments_progress = get_experiments_progress(quiet)
     jobs_progress = get_jobs_progress(quiet)

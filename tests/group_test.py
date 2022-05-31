@@ -14,6 +14,12 @@ def test_group_methods(
     client.group.add_experiments(group, hello_world_experiment_id)
     assert len(client.group.list_experiments(group)) == 1
 
+    # Export the experiments from the group
+    # (expect a three line CSV: the header, one experiment, and a trailing newline)
+    export = list(client.group.export_experiments(group))
+    assert len(export) == 1
+    assert len(export[0].decode().split("\n")) == 3
+
     # Remove the experiment from the group.
     client.group.remove_experiments(group, hello_world_experiment_id)
     assert len(client.group.list_experiments(group)) == 0
