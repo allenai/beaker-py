@@ -190,9 +190,11 @@ class GroupClient(ServiceClient):
         # TODO: make these requests concurrently.
         return [self.beaker.experiment.get(exp_id) for exp_id in exp_ids or []]
 
-    def export_experiments(self, group: Union[str, Group]) -> str:
+    def export_experiments(self, group: Union[str, Group]) -> Generator[bytes, None, None]:
         """
         Export all experiments and metrics in a group as a CSV.
+        
+        Returns a generator that should be exhausted to get the complete file.
 
         :param group: The group ID, name, or object.
 
@@ -201,11 +203,12 @@ class GroupClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         group_id = self.resolve_group(group).id
-        return self.request(
+        yield from self.request(
             f"groups/{self.url_quote(group_id)}/export.csv",
             method="GET",
             exceptions_for_status={404: GroupNotFound(self._not_found_err_msg(group))},
-        ).text
+            stream=True
+        ).iter_content(chunk_size=1024)
 
     def url(self, group: Union[str, Group]) -> str:
         """
