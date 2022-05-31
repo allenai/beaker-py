@@ -190,6 +190,23 @@ class GroupClient(ServiceClient):
         # TODO: make these requests concurrently.
         return [self.beaker.experiment.get(exp_id) for exp_id in exp_ids or []]
 
+    def export_experiments(self, group: Union[str, Group]) -> str:
+        """
+        Export all experiments and metrics in a group as a CSV.
+
+        :param group: The group ID, name, or object.
+
+        :raises GroupNotFound: If the group can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+        """
+        group_id = self.resolve_group(group).id
+        return self.request(
+            f"groups/{self.url_quote(group_id)}/export.csv",
+            method="GET",
+            exceptions_for_status={404: GroupNotFound(self._not_found_err_msg(group))},
+        ).text
+
     def url(self, group: Union[str, Group]) -> str:
         """
         Get the URL for a group.
