@@ -62,6 +62,7 @@ source_suffix = [".rst", ".md"]
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "docker": ("https://docker-py.readthedocs.io/en/stable/", None),
+    "requests": ("https://requests.readthedocs.io/en/stable/", None),
 }
 
 # By default, sort documented members by type within classes and modules.

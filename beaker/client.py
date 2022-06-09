@@ -1,6 +1,10 @@
-from typing import Optional
+from contextlib import contextmanager
+from typing import Generator, Optional, Tuple, Union
 
 import docker
+import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 from .config import Config
 from .data_model import *
@@ -19,7 +23,9 @@ class Beaker:
 
     :param config: The Beaker :class:`Config`.
     :param check_for_upgrades: Automatically check that beaker-py is up-to-date. You'll see
-            a warning if it isn't.
+        a warning if it isn't.
+    :param timeout: How many seconds to wait for the Beaker server to send data before giving up,
+        as a float, or a (connect timeout, read timeout) tuple.
 
     The easiest way to initialize a Beaker client is with :meth:`.from_env()`:
 
@@ -36,13 +42,24 @@ class Beaker:
 
     """
 
-    def __init__(self, config: Config, check_for_upgrades: bool = True):
+    RECOVERABLE_SERVER_ERROR_CODES = (502, 503, 504)
+    MAX_RETRIES = 5
+    API_VERSION = "v3"
+
+    def __init__(
+        self,
+        config: Config,
+        check_for_upgrades: bool = True,
+        timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
+    ):
         # See if there's a newer version, and if so, suggest that the user upgrades.
         if check_for_upgrades:
             self._check_for_upgrades()
 
         self._config = config
         self._docker: Optional[docker.DockerClient] = None
+        self._session: Optional[requests.Session] = None
+        self._timeout = timeout
 
         # Initialize service clients:
         self._account = AccountClient(self)
@@ -108,12 +125,19 @@ class Beaker:
             pass
 
     @classmethod
-    def from_env(cls, check_for_upgrades: bool = True, **overrides) -> "Beaker":
+    def from_env(
+        cls,
+        check_for_upgrades: bool = True,
+        timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
+        **overrides,
+    ) -> "Beaker":
         """
         Initialize client from a config file and/or environment variables.
 
         :param check_for_upgrades: Automatically check that beaker-py is up-to-date. You'll see
             a warning if it isn't.
+        :param timeout: How many seconds to wait for the Beaker server to send data before giving up,
+            as a float, or a (connect timeout, read timeout) tuple.
         :param overrides: Fields in the :class:`Config` to override.
 
         .. note::
@@ -124,7 +148,42 @@ class Beaker:
             If you haven't configured the command-line client, then you can alternately just
             set the environment variable ``BEAKER_TOKEN`` to your Beaker `user token <https://beaker.org/user>`_.
         """
-        return cls(Config.from_env(**overrides), check_for_upgrades=check_for_upgrades)
+        return cls(
+            Config.from_env(**overrides), check_for_upgrades=check_for_upgrades, timeout=timeout
+        )
+
+    def _make_session(self) -> requests.Session:
+        session = requests.Session()
+        retries = Retry(
+            total=self.MAX_RETRIES,
+            backoff_factor=1,
+            status_forcelist=self.RECOVERABLE_SERVER_ERROR_CODES,
+        )
+        session.mount("https://", HTTPAdapter(max_retries=retries))
+        return session
+
+    @contextmanager
+    def session(self) -> Generator[None, None, None]:
+        """
+        A context manager that forces the Beaker client to reuse a single :class:`requests.Session`
+        for all HTTP requests to the Beaker server.
+
+        This can improve performance when calling a series of a client methods in a row.
+
+        :examples:
+
+        >>> with beaker.session():
+        ...     n_images = len(beaker.workspace.images())
+        ...     n_datasets = len(beaker.workspace.datasets())
+
+        """
+        session = self._make_session()
+        try:
+            self._session = session
+            yield None
+        finally:
+            self._session = None
+            session.close()
 
     @property
     def config(self) -> Config:

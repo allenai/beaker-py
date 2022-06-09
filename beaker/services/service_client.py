@@ -1,13 +1,10 @@
 import io
 import json
 import urllib.parse
-from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import docker
 import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
 
 from beaker.config import Config
 from beaker.data_model import *
@@ -19,13 +16,9 @@ if TYPE_CHECKING:
 
 
 class ServiceClient:
-    RECOVERABLE_SERVER_ERROR_CODES = (502, 503, 504)
-    MAX_RETRIES = 5
-    API_VERSION = "v3"
-
     def __init__(self, beaker: "Beaker"):
         self.beaker = beaker
-        self._base_url = f"{self.config.agent_address}/api/{self.API_VERSION}"
+        self._base_url = f"{self.config.agent_address}/api/{self.beaker.API_VERSION}"
 
     @property
     def config(self) -> Config:
@@ -34,17 +27,6 @@ class ServiceClient:
     @property
     def docker(self) -> docker.DockerClient:
         return self.beaker.docker
-
-    @contextmanager
-    def _session_with_backoff(self) -> Generator[requests.Session, None, None]:
-        session = requests.Session()
-        retries = Retry(
-            total=self.MAX_RETRIES,
-            backoff_factor=1,
-            status_forcelist=self.RECOVERABLE_SERVER_ERROR_CODES,
-        )
-        session.mount("https://", HTTPAdapter(max_retries=retries))
-        yield session
 
     def request(
         self,
@@ -57,8 +39,9 @@ class ServiceClient:
         token: Optional[str] = None,
         base_url: Optional[str] = None,
         stream: bool = False,
+        timeout: Optional[Union[float, Tuple[float, float]]] = None,
     ) -> requests.Response:
-        with self._session_with_backoff() as session:
+        def make_request(session: requests.Session) -> requests.Response:
             # Build URL.
             url = f"{base_url or self._base_url}/{resource}"
             if query is not None:
@@ -92,6 +75,7 @@ class ServiceClient:
                 headers=default_headers,
                 data=request_data,
                 stream=stream,
+                timeout=timeout or self.beaker._timeout,
             )
 
             if exceptions_for_status is not None and response.status_code in exceptions_for_status:
@@ -109,6 +93,12 @@ class ServiceClient:
                 raise
 
             return response
+
+        if self.beaker._session is not None:
+            return make_request(self.beaker._session)
+        else:
+            with self.beaker._make_session() as session:
+                return make_request(session)
 
     def resolve_cluster_name(self, cluster_name: str) -> str:
         if "/" not in cluster_name:
