@@ -30,7 +30,7 @@ jobs:
       - name: Setup Python environment
         uses: ./.github/actions/setup-venv
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ env.DEFAULT_PYTHON }}
           cache-prefix: ${{ env.CACHE_PREFIX }}
 
       - name: Setup Beaker
