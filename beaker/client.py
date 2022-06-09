@@ -1,6 +1,10 @@
-from typing import Optional
+from contextlib import contextmanager
+from typing import Generator, Optional
 
 import docker
+import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 from .config import Config
 from .data_model import *
@@ -36,6 +40,10 @@ class Beaker:
 
     """
 
+    RECOVERABLE_SERVER_ERROR_CODES = (502, 503, 504)
+    MAX_RETRIES = 5
+    API_VERSION = "v3"
+
     def __init__(self, config: Config, check_for_upgrades: bool = True):
         # See if there's a newer version, and if so, suggest that the user upgrades.
         if check_for_upgrades:
@@ -43,6 +51,7 @@ class Beaker:
 
         self._config = config
         self._docker: Optional[docker.DockerClient] = None
+        self._session: Optional[requests.Session] = None
 
         # Initialize service clients:
         self._account = AccountClient(self)
@@ -125,6 +134,39 @@ class Beaker:
             set the environment variable ``BEAKER_TOKEN`` to your Beaker `user token <https://beaker.org/user>`_.
         """
         return cls(Config.from_env(**overrides), check_for_upgrades=check_for_upgrades)
+
+    def _make_session(self) -> requests.Session:
+        session = requests.Session()
+        retries = Retry(
+            total=self.MAX_RETRIES,
+            backoff_factor=1,
+            status_forcelist=self.RECOVERABLE_SERVER_ERROR_CODES,
+        )
+        session.mount("https://", HTTPAdapter(max_retries=retries))
+        return session
+
+    @contextmanager
+    def session(self) -> Generator[None, None, None]:
+        """
+        A context manager that forces the Beaker client to reuse a single :class:`requests.Session`
+        for all HTTP requests to the Beaker server.
+
+        This can improve performance when calling a series of a client methods in a row.
+
+        :examples:
+
+        >>> with beaker.session():
+        ...     n_images = len(beaker.workspace.images())
+        ...     n_datasets = len(beaker.workspace.datasets())
+
+        """
+        session = self._make_session()
+        try:
+            self._session = session
+            yield None
+        finally:
+            self._session = None
+            session.close()
 
     @property
     def config(self) -> Config:
