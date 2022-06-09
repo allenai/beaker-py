@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Generator, Optional
+from typing import Generator, Optional, Tuple, Union
 
 import docker
 import requests
@@ -23,7 +23,9 @@ class Beaker:
 
     :param config: The Beaker :class:`Config`.
     :param check_for_upgrades: Automatically check that beaker-py is up-to-date. You'll see
-            a warning if it isn't.
+        a warning if it isn't.
+    :param timeout: How many seconds to wait for the Beaker server to send data before giving up,
+        as a float, or a (connect timeout, read timeout) tuple.
 
     The easiest way to initialize a Beaker client is with :meth:`.from_env()`:
 
@@ -44,7 +46,12 @@ class Beaker:
     MAX_RETRIES = 5
     API_VERSION = "v3"
 
-    def __init__(self, config: Config, check_for_upgrades: bool = True):
+    def __init__(
+        self,
+        config: Config,
+        check_for_upgrades: bool = True,
+        timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
+    ):
         # See if there's a newer version, and if so, suggest that the user upgrades.
         if check_for_upgrades:
             self._check_for_upgrades()
@@ -52,6 +59,7 @@ class Beaker:
         self._config = config
         self._docker: Optional[docker.DockerClient] = None
         self._session: Optional[requests.Session] = None
+        self._timeout = timeout
 
         # Initialize service clients:
         self._account = AccountClient(self)
@@ -117,12 +125,19 @@ class Beaker:
             pass
 
     @classmethod
-    def from_env(cls, check_for_upgrades: bool = True, **overrides) -> "Beaker":
+    def from_env(
+        cls,
+        check_for_upgrades: bool = True,
+        timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
+        **overrides,
+    ) -> "Beaker":
         """
         Initialize client from a config file and/or environment variables.
 
         :param check_for_upgrades: Automatically check that beaker-py is up-to-date. You'll see
             a warning if it isn't.
+        :param timeout: How many seconds to wait for the Beaker server to send data before giving up,
+            as a float, or a (connect timeout, read timeout) tuple.
         :param overrides: Fields in the :class:`Config` to override.
 
         .. note::
@@ -133,7 +148,9 @@ class Beaker:
             If you haven't configured the command-line client, then you can alternately just
             set the environment variable ``BEAKER_TOKEN`` to your Beaker `user token <https://beaker.org/user>`_.
         """
-        return cls(Config.from_env(**overrides), check_for_upgrades=check_for_upgrades)
+        return cls(
+            Config.from_env(**overrides), check_for_upgrades=check_for_upgrades, timeout=timeout
+        )
 
     def _make_session(self) -> requests.Session:
         session = requests.Session()

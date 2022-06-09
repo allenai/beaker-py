@@ -1,7 +1,7 @@
 import io
 import json
 import urllib.parse
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import docker
 import requests
@@ -39,6 +39,7 @@ class ServiceClient:
         token: Optional[str] = None,
         base_url: Optional[str] = None,
         stream: bool = False,
+        timeout: Optional[Union[float, Tuple[float, float]]] = None,
     ) -> requests.Response:
         def make_request(session: requests.Session) -> requests.Response:
             # Build URL.
@@ -74,6 +75,7 @@ class ServiceClient:
                 headers=default_headers,
                 data=request_data,
                 stream=stream,
+                timeout=timeout or self.beaker._timeout,
             )
 
             if exceptions_for_status is not None and response.status_code in exceptions_for_status:

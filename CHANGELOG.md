@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `Beaker.session()` context manager for improving performance when calling a series of 
   client methods in a row.
+- Added `timeout` parameter to `Beaker` client initialization methods with a default of `5` (seconds).
+  This controls the connect and read timeouts of HTTP requests sent to the Beaker server.
 
 ## [v1.3.0](https://github.com/allenai/beaker-py/releases/tag/v1.3.0) - 2022-05-31
 
