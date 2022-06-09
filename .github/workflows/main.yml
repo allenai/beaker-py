@@ -34,9 +34,10 @@ jobs:
           cache-prefix: ${{ env.CACHE_PREFIX }}
 
       - name: Setup Beaker
-        uses: allenai/setup-beaker@v1.0.0
+        uses: allenai/setup-beaker@v1
         with:
           token: ${{ secrets.BEAKER_TOKEN }}
+          github_token: ${{ secrets.GHCR_TOKEN }}
           workspace: ${{ env.BEAKER_WORKSPACE }}
 
       - name: Check config compatibility
