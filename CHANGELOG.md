@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v1.4.0](https://github.com/allenai/beaker-py/releases/tag/v1.4.0) - 2022-06-09
+
 ### Added
 
 - Added `Beaker.session()` context manager for improving performance when calling a series of 
