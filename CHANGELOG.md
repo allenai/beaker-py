@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v1.4.1](https://github.com/allenai/beaker-py/releases/tag/v1.4.1) - 2022-06-10
+
 ### Added
 
 - Added `session` argument to `Beaker` client constructors (`.from_env()` and `__init__()`).
