@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `session` argument to `Beaker` client constructors (`.from_env()` and `__init__()`).
+  You can use this argument to force the client to use a single HTTP `Session` for all requests to the server
+  for the life of the client. Using this approach it's not necessary to use the `Beaker.session()` context manager,
+  but you should only use this if the client is short-lived.
+
 ## [v1.4.0](https://github.com/allenai/beaker-py/releases/tag/v1.4.0) - 2022-06-09
 
 ### Added

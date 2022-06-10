@@ -26,6 +26,18 @@ class Beaker:
         a warning if it isn't.
     :param timeout: How many seconds to wait for the Beaker server to send data before giving up,
         as a float, or a (connect timeout, read timeout) tuple.
+    :param session: Set to ``True`` or a :class:`requests.Session` instance to
+        force the Beaker client to use a single :class:`~requests.Session`
+        for all HTTP requests to the Beaker server for the life of the client.
+
+        .. seealso::
+            The :meth:`session()` context manager.
+
+        .. warning::
+            You should only set this argument for short-lived clients.
+            If you're initializing a :class:`Beaker` client with this that's supposed to stick
+            around indefinitely, consider using the :meth:`session()` context manager
+            intermittently instead.
 
     The easiest way to initialize a Beaker client is with :meth:`.from_env()`:
 
@@ -51,6 +63,7 @@ class Beaker:
         config: Config,
         check_for_upgrades: bool = True,
         timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
+        session: Optional[Union[bool, requests.Session]] = None,
     ):
         # See if there's a newer version, and if so, suggest that the user upgrades.
         if check_for_upgrades:
@@ -58,7 +71,11 @@ class Beaker:
 
         self._config = config
         self._docker: Optional[docker.DockerClient] = None
-        self._session: Optional[requests.Session] = None
+        self._session: Optional[requests.Session] = (
+            None
+            if not session
+            else (session if isinstance(session, requests.Session) else self._make_session())
+        )
         self._timeout = timeout
 
         # Initialize service clients:
@@ -129,6 +146,7 @@ class Beaker:
         cls,
         check_for_upgrades: bool = True,
         timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
+        session: Optional[Union[bool, requests.Session]] = None,
         **overrides,
     ) -> "Beaker":
         """
@@ -136,8 +154,23 @@ class Beaker:
 
         :param check_for_upgrades: Automatically check that beaker-py is up-to-date. You'll see
             a warning if it isn't.
+
         :param timeout: How many seconds to wait for the Beaker server to send data before giving up,
             as a float, or a (connect timeout, read timeout) tuple.
+
+        :param session: Set to ``True`` or a :class:`requests.Session` instance to
+            force the Beaker client to use a single :class:`~requests.Session`
+            for all HTTP requests to the Beaker server.
+
+            .. seealso::
+                The :meth:`session()` context manager.
+
+            .. warning::
+                You should only set this argument for short-lived clients.
+                If you're initializing a :class:`Beaker` client with this that's supposed to stick
+                around indefinitely, consider using the :meth:`session()` context manager
+                intermittently instead.
+
         :param overrides: Fields in the :class:`Config` to override.
 
         .. note::
@@ -163,12 +196,19 @@ class Beaker:
         return session
 
     @contextmanager
-    def session(self) -> Generator[None, None, None]:
+    def session(self, session: Optional[requests.Session] = None) -> Generator[None, None, None]:
         """
         A context manager that forces the Beaker client to reuse a single :class:`requests.Session`
         for all HTTP requests to the Beaker server.
 
         This can improve performance when calling a series of a client methods in a row.
+
+        :param session: The session to use.
+            If not provided a default will be used.
+
+            .. warning::
+                Only set the ``session`` argument if you really know what you're doing! Otherwise
+                just leave this as ``None``.
 
         :examples:
 
@@ -177,12 +217,13 @@ class Beaker:
         ...     n_datasets = len(beaker.workspace.datasets())
 
         """
-        session = self._make_session()
+        current = self._session
+        session: requests.Session = session or self._make_session()
         try:
             self._session = session
             yield None
         finally:
-            self._session = None
+            self._session = current
             session.close()
 
     @property
