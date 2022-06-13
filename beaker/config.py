@@ -1,5 +1,6 @@
 import logging
 import os
+import warnings
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 from typing import ClassVar, Optional
@@ -42,6 +43,11 @@ class Config:
     default_workspace: Optional[str] = None
     """
     Default Beaker workspace to use.
+    """
+
+    default_image: Optional[str] = None
+    """
+    The default image used for interactive sessions.
     """
 
     ADDRESS_KEY: ClassVar[str] = "BEAKER_ADDR"
@@ -102,7 +108,17 @@ class Config:
         """
         with open(path) as config_file:
             logger.debug("Loading beaker config from '%s'", path)
-            return cls(**yaml.load(config_file, Loader=yaml.SafeLoader))
+            field_names = {f.name for f in fields(cls)}
+            data = yaml.load(config_file, Loader=yaml.SafeLoader)
+            for key in list(data.keys()):
+                if key not in field_names:
+                    del data[key]
+                    warnings.warn(
+                        f"Unknown field '{key}' found in config '{path}'. "
+                        f"If this is a bug, please report it at https://github.com/allenai/beaker-py/issues/new/",
+                        RuntimeWarning,
+                    )
+            return cls(**data)
 
     def save(self, path: Optional[Path] = None):
         """
