@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Fixed bug in loading config where encountering unknown fields would cause an exception.
+  `beaker-py` now gracefully handles this.
+
 ## [v1.4.1](https://github.com/allenai/beaker-py/releases/tag/v1.4.1) - 2022-06-10
 
 ### Added
