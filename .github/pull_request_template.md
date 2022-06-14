@@ -16,8 +16,3 @@ Changes proposed in this pull request:
     [Writing docstrings](https://github.com/allenai/beaker-py/blob/main/CONTRIBUTING.md#writing-docstrings) section of the `CONTRIBUTING` docs.
 - [ ] If this PR fixes a bug, I've added a test that will fail without my fix.
 - [ ] If this PR adds a new feature, I've added tests that sufficiently cover my new functionality.
-
-## After submitting
-
-<!-- Please complete this checklist AFTER submitting your PR to speed along the review process. -->
-- [ ] All GitHub Actions jobs for my pull request have passed.
