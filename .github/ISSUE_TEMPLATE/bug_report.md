@@ -16,9 +16,11 @@ assignees: ''
 <details>
 <summary><b>Python traceback (if applicable):</b></summary>
 <p>
+
 <!-- Paste the traceback from any exception (if there was one) in between the next two lines below -->
 ```
 ```
+
 </p>
 </details>
 
@@ -39,9 +41,11 @@ Python version:
 <details>
 <summary><b>Output of <code>pip freeze</code>:</b></summary>
 <p>
+  
 <!-- Paste the output of `pip freeze` in between the next two lines below -->
 ```
 ```
+
 </p>
 </details>
 
@@ -52,8 +56,10 @@ Python version:
 <details>
 <summary><b>Example source:</b></summary>
 <p>
+
 <!-- Add a fully runnable example in between the next two lines below that will reproduce the bug -->
 ```python
 ```
+
 </p>
 </details>
