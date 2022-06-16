@@ -347,7 +347,7 @@ class ExperimentClient(ServiceClient):
             :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
 
         :raises ExperimentNotFound: If any experiment can't be found.
-        :raises TimeoutError: If the ``timeout`` expires.
+        :raises JobTimeoutError: If the ``timeout`` expires.
         :raises DuplicateExperimentError: If the same experiment is given as an argument more than once.
         :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
@@ -401,7 +401,7 @@ class ExperimentClient(ServiceClient):
             :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
 
         :raises ExperimentNotFound: If any experiment can't be found.
-        :raises TimeoutError: If the ``timeout`` expires.
+        :raises JobTimeoutError: If the ``timeout`` expires.
         :raises DuplicateExperimentError: If the same experiment is given as an argument more than once.
         :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
@@ -488,7 +488,7 @@ class ExperimentClient(ServiceClient):
                 # Check for timeout.
                 elapsed = time.time() - start
                 if timeout is not None and elapsed >= timeout:
-                    raise TimeoutError
+                    raise JobTimeoutError
 
                 if incomplete_jobs:
                     # Wait for current stack of incomplete jobs to finalize.

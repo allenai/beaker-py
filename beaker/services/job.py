@@ -264,7 +264,7 @@ class JobClient(ServiceClient):
             :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
 
         :raises JobNotFound: If any job can't be found.
-        :raises TimeoutError: If the ``timeout`` expires.
+        :raises JobTimeoutError: If the ``timeout`` expires.
         :raises DuplicateJobError: If the same job is given as an argument more than once.
         :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
@@ -317,7 +317,7 @@ class JobClient(ServiceClient):
             :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
 
         :raises JobNotFound: If any job can't be found.
-        :raises TimeoutError: If the ``timeout`` expires.
+        :raises JobTimeoutError: If the ``timeout`` expires.
         :raises DuplicateJobError: If the same job is given as an argument more than once.
         :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
@@ -412,7 +412,7 @@ class JobClient(ServiceClient):
 
                 elapsed = time.time() - start
                 if timeout is not None and elapsed >= timeout:
-                    raise TimeoutError
+                    raise JobTimeoutError
                 time.sleep(poll_interval)
         finally:
             if owned_progress:

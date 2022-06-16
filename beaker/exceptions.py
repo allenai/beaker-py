@@ -175,3 +175,7 @@ class ChecksumFailedError(BeakerError):
 
 class JobFailedError(BeakerError):
     pass
+
+
+class JobTimeoutError(BeakerError, TimeoutError):
+    pass
