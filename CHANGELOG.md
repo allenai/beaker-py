@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v1.5.0](https://github.com/allenai/beaker-py/releases/tag/v1.5.0) - 2022-06-16
+
 ### Added
 
 - Added `since` parameter to `Beaker.job.logs()` and `Beaker.experiment.logs()`.
