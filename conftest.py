@@ -159,7 +159,7 @@ def hello_world_image_name() -> str:
 
 @pytest.fixture()
 def hello_world_job_id() -> str:
-    return "01G0062R1K182CGR5559GHT5ED"
+    return "01FPB5WYPJAZ8FT08CZ2BVM316"
 
 
 @pytest.fixture()
