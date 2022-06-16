@@ -6,6 +6,8 @@ from ..exceptions import *
 from .service_client import ServiceClient
 
 if TYPE_CHECKING:
+    from datetime import datetime, timedelta
+
     from rich.progress import Progress, TaskID
 
 
@@ -103,7 +105,12 @@ class JobClient(ServiceClient):
 
         return jobs
 
-    def logs(self, job: Union[str, Job], quiet: bool = False) -> Generator[bytes, None, None]:
+    def logs(
+        self,
+        job: Union[str, Job],
+        quiet: bool = False,
+        since: Optional[Union[str, "datetime", "timedelta"]] = None,
+    ) -> Generator[bytes, None, None]:
         """
         Download the logs for a job.
 
@@ -115,16 +122,27 @@ class JobClient(ServiceClient):
 
         :param job: The Beaker job ID or object.
         :param quiet: If ``True``, progress won't be displayed.
+        :param since: Only show logs since a particular time. Could be a :class:`~datetime.datetime` object,
+            (naive datetimes will be treated as UTC), a timestamp string in the form of RFC 3339
+            (e.g. "2013-01-02T13:23:37Z"), or a relative time
+            (e.g. a `~datetime.timedelta` or a string like "42m").
 
         :raises JobNotFound: If the job can't be found.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         job_id = job.id if isinstance(job, Job) else job
+        opts = {}
+        if since is not None:
+            from ..util import format_since
+
+            opts["since"] = format_since(since)
+
         response = self.request(
             f"jobs/{job_id}/logs",
             method="GET",
             exceptions_for_status={404: JobNotFound(job_id)},
             stream=True,
+            query=opts,
         )
 
         # TODO: currently beaker doesn't provide the Content-Length header, update this if they do.

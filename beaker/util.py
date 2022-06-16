@@ -1,7 +1,8 @@
 import time
 from collections import OrderedDict
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Tuple, TypeVar, Union
 
 from .aliases import PathOrStr
 
@@ -76,3 +77,15 @@ def cached_property(ttl: float = 60):
         return prop_with_cache
 
     return ttl_cached_property
+
+
+def format_since(since: Union[datetime, timedelta, str]) -> str:
+    if isinstance(since, datetime):
+        if since.tzinfo is None:
+            return since.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        else:
+            return since.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
+    elif isinstance(since, timedelta):
+        return f"{since.total_seconds()}s"
+    else:
+        return since
