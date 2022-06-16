@@ -1,4 +1,5 @@
 import time
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Sequence, Set, Union
 
 from ..aliases import PathOrStr
@@ -7,8 +8,6 @@ from ..exceptions import *
 from .service_client import ServiceClient
 
 if TYPE_CHECKING:
-    from datetime import datetime, timedelta
-
     from rich.progress import TaskID
 
 
@@ -235,10 +234,10 @@ class ExperimentClient(ServiceClient):
         :param task: The task ID, name, or object of a specific task from the Beaker experiment
             to fetch logs for. Required if there are multiple tasks in the experiment.
         :param quiet: If ``True``, progress won't be displayed.
-        :param since: Only show logs since a particular time. Could be a UTC `datetime` object,
-            (naive datetimes will be treated as UTC), a timestamp in the form of RFC 3339
+        :param since: Only show logs since a particular time. Could be a :class:`~datetime.datetime` object
+            (naive datetimes will be treated as UTC), a timestamp string in the form of RFC 3339
             (e.g. "2013-01-02T13:23:37Z"), or a relative time
-            (e.g. a timedelta or a string like "42m").
+            (e.g. a :class:`~datetime.timedelta` or a string like "42m").
 
         :raises ValueError: The experiment has no tasks or jobs, or the experiment has multiple tasks but
             ``task`` is not specified.
