@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v1.5.1](https://github.com/allenai/beaker-py/releases/tag/v1.5.1) - 2022-06-16
+
 ### Changed
 
 - `Beaker.(job|experiment).(wait_for|as_completed)()` methods now raises a more specific `JobTimeoutError` (which inherits from `TimeoutError`) instead of a generic `TimeoutError`.
