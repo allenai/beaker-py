@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added `Beaker.job.follow()` and `Beaker.experiment.follow()` methods for live streaming logs.
+
+### Changed
+
+- The return type of `Beaker.experiment.tasks()` behaves like both a `Sequence[Task]` and a `Mapping[str, Task]`, i.e.
+  you can call `__getitem__()` with either an `int`, `slice`, or a `str` for the name of a task.
+
+### Fixed
+
+- Fixed a bug where `Beaker.(job|experiment).(wait_for|as_completed)()` methods could hang if a job was canceled or failed to ever start for some reason.
+
 ## [v1.5.1](https://github.com/allenai/beaker-py/releases/tag/v1.5.1) - 2022-06-16
 
 ### Changed

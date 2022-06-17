@@ -188,7 +188,7 @@ class ExperimentClient(ServiceClient):
             ).json()
         )
 
-    def tasks(self, experiment: Union[str, Experiment]) -> List[Task]:
+    def tasks(self, experiment: Union[str, Experiment]) -> Tasks:
         """
         List the tasks in an experiment.
 
@@ -197,9 +197,14 @@ class ExperimentClient(ServiceClient):
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
+
+        :examples:
+
+        >>> task = beaker.experiment.tasks(hello_world_experiment_name)["main"]
+
         """
         experiment_id = self.resolve_experiment(experiment).id
-        return [
+        tasks = [
             Task.from_json(d)
             for d in self.request(
                 f"experiments/{self.url_quote(experiment_id)}/tasks",
@@ -209,6 +214,7 @@ class ExperimentClient(ServiceClient):
                 },
             ).json()
         ]
+        return Tasks(tasks)
 
     def logs(
         self,
@@ -337,6 +343,9 @@ class ExperimentClient(ServiceClient):
             :meth:`as_completed()`
 
         .. seealso::
+            :meth:`follow()`
+
+        .. seealso::
             :meth:`Beaker.job.wait_for() <JobClient.wait_for>`
 
         :param experiments: Experiment ID, name, or object.
@@ -391,6 +400,9 @@ class ExperimentClient(ServiceClient):
             :meth:`wait_for()`
 
         .. seealso::
+            :meth:`follow()`
+
+        .. seealso::
             :meth:`Beaker.job.as_completed() <JobClient.as_completed>`
 
         :param experiments: Experiment ID, name, or object.
@@ -412,7 +424,7 @@ class ExperimentClient(ServiceClient):
 
         from ..progress import get_exps_and_jobs_progress
 
-        start = time.time()
+        start = time.monotonic()
         # Initialize progress trackers.
         live_display, experiments_progress, jobs_progress = get_exps_and_jobs_progress(quiet)
         # Keeps track of the IDs of each job for each task in each experiment.
@@ -486,7 +498,7 @@ class ExperimentClient(ServiceClient):
                         yield complete_experiment(exp_id)
 
                 # Check for timeout.
-                elapsed = time.time() - start
+                elapsed = time.monotonic() - start
                 if timeout is not None and elapsed >= timeout:
                     raise JobTimeoutError
 
@@ -505,11 +517,8 @@ class ExperimentClient(ServiceClient):
                         exp_id = job.execution.experiment
 
                         # Ensure job was successful if `strict==True`.
-                        if strict and job.status.exit_code != 0:
-                            raise JobFailedError(
-                                f"Job '{job.id}' from experiment '{exp_id}' failed "
-                                f"with exit code '{job.status.exit_code}'"
-                            )
+                        if strict:
+                            job.check()
 
                         # Update progress display.
                         experiments_progress.advance(exp_to_progress_task[exp_id])
@@ -539,6 +548,78 @@ class ExperimentClient(ServiceClient):
                         latest_job = self._latest_job(task.jobs)
                         assert latest_job is not None
                         task_to_job[task.id] = latest_job.id
+
+    def follow(
+        self,
+        experiment: Union[str, Experiment],
+        task: Optional[Union[str, Task]] = None,
+        timeout: Optional[float] = None,
+        strict: bool = False,
+    ) -> Generator[bytes, None, Experiment]:
+        """
+        Follow an experiment live, creating a generator that produces log lines
+        (as bytes) from the task's job as they become available.
+        The return value of the generator is the final
+        :class:`~beaker.data_model.experiment.Experiment` object.
+
+        .. seealso::
+            :meth:`logs()`
+
+        .. seealso::
+            :meth:`wait_for()`
+
+        .. seealso::
+            :meth:`as_completed()`
+
+        .. seealso::
+            :meth:`Beaker.job.follow() <JobClient.follow>`
+
+        :param experiment: Experiment ID, name, or object.
+        :param task: The task ID, name, or object of a specific task from the Beaker experiment
+            to follow. Required if there are multiple tasks in the experiment.
+        :param timeout: Maximum amount of time to wait for (in seconds).
+        :param strict: If ``True``, the exit code of the job will be checked, and a
+            :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
+
+        :raises ExperimentNotFound: If any experiment can't be found.
+        :raises ValueError: The experiment has no tasks or jobs, or the experiment has multiple tasks but
+            ``task`` is not specified.
+        :raises TaskNotFound: If the given task doesn't exist.
+        :raises JobTimeoutError: If the ``timeout`` expires.
+        :raises JobFailedError: If ``strict=True`` and the task's job finishes with a non-zero exit code.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+
+        :examples:
+
+        >>> for line in beaker.experiment.follow(hello_world_experiment_name):
+        ...     # Every log line from Beaker starts with an RFC 3339 UTC timestamp
+        ...     # (e.g. '2021-12-07T19:30:24.637600011Z'). If we don't want to print
+        ...     # the timestamps we can split them off like this:
+        ...     line = line[line.find(b"Z ")+2:]
+        ...     print(line.decode(errors="ignore"), end="")
+        <BLANKLINE>
+        Hello from Docker!
+        This message shows that your installation appears to be working correctly.
+        <BLANKLINE>
+        ...
+        """
+        if timeout is not None and timeout <= 0:
+            raise ValueError("'timeout' must be a positive number")
+
+        start = time.monotonic()
+        job: Optional[Job] = None
+        while job is None:
+            job = self.latest_job(experiment, task=task)
+            if timeout is not None and time.monotonic() - start >= timeout:
+                raise JobTimeoutError(
+                    "Job for task failed to initialize within '{timeout}' seconds"
+                )
+            time.sleep(2.0)
+
+        assert job is not None  # for mypy
+        yield from self.beaker.job.follow(job, strict=strict)
+        return self.get(experiment.id if isinstance(experiment, Experiment) else experiment)
 
     def url(
         self, experiment: Union[str, Experiment], task: Optional[Union[str, Task]] = None
@@ -592,7 +673,7 @@ class ExperimentClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        tasks = self.tasks(experiment)
+        tasks = list(self.tasks(experiment))
         exp_id = experiment if isinstance(experiment, str) else experiment.id
         if not tasks:
             raise ValueError(f"Experiment '{exp_id}' has no tasks")

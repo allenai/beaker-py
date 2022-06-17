@@ -19,7 +19,9 @@ class CurrentJobStatus(str, Enum):
     running = "running"
     idle = "idle"
     exited = "exited"
+    failed = "failed"
     finalized = "finalized"
+    canceled = "canceled"
 
 
 class JobStatus(BaseModel):
@@ -51,8 +53,12 @@ class JobStatus(BaseModel):
         """
         if self.finalized is not None:
             return CurrentJobStatus.finalized
+        elif self.failed is not None:
+            return CurrentJobStatus.failed
         elif self.exited is not None:
             return CurrentJobStatus.exited
+        elif self.canceled is not None:
+            return CurrentJobStatus.canceled
         elif self.idle_since is not None:
             return CurrentJobStatus.idle
         elif self.started is not None:
@@ -125,6 +131,36 @@ class Job(BaseModel):
     @property
     def is_finalized(self) -> bool:
         return self.status.current == CurrentJobStatus.finalized
+
+    @property
+    def is_done(self) -> bool:
+        return self.status.current in {
+            CurrentJobStatus.failed,
+            CurrentJobStatus.exited,
+            CurrentJobStatus.canceled,
+            CurrentJobStatus.finalized,
+        }
+
+    def check(self):
+        """
+        :raises JobFailedError: If the job failed or was canceled.
+        """
+        from ..exceptions import JobFailedError
+
+        if self.status.current in {
+            CurrentJobStatus.failed,
+            CurrentJobStatus.exited,
+            CurrentJobStatus.canceled,
+        }:
+            raise JobFailedError(f"Job '{self.id}' {self.status.current}")
+        elif (
+            self.status.current in CurrentJobStatus.finalized
+            and self.status.exit_code is not None
+            and self.status.exit_code > 0
+        ):
+            raise JobFailedError(
+                f"Job '{self.id}' exited with non-zero exit code ({self.status.exit_code})"
+            )
 
 
 class Jobs(BaseModel):

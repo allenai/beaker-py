@@ -175,7 +175,7 @@ Experiment
 ~~~~~~~~~~
 
 .. automodule:: beaker.data_model.experiment
-   :members: Experiment, Task
+   :members: Experiment, Task, Tasks
    :undoc-members:
 
 Secret

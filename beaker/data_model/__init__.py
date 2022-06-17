@@ -1,5 +1,5 @@
 from .account import *
-from .base import BaseModel
+from .base import BaseModel, MappedSequence
 from .cluster import *
 from .dataset import *
 from .experiment import *
