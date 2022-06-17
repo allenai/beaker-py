@@ -106,3 +106,16 @@ def test_digest_hashable():
     digest = Digest("0Q/XIPetp+QFDce6EIYNVcNTCZSlPqmEfVs1eFEMK0Y=")
     d = {digest: 1}
     assert digest in d
+
+
+def test_mapped_sequence():
+    ms = MappedSequence([1, 2, 3], {"a": 1, "b": 2, "c": 3})
+    assert ms["a"] == 1
+    assert ms[0] == 1
+    assert len(ms) == 3
+    assert "a" in ms
+    assert 1 in ms
+    assert list(ms) == [1, 2, 3]
+    assert set(ms.keys()) == {"a", "b", "c"}
+    assert ms.get("a") == 1
+    assert "z" not in ms

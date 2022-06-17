@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-from typing import Any, Dict, Type, TypeVar
+from typing import Any, Dict, Iterator, Mapping, Sequence, Type, TypeVar, Union
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ValidationError, root_validator
@@ -72,3 +72,35 @@ class BaseModel(_BaseModel):
             return [cls.jsonify(x_i) for x_i in x]
         else:
             return x
+
+
+class MappedSequence(Sequence[T], Mapping[str, T]):
+    def __init__(self, sequence: Sequence[T], mapping: Mapping[str, T]):
+        self._sequence = sequence
+        self._mapping = mapping
+
+    def __getitem__(self, k) -> Union[T, Sequence[T]]:  # type: ignore[override]
+        if isinstance(k, (int, slice)):
+            return self._sequence[k]
+        elif isinstance(k, str):
+            return self._mapping[k]
+        else:
+            raise TypeError("keys must be integers, slices, or strings")
+
+    def __contains__(self, k) -> bool:
+        if isinstance(k, str):
+            return k in self._mapping
+        else:
+            return k in self._sequence
+
+    def __iter__(self) -> Iterator[T]:
+        return iter(self._sequence)
+
+    def __len__(self) -> int:
+        return len(self._sequence)
+
+    def keys(self):
+        return self._mapping.keys()
+
+    def values(self):
+        return self._mapping.values()

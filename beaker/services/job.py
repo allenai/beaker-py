@@ -119,6 +119,9 @@ class JobClient(ServiceClient):
         .. seealso::
             :meth:`Beaker.experiment.logs() <ExperimentClient.logs>`
 
+        .. seealso::
+            :meth:`follow()`
+
         :param job: The Beaker job ID or object.
         :param quiet: If ``True``, progress won't be displayed.
         :param since: Only show logs since a particular time. Could be a :class:`~datetime.datetime` object
@@ -254,6 +257,9 @@ class JobClient(ServiceClient):
             :meth:`as_completed()`
 
         .. seealso::
+            :meth:`follow()`
+
+        .. seealso::
             :meth:`Beaker.experiment.wait_for() <ExperimentClient.wait_for>`
 
         :param jobs: Job ID, name, or object.
@@ -307,6 +313,9 @@ class JobClient(ServiceClient):
             :meth:`wait_for()`
 
         .. seealso::
+            :meth:`follow()`
+
+        .. seealso::
             :meth:`Beaker.experiment.as_completed() <ExperimentClient.as_completed>`
 
         :param jobs: Job ID, name, or object.
@@ -330,6 +339,96 @@ class JobClient(ServiceClient):
             quiet=quiet,
             strict=strict,
         )
+
+    def follow(
+        self, job: Union[str, Job], timeout: Optional[float] = None, strict: bool = False
+    ) -> Generator[bytes, None, Job]:
+        """
+        Follow a job live, creating a generator that produces log lines (as bytes) from the job
+        as they become available. The return value of the generator is the finalized
+        :class:`~beaker.data_model.job.Job` object.
+
+        .. seealso::
+            :meth:`logs()`
+
+        .. seealso::
+            :meth:`wait_for()`
+
+        .. seealso::
+            :meth:`as_completed()`
+
+        .. seealso::
+            :meth:`Beaker.experiment.follow() <ExperimentClient.follow>`
+
+        :param job: Job ID, name, or object.
+        :param timeout: Maximum amount of time to follow job for (in seconds).
+        :param strict: If ``True``, the exit code of each job will be checked, and a
+            :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
+
+        :raises JobNotFound: If any job can't be found.
+        :raises JobTimeoutError: If the ``timeout`` expires.
+        :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises HTTPError: Any other HTTP exception that can occur.
+
+        :examples:
+
+        >>> job = beaker.experiment.latest_job(hello_world_experiment_name)
+        >>> for line in beaker.job.follow(job):
+        ...     # Every log line from Beaker starts with an RFC 3339 UTC timestamp
+        ...     # (e.g. '2021-12-07T19:30:24.637600011Z'). If we don't want to print
+        ...     # the timestamps we can split them off like this:
+        ...     line = line[line.find(b"Z ")+2:]
+        ...     print(line.decode(errors="ignore"), end="")
+        <BLANKLINE>
+        Hello from Docker!
+        This message shows that your installation appears to be working correctly.
+        <BLANKLINE>
+        ...
+
+        """
+        if timeout is not None and timeout <= 0:
+            raise ValueError("'timeout' must be a positive number")
+
+        start = time.monotonic()
+        last_timestamp: Optional[str] = None
+        updated_job: Job
+        while True:
+            updated_job = self.get(job.id if isinstance(job, Job) else job)
+
+            # Pull and yield log lines.
+            buffer = b""
+            for chunk in self.logs(updated_job, quiet=True, since=last_timestamp):
+                lines = (buffer + chunk).splitlines(keepends=True)
+                if chunk.endswith(b"\n"):
+                    buffer = b""
+                elif lines:
+                    # Last line in chunk is not a complete line.
+                    lines, buffer = lines[:-1], lines[-1]
+                timestamp: Optional[str] = None
+                for line in lines:
+                    timestamp_end = line.find(b"Z ")
+                    if timestamp_end > 0:
+                        timestamp = line[: timestamp_end + 1].decode()
+                    else:
+                        timestamp = None
+                    if last_timestamp is None or timestamp != last_timestamp:
+                        # Only yield new lines.
+                        yield line
+                if timestamp is not None:
+                    last_timestamp = timestamp
+
+            # Check status of job, finish if job is no-longer running.
+            if updated_job.is_done:
+                if strict:
+                    updated_job.check()
+                return updated_job
+
+            # Check timeout if we're still waiting for job to complete.
+            if timeout is not None and time.monotonic() - start >= timeout:
+                raise JobTimeoutError(updated_job.id)
+
+            time.sleep(1.0)
 
     def _as_completed(
         self,
@@ -367,7 +466,7 @@ class JobClient(ServiceClient):
         from ..progress import get_jobs_progress
 
         job_ids: List[str] = []
-        start = time.time()
+        start = time.monotonic()
         owned_progress = _progress is None
         progress = _progress or get_jobs_progress(quiet)
         if owned_progress:
@@ -393,14 +492,12 @@ class JobClient(ServiceClient):
                 for job_id in list(job_id_to_progress_task):
                     task_id = job_id_to_progress_task[job_id]
                     job = self.get(job_id)
-                    if not job.is_finalized:
+                    if not job.is_done:
                         progress.update(task_id, total=polls + 1, advance=1)
                     else:
                         # Ensure job was successful if `strict==True`.
-                        if strict and job.status.exit_code != 0:
-                            raise JobFailedError(
-                                f"Job '{job.id}' failed with exit code '{job.status.exit_code}'"
-                            )
+                        if strict:
+                            job.check()
                         progress.update(
                             task_id,
                             total=polls + 1,
@@ -410,7 +507,7 @@ class JobClient(ServiceClient):
                         del job_id_to_progress_task[job_id]
                         yield job
 
-                elapsed = time.time() - start
+                elapsed = time.monotonic() - start
                 if timeout is not None and elapsed >= timeout:
                     raise JobTimeoutError
                 time.sleep(poll_interval)

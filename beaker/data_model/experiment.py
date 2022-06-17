@@ -1,10 +1,10 @@
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 from pydantic import Field
 
 from .account import Account
-from .base import BaseModel
+from .base import BaseModel, MappedSequence
 from .job import Job
 from .workspace import WorkspaceRef
 
@@ -48,6 +48,16 @@ class Task(BaseModel):
         if not self.jobs:
             return None
         return sorted(self.jobs, key=lambda job: job.status.created)[-1]
+
+
+class Tasks(MappedSequence[Task]):
+    """
+    A sequence of :class:`Task` that also behaves like a mapping of task names to tasks,
+    i.e. you can use ``get()`` or ``__getitem__()`` with the name of the task.
+    """
+
+    def __init__(self, tasks: List[Task]):
+        super().__init__(tasks, {task.name: task for task in tasks if task.name is not None})
 
 
 class ExperimentsPage(BaseModel):
