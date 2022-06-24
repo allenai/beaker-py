@@ -163,8 +163,8 @@ def hello_world_job_id() -> str:
 
 
 @pytest.fixture()
-def beaker_node_id() -> str:
-    return "01FXTYPFQ1QQ7XV4SH8VTCRZMG"
+def beaker_node_id(client: Beaker, beaker_on_prem_cluster_name: str) -> str:
+    return client.cluster.nodes(beaker_on_prem_cluster_name)[0].id
 
 
 @pytest.fixture()
