@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Added support for older versions of Pydantic (back to v1.8.2).
+
 ## [v1.6.0](https://github.com/allenai/beaker-py/releases/tag/v1.6.0) - 2022-06-17
 
 ### Added
