@@ -182,7 +182,10 @@ class Beaker:
             set the environment variable ``BEAKER_TOKEN`` to your Beaker `user token <https://beaker.org/user>`_.
         """
         return cls(
-            Config.from_env(**overrides), check_for_upgrades=check_for_upgrades, timeout=timeout
+            Config.from_env(**overrides),
+            check_for_upgrades=check_for_upgrades,
+            timeout=timeout,
+            session=session,
         )
 
     def _make_session(self) -> requests.Session:

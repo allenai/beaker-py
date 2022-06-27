@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+
+- Fixed a bug where the `session` parameter to `Beaker.from_env()` was actually passed through to the class' `__init__()` method.
+
 ## [v1.6.1](https://github.com/allenai/beaker-py/releases/tag/v1.6.1) - 2022-06-24
 
 ### Changed
