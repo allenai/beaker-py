@@ -93,9 +93,14 @@ class Beaker:
 
         # Ensure default workspace exists.
         if self._config.default_workspace is not None:
+            if self._config.default_workspace == "":
+                raise ValueError("'default_workspace' cannot be an empty string")
             self.workspace.ensure(self._config.default_workspace)
+
         # Validate default org.
         if self._config.default_org is not None:
+            if self._config.default_org == "":
+                raise ValueError("'default_org' cannot be an empty string")
             self.organization.get(self._config.default_org)
 
     def __str__(self) -> str:
