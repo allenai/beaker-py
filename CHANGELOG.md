@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v1.6.3](https://github.com/allenai/beaker-py/releases/tag/v1.6.3) - 2022-07-05
+
 ### Fixed
 
 - Handling empty string values in Beaker config YAML files for compatibility with `beaker` CLI.
