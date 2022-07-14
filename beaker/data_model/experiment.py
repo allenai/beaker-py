@@ -14,7 +14,6 @@ class Experiment(BaseModel):
     name: Optional[str] = None
     full_name: Optional[str] = None
     description: Optional[str] = None
-    owner: Account
     author: Account
     created: datetime
     workspace_ref: WorkspaceRef
@@ -33,7 +32,6 @@ class Task(BaseModel):
     id: str
     name: Optional[str] = None
     experiment_id: str
-    owner: Account
     author: Account
     created: datetime
     schedulable: bool = False
