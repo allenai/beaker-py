@@ -27,7 +27,6 @@ class Dataset(BaseModel):
     name: Optional[str] = None
     full_name: Optional[str] = None
     description: Optional[str] = None
-    owner: Account
     author: Account
     created: datetime
     committed: Optional[datetime] = None
