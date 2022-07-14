@@ -3,9 +3,13 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) with one exception: minor yet potentially breaking changes to the data model that are made to maintain
+compatibility with the Beaker server and not necessarily given new major releases. We often
+use patch releases for compatibility fixes instead.
 
 ## Unreleased
+
+## [v1.6.4](https://github.com/allenai/beaker-py/releases/tag/v1.6.4) - 2022-07-14
 
 ### Fixed
 
