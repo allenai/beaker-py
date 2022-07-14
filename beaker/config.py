@@ -111,6 +111,7 @@ class Config:
             field_names = {f.name for f in fields(cls)}
             data = yaml.load(config_file, Loader=yaml.SafeLoader)
             for key in list(data.keys()):
+                value = data[key]
                 if key not in field_names:
                     del data[key]
                     warnings.warn(
@@ -118,6 +119,9 @@ class Config:
                         f"If this is a bug, please report it at https://github.com/allenai/beaker-py/issues/new/",
                         RuntimeWarning,
                     )
+                elif isinstance(value, str) and value == "":
+                    # Replace empty strings with `None`
+                    data[key] = None
             return cls(**data)
 
     def save(self, path: Optional[Path] = None):

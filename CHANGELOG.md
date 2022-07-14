@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [v1.6.3](https://github.com/allenai/beaker-py/releases/tag/v1.6.3) - 2022-07-05
+
+### Fixed
+
+- Handling empty string values in Beaker config YAML files for compatibility with `beaker` CLI.
+  Any empty string values in a Beaker config YAML file are now converted to `None` when the `Config`
+  object is loaded from the file.
+  On the other hand, if you try to explicitly set the value of a field to an empty string when initializing the `Beaker` client (e.g. `Beaker.from_env(default_org='')`)
+  you'll get a `ValueError`.
+
 ## [v1.6.2](https://github.com/allenai/beaker-py/releases/tag/v1.6.2) - 2022-06-27
 
 ### Fixed
