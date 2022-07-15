@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Fixed bug with checking job status. Sometimes a successful job would be marked as failed.
+
 ## [v1.6.4](https://github.com/allenai/beaker-py/releases/tag/v1.6.4) - 2022-07-14
 
 ### Fixed
