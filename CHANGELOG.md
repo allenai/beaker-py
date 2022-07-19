@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.6.6](https://github.com/allenai/beaker-py/releases/tag/v1.6.6) - 2022-07-19
+
 ### Fixed
 
 - Fixed bug where `Beaker.experiment.delete()` would fail if the result dataset was already
