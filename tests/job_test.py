@@ -72,5 +72,5 @@ def test_job_logs_since(client: Beaker, hello_world_job_id: str):
 2021-12-07T19:30:24.637693808Z
 2021-12-07T19:30:24.637696627Z For more examples and ideas, visit:
 2021-12-07T19:30:24.637699976Z  https://docs.docker.com/get-started/
-2021-12-07T19:30:24.637702728Z\n"""
+2021-12-07T19:30:24.637702728Z"""
     )
