@@ -539,7 +539,7 @@ class DatasetClient(ServiceClient):
         :raises DatasetNotFound: If the dataset can't be found.
         """
         dataset_id = self.resolve_dataset(dataset).id
-        return f"{self.config.agent_address}/ds/{self.url_quote(dataset_id)}/details"
+        return f"{self.config.agent_address}/ds/{self.url_quote(dataset_id)}"
 
     def _not_found_err_msg(self, dataset: Union[str, Dataset]) -> str:
         dataset = dataset if isinstance(dataset, str) else dataset.id

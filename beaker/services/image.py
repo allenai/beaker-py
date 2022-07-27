@@ -324,7 +324,7 @@ class ImageClient(ServiceClient):
         :raises ImageNotFound: If the image can't be found on Beaker.
         """
         image_id = self.resolve_image(image).id
-        return f"{self.config.agent_address}/im/{self.url_quote(image_id)}/details"
+        return f"{self.config.agent_address}/im/{self.url_quote(image_id)}"
 
     def _not_found_err_msg(self, image: Union[str, Image]) -> str:
         image = image if isinstance(image, str) else image.id
