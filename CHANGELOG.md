@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.6.8](https://github.com/allenai/beaker-py/releases/tag/v1.6.8) - 2022-07-27
+
 ### Changed
 
 - Shortened URLs for `dataset` and `image`.
