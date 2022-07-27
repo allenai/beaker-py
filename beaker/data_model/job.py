@@ -147,14 +147,10 @@ class Job(BaseModel):
         """
         from ..exceptions import JobFailedError
 
-        if self.status.current in {
-            CurrentJobStatus.failed,
-            CurrentJobStatus.exited,
-            CurrentJobStatus.canceled,
-        }:
+        if self.status.current in {CurrentJobStatus.failed, CurrentJobStatus.canceled}:
             raise JobFailedError(f"Job '{self.id}' {self.status.current}")
         elif (
-            self.status.current in CurrentJobStatus.finalized
+            self.status.current in {CurrentJobStatus.finalized, CurrentJobStatus.exited}
             and self.status.exit_code is not None
             and self.status.exit_code > 0
         ):

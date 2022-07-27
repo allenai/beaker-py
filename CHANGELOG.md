@@ -3,9 +3,40 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) with one exception: minor yet potentially breaking changes to the data model that are made to maintain
+compatibility with the Beaker server and not necessarily given new major releases. We often
+use patch releases for compatibility fixes instead.
 
 ## Unreleased
+
+### Changed
+
+- Shortened URLs for `dataset` and `image`.
+
+## [v1.6.7](https://github.com/allenai/beaker-py/releases/tag/v1.6.7) - 2022-07-20
+
+### Fixed
+
+- Fixed a bug in `Beaker.(job|experiment).follow()` where some final log lines might not be yielded before the method returns.
+
+## [v1.6.6](https://github.com/allenai/beaker-py/releases/tag/v1.6.6) - 2022-07-19
+
+### Fixed
+
+- Fixed bug where `Beaker.experiment.delete()` would fail if the result dataset was already
+  deleted.
+
+## [v1.6.5](https://github.com/allenai/beaker-py/releases/tag/v1.6.5) - 2022-07-15
+
+### Fixed
+
+- Fixed bug with checking job status. Sometimes a successful job would be marked as failed.
+
+## [v1.6.4](https://github.com/allenai/beaker-py/releases/tag/v1.6.4) - 2022-07-14
+
+### Fixed
+
+- Removed outdated field `owner` from `Experiment`, `Task`, and `Dataset`.
 
 ## [v1.6.3](https://github.com/allenai/beaker-py/releases/tag/v1.6.3) - 2022-07-05
 

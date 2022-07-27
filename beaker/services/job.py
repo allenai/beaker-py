@@ -392,11 +392,9 @@ class JobClient(ServiceClient):
 
         start = time.monotonic()
         last_timestamp: Optional[str] = None
-        updated_job: Job
-        while True:
-            updated_job = self.get(job.id if isinstance(job, Job) else job)
 
-            # Pull and yield log lines.
+        def pull_logs_since(updated_job: Job):
+            nonlocal last_timestamp
             buffer = b""
             for chunk in self.logs(updated_job, quiet=True, since=last_timestamp):
                 lines = (buffer + chunk).splitlines(keepends=True)
@@ -418,17 +416,31 @@ class JobClient(ServiceClient):
                 if timestamp is not None:
                     last_timestamp = timestamp
 
+        updated_job: Job
+        while True:
+            updated_job = self.get(job.id if isinstance(job, Job) else job)
+
+            # Pull and yield log lines.
+            for line in pull_logs_since(updated_job):
+                yield line
+
             # Check status of job, finish if job is no-longer running.
             if updated_job.is_done:
-                if strict:
-                    updated_job.check()
-                return updated_job
+                break
 
             # Check timeout if we're still waiting for job to complete.
             if timeout is not None and time.monotonic() - start >= timeout:
                 raise JobTimeoutError(updated_job.id)
 
             time.sleep(1.0)
+
+        for line in pull_logs_since(updated_job):
+            yield line
+
+        if strict:
+            updated_job.check()
+
+        return updated_job
 
     def _as_completed(
         self,
