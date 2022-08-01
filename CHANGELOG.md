@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.6.9](https://github.com/allenai/beaker-py/releases/tag/v1.6.9) - 2022-08-01
+
 ### Fixed
 
 - Fixed a bug in `Beaker.group.create()` where the `description` argument would be ignored.
