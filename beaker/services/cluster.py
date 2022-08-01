@@ -147,7 +147,7 @@ class ClusterClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        org: Organization = self.resolve_org(org)
+        org = self.resolve_org(org)
         return [
             Cluster.from_json(d)
             for d in self.request(
@@ -187,7 +187,7 @@ class ClusterClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        cluster: Cluster = self.resolve_cluster(cluster)
+        cluster = self.resolve_cluster(cluster)
         nodes = self.nodes(cluster)
 
         running_jobs = 0
@@ -218,33 +218,39 @@ class ClusterClient(ServiceClient):
             cluster=cluster,
             running_jobs=running_jobs,
             queued_jobs=queued_jobs,
-            nodes=[
-                NodeUtilization(
-                    id=node.id,
-                    hostname=node.hostname,
-                    limits=node.limits,
-                    running_jobs=node_to_util[node.id]["running_jobs"],
-                    used=NodeResources(
-                        gpu_count=None
-                        if node.limits.gpu_count is None
-                        else min(node.limits.gpu_count, node_to_util[node.id]["gpus_used"]),
-                        cpu_count=None
-                        if node.limits.cpu_count is None
-                        else min(node.limits.cpu_count, node_to_util[node.id]["cpus_used"]),
-                        gpu_type=node.limits.gpu_type,
-                    ),
-                    free=NodeResources(
-                        gpu_count=None
-                        if node.limits.gpu_count is None
-                        else max(0, node.limits.gpu_count - node_to_util[node.id]["gpus_used"]),
-                        cpu_count=None
-                        if node.limits.cpu_count is None
-                        else max(0, node.limits.cpu_count - node_to_util[node.id]["cpus_used"]),
-                        gpu_type=node.limits.gpu_type,
-                    ),
-                )
-                for node in nodes
-            ],
+            nodes=tuple(
+                [
+                    NodeUtilization(
+                        id=node.id,
+                        hostname=node.hostname,
+                        limits=node.limits,
+                        running_jobs=int(node_to_util[node.id]["running_jobs"]),
+                        used=NodeResources(
+                            gpu_count=None
+                            if node.limits.gpu_count is None
+                            else int(
+                                min(node.limits.gpu_count, node_to_util[node.id]["gpus_used"])
+                            ),
+                            cpu_count=None
+                            if node.limits.cpu_count is None
+                            else min(node.limits.cpu_count, node_to_util[node.id]["cpus_used"]),
+                            gpu_type=node.limits.gpu_type,
+                        ),
+                        free=NodeResources(
+                            gpu_count=None
+                            if node.limits.gpu_count is None
+                            else int(
+                                max(0, node.limits.gpu_count - node_to_util[node.id]["gpus_used"])
+                            ),
+                            cpu_count=None
+                            if node.limits.cpu_count is None
+                            else max(0, node.limits.cpu_count - node_to_util[node.id]["cpus_used"]),
+                            gpu_type=node.limits.gpu_type,
+                        ),
+                    )
+                    for node in nodes
+                ]
+            ),
         )
 
     def filter_available(

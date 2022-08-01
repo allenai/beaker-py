@@ -50,7 +50,7 @@ class OrganizationClient(ServiceClient):
         :raises AccountNotFound: If the account doesn't exist.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        org: Organization = self.resolve_org(org)
+        org = self.resolve_org(org)
         account_name = account if isinstance(account, str) else account.name
         self.request(
             f"orgs/{self.url_quote(org.name)}/members/{account_name}",
@@ -75,7 +75,7 @@ class OrganizationClient(ServiceClient):
         :raises AccountNotFound: If the account doesn't exist or isn't a member of the org.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        org: Organization = self.resolve_org(org)
+        org = self.resolve_org(org)
         account_name = account if isinstance(account, str) else account.name
         return OrganizationMember.from_json(
             self.request(
@@ -97,7 +97,7 @@ class OrganizationClient(ServiceClient):
             :data:`Beaker.config.default_org <beaker.Config.default_org>` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        org: Organization = self.resolve_org(org)
+        org = self.resolve_org(org)
         return [
             Account.from_json(d)
             for d in self.request(
@@ -122,7 +122,7 @@ class OrganizationClient(ServiceClient):
             :data:`Beaker.config.default_org <beaker.Config.default_org>` are set.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        org: Organization = self.resolve_org(org)
+        org = self.resolve_org(org)
         account_name = account if isinstance(account, str) else account.name
         self.request(
             f"orgs/{self.url_quote(org.name)}/members/{account_name}",

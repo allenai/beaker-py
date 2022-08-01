@@ -48,7 +48,10 @@ class ExperimentClient(ServiceClient):
             raise
 
     def create(
-        self, name: str, spec: Union[ExperimentSpec, PathOrStr], workspace: Optional[str] = None
+        self,
+        name: str,
+        spec: Union[ExperimentSpec, PathOrStr],
+        workspace: Optional[Union[Workspace, str]] = None,
     ) -> Experiment:
         """
         Create a new Beaker experiment with the given ``spec``.
@@ -74,7 +77,7 @@ class ExperimentClient(ServiceClient):
         else:
             spec = ExperimentSpec.from_file(spec)
             json_spec = spec.to_json()
-        workspace: Workspace = self.resolve_workspace(workspace)
+        workspace = self.resolve_workspace(workspace)
         self._validate_spec(spec, workspace)
         experiment_data = self.request(
             f"workspaces/{workspace.id}/experiments",
@@ -149,7 +152,7 @@ class ExperimentClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        experiment: Experiment = self.resolve_experiment(experiment)
+        experiment = self.resolve_experiment(experiment)
         if delete_results_datasets:
             for task in self.tasks(experiment):
                 for job in task.jobs:

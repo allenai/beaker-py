@@ -226,7 +226,7 @@ class Beaker:
 
         """
         current = self._session
-        session: requests.Session = session or self._make_session()
+        session = session or self._make_session()
         try:
             self._session = session
             yield None

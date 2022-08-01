@@ -46,7 +46,7 @@ class GroupClient(ServiceClient):
         name: str,
         *experiments: Union[str, Experiment],
         description: Optional[str] = None,
-        workspace: Optional[str] = None,
+        workspace: Optional[Union[Workspace, str]] = None,
     ) -> Group:
         """
         :param name: The name to assign the group.
@@ -64,7 +64,7 @@ class GroupClient(ServiceClient):
         :raises HTTPError: Any other HTTP exception that can occur.
         """
         self.validate_beaker_name(name)
-        workspace: Workspace = self.resolve_workspace(workspace)
+        workspace = self.resolve_workspace(workspace)
         exp_ids: List[str] = list(
             set([self.resolve_experiment(experiment).id for experiment in experiments])
         )
@@ -73,7 +73,7 @@ class GroupClient(ServiceClient):
             method="POST",
             data=GroupSpec(
                 name=name,
-                descriptio=description,
+                description=description,
                 workspace=workspace.full_name,
                 experiments=exp_ids,
             ),

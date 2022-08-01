@@ -24,7 +24,7 @@ class SecretClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace: Workspace = self.resolve_workspace(workspace, read_only_ok=True)
+        workspace = self.resolve_workspace(workspace, read_only_ok=True)
         return Secret.from_json(
             self.request(
                 f"workspaces/{workspace.id}/secrets/{self.url_quote(secret)}",
@@ -49,7 +49,7 @@ class SecretClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace: Workspace = self.resolve_workspace(workspace, read_only_ok=True)
+        workspace = self.resolve_workspace(workspace, read_only_ok=True)
         name = secret.name if isinstance(secret, Secret) else secret
         return self.request(
             f"workspaces/{workspace.id}/secrets/{self.url_quote(name)}/value",
@@ -72,7 +72,7 @@ class SecretClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace: Workspace = self.resolve_workspace(workspace)
+        workspace = self.resolve_workspace(workspace)
         return Secret.from_json(
             self.request(
                 f"workspaces/{workspace.id}/secrets/{self.url_quote(name)}/value",
@@ -95,7 +95,7 @@ class SecretClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        workspace: Workspace = self.resolve_workspace(workspace)
+        workspace = self.resolve_workspace(workspace)
         name = secret.name if isinstance(secret, Secret) else secret
         return self.request(
             f"workspaces/{workspace.id}/secrets/{self.url_quote(name)}",

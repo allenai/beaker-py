@@ -99,7 +99,7 @@ def test_snake_case_vs_lower_camel_case():
         assert x.host_path == "/tmp/foo"
         x.host_path = "/tmp/bar"
         assert str(x) == "beaker=None host_path='/tmp/bar' result=None url=None secret=None"
-        x.to_json() == {"hostPath": "/tmp/bar"}
+        assert x.to_json() == {"hostPath": "/tmp/bar"}
 
 
 def test_digest_hashable():
