@@ -390,7 +390,9 @@ class TaskSpec(BaseModel, frozen=False):
             name=name,
             image=ImageSource(beaker=beaker_image, docker=docker_image),
             result=ResultSpec(path=result_path),
-            context=TaskContext(cluster=cluster, priority=priority),
+            context=TaskContext(
+                cluster=cluster, priority=None if priority is None else Priority(priority)
+            ),
             **kwargs,
         )
 

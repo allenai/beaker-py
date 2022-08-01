@@ -73,7 +73,7 @@ class GroupClient(ServiceClient):
             method="POST",
             data=GroupSpec(
                 name=name,
-                descriptio=description,
+                description=description,
                 workspace=workspace.full_name,
                 experiments=exp_ids,
             ),

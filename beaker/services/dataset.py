@@ -339,7 +339,7 @@ class DatasetClient(ServiceClient):
         size = int(size_str) if size_str else None
         return FileInfo(
             path=file_name,
-            digest=response.headers[self.HEADER_DIGEST],
+            digest=Digest(response.headers[self.HEADER_DIGEST]),
             updated=datetime.strptime(
                 response.headers[self.HEADER_LAST_MODIFIED], "%a, %d %b %Y %H:%M:%S %Z"
             ),
