@@ -197,7 +197,7 @@ class DatasetClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        dataset: Dataset = self.resolve_dataset(dataset)
+        dataset = self.resolve_dataset(dataset)
         if dataset.storage is None:
             # Might need to get dataset again if 'storage' hasn't been set yet.
             dataset = self.get(dataset.id)
@@ -213,7 +213,7 @@ class DatasetClient(ServiceClient):
             ).json()
         )
 
-        target: Path = Path(target or Path("."))
+        target = Path(target or Path("."))
         target.mkdir(exist_ok=True, parents=True)
 
         total_bytes_to_download: Optional[int] = None
@@ -293,7 +293,7 @@ class DatasetClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        dataset: Dataset = self.resolve_dataset(dataset, ensure_storage=True)
+        dataset = self.resolve_dataset(dataset, ensure_storage=True)
         assert dataset.storage is not None
 
         file_info = file if isinstance(file, FileInfo) else self.file_info(dataset, file)
@@ -326,7 +326,7 @@ class DatasetClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        dataset: Dataset = self.resolve_dataset(dataset, ensure_storage=True)
+        dataset = self.resolve_dataset(dataset, ensure_storage=True)
         assert dataset.storage is not None
         response = self.request(
             f"datasets/{dataset.storage.id}/files/{file_name}",
@@ -398,7 +398,7 @@ class DatasetClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        dataset: Dataset = self.resolve_dataset(dataset)
+        dataset = self.resolve_dataset(dataset)
         if dataset.committed is not None:
             raise DatasetWriteError(dataset.id)
 
@@ -478,7 +478,7 @@ class DatasetClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        dataset: Dataset = self.resolve_dataset(dataset)
+        dataset = self.resolve_dataset(dataset)
         if dataset.storage is None:
             # Might need to get dataset again if 'storage' hasn't been set yet.
             dataset = self.get(dataset.id)
@@ -558,7 +558,7 @@ class DatasetClient(ServiceClient):
         task_id: "TaskID",
         ignore_errors: bool = False,
     ) -> int:
-        source: Path = Path(source)
+        source = Path(source)
         assert dataset.storage is not None
         if ignore_errors and not source.exists():
             return 0

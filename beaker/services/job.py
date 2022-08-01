@@ -194,7 +194,7 @@ class JobClient(ServiceClient):
         :raises JobNotFound: If the job can't be found.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        job: Job = self.get(job.id if isinstance(job, Job) else job)
+        job = self.get(job.id if isinstance(job, Job) else job)
         if job.execution is None:
             return None
         else:

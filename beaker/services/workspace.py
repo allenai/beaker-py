@@ -226,7 +226,7 @@ class WorkspaceClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        org: Organization = self.resolve_org(org)
+        org = self.resolve_org(org)
         workspaces: List[Workspace] = []
         cursor: Optional[str] = None
         query: Dict[str, str] = {"org": org.id}

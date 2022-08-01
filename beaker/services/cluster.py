@@ -147,7 +147,7 @@ class ClusterClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        org: Organization = self.resolve_org(org)
+        org = self.resolve_org(org)
         return [
             Cluster.from_json(d)
             for d in self.request(
@@ -187,7 +187,7 @@ class ClusterClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
-        cluster: Cluster = self.resolve_cluster(cluster)
+        cluster = self.resolve_cluster(cluster)
         nodes = self.nodes(cluster)
 
         running_jobs = 0

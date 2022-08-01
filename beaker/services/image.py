@@ -49,7 +49,7 @@ class ImageClient(ServiceClient):
         self,
         name: str,
         image_tag: str,
-        workspace: Optional[str] = None,
+        workspace: Optional[Union[Workspace, str]] = None,
         description: Optional[str] = None,
         quiet: bool = False,
         commit: bool = True,
@@ -74,7 +74,7 @@ class ImageClient(ServiceClient):
 
         """
         self.validate_beaker_name(name)
-        workspace: Workspace = self.resolve_workspace(workspace)
+        workspace = self.resolve_workspace(workspace)
 
         # Get local Docker image object.
         image = self.docker.images.get(image_tag)
