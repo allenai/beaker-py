@@ -34,7 +34,7 @@ jobs:
           cache-prefix: ${{ env.CACHE_PREFIX }}
 
       - name: Setup Beaker
-        uses: allenai/setup-beaker@v1
+        uses: allenai/setup-beaker@v2
         with:
           token: ${{ secrets.BEAKER_TOKEN }}
           github_token: ${{ secrets.GH_SETUP_BEAKER_TOKEN }}
