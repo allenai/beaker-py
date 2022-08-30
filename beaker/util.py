@@ -1,8 +1,9 @@
+import re
 import time
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, TypeVar, Union
 
 from .aliases import PathOrStr
 
@@ -89,3 +90,14 @@ def format_since(since: Union[datetime, timedelta, str]) -> str:
         return f"{since.total_seconds()}s"
     else:
         return since
+
+
+TIMESTAMP_RE = re.compile(rb"^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+Z)(.*)$")
+
+
+def split_timestamp(s: bytes) -> Optional[str]:
+    match = TIMESTAMP_RE.match(s)
+    if match is not None:
+        return match.group(1).decode()
+    else:
+        return None

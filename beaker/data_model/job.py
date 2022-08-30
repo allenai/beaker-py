@@ -134,12 +134,7 @@ class Job(BaseModel):
 
     @property
     def is_done(self) -> bool:
-        return self.status.current in {
-            CurrentJobStatus.failed,
-            CurrentJobStatus.exited,
-            CurrentJobStatus.canceled,
-            CurrentJobStatus.finalized,
-        }
+        return self.status.current == CurrentJobStatus.finalized
 
     def check(self):
         """

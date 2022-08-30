@@ -561,6 +561,7 @@ class ExperimentClient(ServiceClient):
         task: Optional[Union[str, Task]] = None,
         timeout: Optional[float] = None,
         strict: bool = False,
+        include_timestamps: bool = True,
     ) -> Generator[bytes, None, Experiment]:
         """
         Follow an experiment live, creating a generator that produces log lines
@@ -586,6 +587,8 @@ class ExperimentClient(ServiceClient):
         :param timeout: Maximum amount of time to wait for (in seconds).
         :param strict: If ``True``, the exit code of the job will be checked, and a
             :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
+        :param include_timestamps: If ``True`` (the default) timestamps from the Beaker logs
+            will be included in the output.
 
         :raises ExperimentNotFound: If any experiment can't be found.
         :raises ValueError: The experiment has no tasks or jobs, or the experiment has multiple tasks but
@@ -624,7 +627,7 @@ class ExperimentClient(ServiceClient):
             time.sleep(2.0)
 
         assert job is not None  # for mypy
-        yield from self.beaker.job.follow(job, strict=strict)
+        yield from self.beaker.job.follow(job, strict=strict, include_timestamps=include_timestamps)
         return self.get(experiment.id if isinstance(experiment, Experiment) else experiment)
 
     def url(

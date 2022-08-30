@@ -1,6 +1,7 @@
 import time
+from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Set, Union
 
 from ..data_model import *
 from ..exceptions import *
@@ -341,7 +342,11 @@ class JobClient(ServiceClient):
         )
 
     def follow(
-        self, job: Union[str, Job], timeout: Optional[float] = None, strict: bool = False
+        self,
+        job: Union[str, Job],
+        timeout: Optional[float] = None,
+        strict: bool = False,
+        include_timestamps: bool = True,
     ) -> Generator[bytes, None, Job]:
         """
         Follow a job live, creating a generator that produces log lines (as bytes) from the job
@@ -364,6 +369,8 @@ class JobClient(ServiceClient):
         :param timeout: Maximum amount of time to follow job for (in seconds).
         :param strict: If ``True``, the exit code of each job will be checked, and a
             :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
+        :param include_timestamps: If ``True`` (the default) timestamps from the Beaker logs
+            will be included in the output.
 
         :raises JobNotFound: If any job can't be found.
         :raises JobTimeoutError: If the ``timeout`` expires.
@@ -387,14 +394,17 @@ class JobClient(ServiceClient):
         ...
 
         """
+        from ..util import split_timestamp
+
         if timeout is not None and timeout <= 0:
             raise ValueError("'timeout' must be a positive number")
 
         start = time.monotonic()
         last_timestamp: Optional[str] = None
+        lines_for_timestamp: Dict[str, Set[bytes]] = defaultdict(set)
 
         def pull_logs_since(updated_job: Job):
-            nonlocal last_timestamp
+            nonlocal last_timestamp, lines_for_timestamp
             buffer = b""
             for chunk in self.logs(updated_job, quiet=True, since=last_timestamp):
                 lines = (buffer + chunk).splitlines(keepends=True)
@@ -403,18 +413,19 @@ class JobClient(ServiceClient):
                 elif lines:
                     # Last line in chunk is not a complete line.
                     lines, buffer = lines[:-1], lines[-1]
-                timestamp: Optional[str] = None
                 for line in lines:
-                    timestamp_end = line.find(b"Z ")
-                    if timestamp_end > 0:
-                        timestamp = line[: timestamp_end + 1].decode()
-                    else:
-                        timestamp = None
-                    if last_timestamp is None or timestamp != last_timestamp:
-                        # Only yield new lines.
-                        yield line
-                if timestamp is not None:
-                    last_timestamp = timestamp
+                    timestamp = split_timestamp(line)
+                    # Yield new lines.
+                    if timestamp is not None and timestamp != last_timestamp:
+                        if include_timestamps:
+                            yield line
+                        else:
+                            yield line[len(timestamp) + 1 :]
+                        last_timestamp = timestamp
+                    elif timestamp is None and last_timestamp is not None:
+                        if line not in lines_for_timestamp[last_timestamp]:
+                            yield line
+                            lines_for_timestamp[last_timestamp].add(line)
 
         updated_job: Job
         while True:

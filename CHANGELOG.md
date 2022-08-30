@@ -9,6 +9,14 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added argument `include_timestamps: bool` to `Beaker.(job|experiment).follow()`.
+
+### Fixed
+
+- Fixed returning duplicate log lines from `Beaker.(job|experiment).follow()`.
+
 ## [v1.6.9](https://github.com/allenai/beaker-py/releases/tag/v1.6.9) - 2022-08-01
 
 ### Fixed
