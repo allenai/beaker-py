@@ -11,7 +11,7 @@ use patch releases for compatibility fixes instead.
 
 ### Fixed
 
-- Fixed bug with `Beaker.(job|experiment).follow()` where final line was returned.
+- Fixed bug with `Beaker.(job|experiment).follow()` where final line wasn't returned.
 
 ### Removed
 
