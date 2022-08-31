@@ -9,6 +9,14 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Fixed bug with `Beaker.(job|experiment).follow()` where final line was returned.
+
+### Removed
+
+- Removed deprecated `url` option for `DataMount`.
+
 ## [v1.7.0](https://github.com/allenai/beaker-py/releases/tag/v1.7.0) - 2022-08-30
 
 ### Added

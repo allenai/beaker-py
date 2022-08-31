@@ -403,8 +403,22 @@ class JobClient(ServiceClient):
         last_timestamp: Optional[str] = None
         lines_for_timestamp: Dict[str, Set[bytes]] = defaultdict(set)
 
-        def pull_logs_since(updated_job: Job):
+        def get_line_to_yield(line: bytes) -> Optional[bytes]:
             nonlocal last_timestamp, lines_for_timestamp
+            timestamp = split_timestamp(line)
+            if timestamp is not None and timestamp != last_timestamp:
+                last_timestamp = timestamp
+                if include_timestamps:
+                    return line
+                else:
+                    return line[len(timestamp) + 1 :]
+            elif timestamp is None and last_timestamp is not None:
+                if line not in lines_for_timestamp[last_timestamp]:
+                    lines_for_timestamp[last_timestamp].add(line)
+                    return line
+            return None
+
+        def pull_logs_since(updated_job: Job, final: bool = False):
             buffer = b""
             for chunk in self.logs(updated_job, quiet=True, since=last_timestamp):
                 lines = (buffer + chunk).splitlines(keepends=True)
@@ -414,18 +428,13 @@ class JobClient(ServiceClient):
                     # Last line in chunk is not a complete line.
                     lines, buffer = lines[:-1], lines[-1]
                 for line in lines:
-                    timestamp = split_timestamp(line)
-                    # Yield new lines.
-                    if timestamp is not None and timestamp != last_timestamp:
-                        if include_timestamps:
-                            yield line
-                        else:
-                            yield line[len(timestamp) + 1 :]
-                        last_timestamp = timestamp
-                    elif timestamp is None and last_timestamp is not None:
-                        if line not in lines_for_timestamp[last_timestamp]:
-                            yield line
-                            lines_for_timestamp[last_timestamp].add(line)
+                    line_to_yield = get_line_to_yield(line)
+                    if line_to_yield is not None:
+                        yield line_to_yield
+            if final and buffer:
+                line_to_yield = get_line_to_yield(buffer + b"\n")
+                if line_to_yield is not None:
+                    yield line_to_yield
 
         updated_job: Job
         while True:
@@ -445,7 +454,7 @@ class JobClient(ServiceClient):
 
             time.sleep(1.0)
 
-        for line in pull_logs_since(updated_job):
+        for line in pull_logs_since(updated_job, final=True):
             yield line
 
         if strict:
