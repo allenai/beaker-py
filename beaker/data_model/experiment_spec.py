@@ -102,12 +102,6 @@ class DataSource(BaseModel, frozen=False):
         completes successfully.
     """
 
-    url: Optional[str] = None
-    """
-    URL is a web location from which to download data.
-    Beaker currently supports S3 (``s3://``), GCS (``gs://``), and HTTP(S) (``https://``) URLs.
-    """
-
     secret: Optional[str] = None
     """
     Name of a secret within the experiment's workspace which will be mounted as a plain-text file.
