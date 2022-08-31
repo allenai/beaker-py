@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.7.1](https://github.com/allenai/beaker-py/releases/tag/v1.7.1) - 2022-08-31
+
 ### Fixed
 
 - Fixed bug with `Beaker.(job|experiment).follow()` where final line wasn't returned.
