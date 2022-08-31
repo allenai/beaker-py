@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Removed
+
+- Removed deprecated `url` option for `DataMount`.
+
 ## [v1.7.0](https://github.com/allenai/beaker-py/releases/tag/v1.7.0) - 2022-08-30
 
 ### Added
