@@ -9,13 +9,9 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
-### Changed
-
-- Increased the size of the connection pool
-
 ### Fixed
 
-- Fixed bug with `Beaker.(job|experiment).follow()` where final line was returned.
+- Fixed bug with `Beaker.(job|experiment).follow()` where final line wasn't returned.
 
 ### Removed
 
