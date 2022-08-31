@@ -3,4 +3,4 @@ packaging
 pydantic>=1.8.2,<1.10
 rich>=12.3,<12.6
 PyYAML
-docker>=5.0,<6.0
+docker>=5.0,<7.0
