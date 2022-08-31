@@ -201,7 +201,7 @@ class Beaker:
             backoff_factor=1,
             status_forcelist=self.RECOVERABLE_SERVER_ERROR_CODES,
         )
-        session.mount("https://", HTTPAdapter(max_retries=retries, pool_maxsize=os.cpu_count() * 2))
+        session.mount("https://", HTTPAdapter(max_retries=retries, pool_maxsize=(os.cpu_count() or 16) * 2))
         return session
 
     @contextmanager
