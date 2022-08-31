@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Fixed bug with `Beaker.(job|experiment).follow()` where final line was returned.
+
 ### Removed
 
 - Removed deprecated `url` option for `DataMount`.
