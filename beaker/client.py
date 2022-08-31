@@ -1,3 +1,4 @@
+import os
 from contextlib import contextmanager
 from typing import Generator, Optional, Tuple, Union
 
@@ -200,7 +201,7 @@ class Beaker:
             backoff_factor=1,
             status_forcelist=self.RECOVERABLE_SERVER_ERROR_CODES,
         )
-        session.mount("https://", HTTPAdapter(max_retries=retries))
+        session.mount("https://", HTTPAdapter(max_retries=retries, pool_maxsize=os.cpu_count() * 2))
         return session
 
     @contextmanager
