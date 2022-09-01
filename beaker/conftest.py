@@ -19,6 +19,8 @@ def doctest_fixtures(
     secret_name,
     group_name,
     hello_world_experiment_name,
+    squad_dataset_name,
+    tmp_path,
 ):
     doctest_namespace["beaker"] = client
     doctest_namespace["workspace_name"] = workspace_name
@@ -35,3 +37,5 @@ def doctest_fixtures(
     doctest_namespace["secret_name"] = secret_name
     doctest_namespace["group_name"] = group_name
     doctest_namespace["hello_world_experiment_name"] = hello_world_experiment_name
+    doctest_namespace["squad_dataset_name"] = squad_dataset_name
+    doctest_namespace["tmp_path"] = tmp_path

@@ -192,6 +192,12 @@ And download a dataset with :meth:`Beaker.dataset.fetch() <services.DatasetClien
 >>> beaker.dataset.fetch(dataset, target=download_path, quiet=True)
 <BLANKLINE>
 
+You can also download a single file using
+:meth:`Beaker.dataset.stream_file() <services.DatasetClient.stream_file>`:
+
+>>> contents = b"".join(beaker.dataset.stream_file(dataset, "docs/source/conf.py", quiet=True))
+<BLANKLINE>
+
 Secrets
 -------
 

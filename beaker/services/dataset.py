@@ -292,6 +292,14 @@ class DatasetClient(ServiceClient):
             bytes don't match the expected digest.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
+
+        :examples:
+
+        >>> total_bytes = 0
+        >>> with open(tmp_path / "squad-train.arrow", "wb") as f:
+        ...     for chunk in beaker.dataset.stream_file(squad_dataset_name, "squad-train.arrow", quiet=True):
+        ...         total_bytes += f.write(chunk)
+        <BLANKLINE>
         """
         dataset = self.resolve_dataset(dataset, ensure_storage=True)
         assert dataset.storage is not None
