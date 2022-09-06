@@ -9,6 +9,11 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Fixes an issue where a job that was canceled during initialization or provisioning might
+  not get marked as a failure.
+
 ## [v1.7.1](https://github.com/allenai/beaker-py/releases/tag/v1.7.1) - 2022-08-31
 
 ### Fixed
