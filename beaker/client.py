@@ -197,8 +197,12 @@ class Beaker:
     def _make_session(self) -> requests.Session:
         session = requests.Session()
         retries = Retry(
-            total=self.MAX_RETRIES,
-            backoff_factor=1,
+            total=self.MAX_RETRIES * 2,
+            connect=self.MAX_RETRIES,
+            read=self.MAX_RETRIES,
+            status=self.MAX_RETRIES,
+            other=self.MAX_RETRIES,
+            backoff_factor=0.5,
             status_forcelist=self.RECOVERABLE_SERVER_ERROR_CODES,
         )
         session.mount(
