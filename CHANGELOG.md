@@ -12,6 +12,8 @@ use patch releases for compatibility fixes instead.
 ### Fixed
 
 - 429 errors treated as recoverable.
+- Fixed an error with `Beaker.experiment.(wait_for|as_completed|follow)` that would
+  hang if an experiment's task was stopped before a job was created.
 
 ## [v1.7.2](https://github.com/allenai/beaker-py/releases/tag/v1.7.2) - 2022-09-06
 

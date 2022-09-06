@@ -365,6 +365,8 @@ class ExperimentClient(ServiceClient):
         :raises JobTimeoutError: If the ``timeout`` expires.
         :raises DuplicateExperimentError: If the same experiment is given as an argument more than once.
         :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
+        :raises TaskStoppedError: If ``strict=True`` and a task is stopped
+            before a corresponding job is initialized.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -422,6 +424,8 @@ class ExperimentClient(ServiceClient):
         :raises JobTimeoutError: If the ``timeout`` expires.
         :raises DuplicateExperimentError: If the same experiment is given as an argument more than once.
         :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
+        :raises TaskStoppedError: If ``strict=True`` and a task is stopped
+            before a corresponding job is initialized.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
@@ -441,8 +445,10 @@ class ExperimentClient(ServiceClient):
         incomplete_exps: Set[str] = set()
         # Keeps track of jobs that have been finalized.
         finalized_jobs: Set[str] = set()
+        # Keeps track of tasks that were stopped before a job was created.
+        stopped_tasks: Set[str] = set()
 
-        def completed_tasks(exp_id: str) -> int:
+        def num_completed_tasks(exp_id: str) -> int:
             return len(
                 [
                     job_id
@@ -451,11 +457,20 @@ class ExperimentClient(ServiceClient):
                 ]
             )
 
+        def num_stopped_tasks(exp_id: str) -> int:
+            return len(
+                [
+                    task_id
+                    for task_id in exp_to_task_to_job[exp_id].keys()
+                    if task_id in stopped_tasks
+                ]
+            )
+
         def total_tasks(exp_id: str) -> int:
             return len(exp_to_task_to_job[exp_id])
 
         def experiment_finalized(exp_id: str) -> bool:
-            return completed_tasks(exp_id) == total_tasks(exp_id)
+            return (num_stopped_tasks(exp_id) + num_completed_tasks(exp_id)) == total_tasks(exp_id)
 
         def complete_experiment(exp_id: str) -> Experiment:
             incomplete_exps.remove(exp_id)
@@ -482,6 +497,8 @@ class ExperimentClient(ServiceClient):
                     exp_to_task_to_job[exp_id][task.id] = (
                         None if latest_job is None else latest_job.id
                     )
+                    if not task.jobs and not task.schedulable:
+                        stopped_tasks.add(task.id)
 
                 # Add to progress tracker.
                 exp_to_progress_task[exp_id] = experiments_progress.add_task(
@@ -492,16 +509,21 @@ class ExperimentClient(ServiceClient):
             # Now wait for the incomplete experiments to finalize.
             while incomplete_exps:
                 # Collect (registered) incomplete jobs and also yield any experiments
-                # that have been finalized.
+                # that have been finalized or stopped.
                 incomplete_jobs: List[str] = []
                 for exp_id, task_to_job in exp_to_task_to_job.items():
-                    if not experiment_finalized(exp_id):
-                        for job_id in task_to_job.values():
-                            if job_id is not None and job_id not in finalized_jobs:
-                                incomplete_jobs.append(job_id)
-                    elif exp_id in incomplete_exps:
-                        # Experiment has just completed, yield it.
-                        yield complete_experiment(exp_id)
+                    if exp_id in incomplete_exps:
+                        if strict:
+                            for task_id in task_to_job:
+                                if task_id in stopped_tasks:
+                                    raise TaskStoppedError(task_id)
+                        if not experiment_finalized(exp_id):
+                            for task_id, job_id in task_to_job.items():
+                                if job_id is not None and job_id not in finalized_jobs:
+                                    incomplete_jobs.append(job_id)
+                        else:
+                            # Experiment has just completed, yield it.
+                            yield complete_experiment(exp_id)
 
                 # Check for timeout.
                 elapsed = time.monotonic() - start
@@ -548,12 +570,17 @@ class ExperimentClient(ServiceClient):
                         continue
 
                     for task in self.tasks(exp_id):
-                        if task_to_job[task.id] is not None or not task.jobs:
+                        if task_to_job[task.id] is not None:
                             continue
 
-                        latest_job = self._latest_job(task.jobs)
-                        assert latest_job is not None
-                        task_to_job[task.id] = latest_job.id
+                        if not task.jobs:
+                            if not task.schedulable:
+                                # Task was stopped before a job was created.
+                                stopped_tasks.add(task.id)
+                        else:
+                            latest_job = self._latest_job(task.jobs)
+                            assert latest_job is not None
+                            task_to_job[task.id] = latest_job.id
 
     def follow(
         self,
@@ -596,6 +623,8 @@ class ExperimentClient(ServiceClient):
         :raises TaskNotFound: If the given task doesn't exist.
         :raises JobTimeoutError: If the ``timeout`` expires.
         :raises JobFailedError: If ``strict=True`` and the task's job finishes with a non-zero exit code.
+        :raises TaskStoppedError: If ``strict=True`` and a task is stopped
+            before a corresponding job is initialized.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
 
@@ -619,7 +648,17 @@ class ExperimentClient(ServiceClient):
         start = time.monotonic()
         job: Optional[Job] = None
         while job is None:
-            job = self.latest_job(experiment, task=task)
+            actual_task = self._task(experiment, task=task)
+            if actual_task.jobs:
+                job = self.latest_job(experiment, task=actual_task)
+            elif not actual_task.schedulable:
+                if strict:
+                    raise TaskStoppedError(task)
+                else:
+                    return self.get(
+                        experiment.id if isinstance(experiment, Experiment) else experiment
+                    )
+
             if timeout is not None and time.monotonic() - start >= timeout:
                 raise JobTimeoutError(
                     "Job for task failed to initialize within '{timeout}' seconds"
@@ -682,19 +721,33 @@ class ExperimentClient(ServiceClient):
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises HTTPError: Any other HTTP exception that can occur.
         """
+        return self._latest_job(
+            self._task(experiment, task).jobs, ensure_finalized=ensure_finalized
+        )
+
+    def _task(
+        self, experiment: Union[str, Experiment], task: Optional[Union[str, Task]] = None
+    ) -> Task:
         tasks = list(self.tasks(experiment))
         exp_id = experiment if isinstance(experiment, str) else experiment.id
+
         if not tasks:
             raise ValueError(f"Experiment '{exp_id}' has no tasks")
-        elif len(tasks) > 1:
+        else:
             if task is None:
-                raise ValueError(f"'task' required since experiment '{exp_id}' has multiple tasks")
+                if len(tasks) == 1:
+                    return tasks[0]
+                else:
+                    raise ValueError(
+                        f"'task' required since experiment '{exp_id}' has multiple tasks"
+                    )
             else:
                 task_name_or_id = task.id if isinstance(task, Task) else task
                 tasks = [t for t in tasks if t.name == task_name_or_id or t.id == task_name_or_id]
-                if not tasks:
+                if tasks:
+                    return tasks[0]
+                else:
                     raise TaskNotFound(f"No task '{task_name_or_id}' in experiment '{exp_id}'")
-        return self._latest_job(tasks[0].jobs, ensure_finalized=ensure_finalized)
 
     def _not_found_err_msg(self, experiment: Union[str, Experiment]) -> str:
         experiment = experiment if isinstance(experiment, str) else experiment.id
