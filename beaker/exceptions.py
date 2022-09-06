@@ -173,6 +173,10 @@ class ChecksumFailedError(BeakerError):
     """
 
 
+class TaskStoppedError(BeakerError):
+    pass
+
+
 class JobFailedError(BeakerError):
     pass
 
