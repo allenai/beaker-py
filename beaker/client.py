@@ -55,7 +55,7 @@ class Beaker:
 
     """
 
-    RECOVERABLE_SERVER_ERROR_CODES = (502, 503, 504)
+    RECOVERABLE_SERVER_ERROR_CODES = (429, 502, 503, 504)
     MAX_RETRIES = 5
     API_VERSION = "v3"
 
@@ -202,7 +202,7 @@ class Beaker:
             read=self.MAX_RETRIES,
             status=self.MAX_RETRIES,
             other=self.MAX_RETRIES,
-            backoff_factor=0.5,
+            backoff_factor=1,
             status_forcelist=self.RECOVERABLE_SERVER_ERROR_CODES,
         )
         session.mount(
