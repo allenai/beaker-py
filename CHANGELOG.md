@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.7.4](https://github.com/allenai/beaker-py/releases/tag/v1.7.4) - 2022-09-07
+
 ### Fixed
 
 - 500 errors from server treated as recoverable.
