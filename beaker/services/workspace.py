@@ -21,7 +21,8 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace = workspace or self.config.default_workspace
         if workspace is None:
@@ -61,7 +62,8 @@ class WorkspaceClient(ServiceClient):
         :raises ValueError: If the workspace name is invalid.
         :raises WorkspaceConflict: If a workspace by that name already exists.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace_name = self.resolve_workspace_name(workspace)
         org, name = workspace_name.split("/", 1)
@@ -84,7 +86,8 @@ class WorkspaceClient(ServiceClient):
 
         :raises ValueError: If the workspace name is invalid.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         try:
             return self.get(workspace)
@@ -99,7 +102,8 @@ class WorkspaceClient(ServiceClient):
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         if workspace is None:  # could accidentally archive default workspace if None
             raise TypeError("Expected 'str', got 'NoneType'")
@@ -124,7 +128,8 @@ class WorkspaceClient(ServiceClient):
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         if workspace is None:  # could accidentally unarchive default workspace if None
             raise TypeError("Expected 'str', got 'NoneType'")
@@ -151,7 +156,8 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises ValueError: If the new name is invalid.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         self.validate_beaker_name(name)
         if workspace is None:  # could accidentally rename default workspace if None
@@ -186,7 +192,8 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace_name = self.resolve_workspace(workspace).full_name
         self.request(
@@ -224,7 +231,8 @@ class WorkspaceClient(ServiceClient):
             :data:`Beaker.config.default_org <beaker.Config.default_org>` are set.
         :raises AccountNotFound: If the author account doesn't exist.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         org = self.resolve_org(org)
         workspaces: List[Workspace] = []
@@ -278,7 +286,8 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
         images: List[Image] = []
@@ -327,7 +336,8 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
         experiments: List[Experiment] = []
@@ -380,7 +390,8 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
         datasets: List[Dataset] = []
@@ -426,7 +437,8 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
         return [
@@ -451,7 +463,8 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
         return [
@@ -478,7 +491,8 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
         return WorkspacePermissions.from_json(
@@ -511,7 +525,8 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         if auth not in set(Permission):
             raise ValueError(f"Authorization '{auth}' is invalid")
@@ -543,7 +558,8 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
         self.request(
@@ -569,7 +585,8 @@ class WorkspaceClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         account_ids = [
             account.id if isinstance(account, Account) else self.beaker.account.get(account).id

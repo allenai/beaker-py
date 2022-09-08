@@ -6,10 +6,11 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 import docker
 import requests
 
-from beaker.config import Config
-from beaker.data_model import *
-from beaker.exceptions import *
-from beaker.version import VERSION
+from ..config import Config
+from ..data_model import *
+from ..exceptions import *
+from ..util import retriable
+from ..version import VERSION
 
 if TYPE_CHECKING:
     from ..client import Beaker
@@ -84,15 +85,32 @@ class ServiceClient:
             try:
                 response.raise_for_status()
             except requests.exceptions.HTTPError:
+                # Try parsing error message from the response
+                msg: Optional[str] = None
                 if response.text:
                     try:
                         msg = json.loads(response.text)["message"]
-                        raise BeakerError(msg)
                     except (TypeError, KeyError, json.JSONDecodeError):
                         pass
-                raise
+
+                if (
+                    msg is not None
+                    and response.status_code is not None
+                    and 400 <= response.status_code < 500
+                ):
+                    # Raise a BeakerError if we're misusing the API (4xx error code).
+                    raise BeakerError(msg)
+                elif msg is not None:
+                    raise HTTPError(msg, response=response)
+                else:
+                    raise
 
             return response
+
+        if method in {"HEAD", "GET"}:
+            # We assume HEAD and GET calls won't modify state, so they're
+            # safe to retry for any recoverable error.
+            make_request = retriable()(make_request)
 
         if self.beaker._session is not None:
             return make_request(self.beaker._session)

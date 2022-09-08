@@ -9,6 +9,16 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `Beaker.dataset.get_file()`. Similar to `stream_file()`, but returns 
+  the entire bytes at once and is more robust since it will retry internally when HTTP and timeout errors occur.
+
+### Fixed
+
+- Made most methods more robust to all recoverable errors that can occur while contacting the Beaker server,
+  such HTTP, timeout, connection, and SSL errors.
+
 ## [v1.7.4](https://github.com/allenai/beaker-py/releases/tag/v1.7.4) - 2022-09-07
 
 ### Fixed

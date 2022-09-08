@@ -20,7 +20,9 @@ class OrganizationClient(ServiceClient):
         :raises OrganizationNotFound: If the organization doesn't exist.
         :raises OrganizationNotSet: If neither ``org`` nor
             :data:`Beaker.config.default_org <beaker.Config.default_org>` are set.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         org = org or self.config.default_org
         if org is None:
@@ -48,7 +50,9 @@ class OrganizationClient(ServiceClient):
         :raises OrganizationNotSet: If neither ``org`` nor
             :data:`Beaker.config.default_org <beaker.Config.default_org>` are set.
         :raises AccountNotFound: If the account doesn't exist.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         org = self.resolve_org(org)
         account_name = account if isinstance(account, str) else account.name
@@ -73,7 +77,9 @@ class OrganizationClient(ServiceClient):
         :raises OrganizationNotSet: If neither ``org`` nor
             :data:`Beaker.config.default_org <beaker.Config.default_org>` are set.
         :raises AccountNotFound: If the account doesn't exist or isn't a member of the org.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         org = self.resolve_org(org)
         account_name = account if isinstance(account, str) else account.name
@@ -95,7 +101,9 @@ class OrganizationClient(ServiceClient):
         :raises OrganizationNotFound: If the organization doesn't exist.
         :raises OrganizationNotSet: If neither ``org`` nor
             :data:`Beaker.config.default_org <beaker.Config.default_org>` are set.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         org = self.resolve_org(org)
         return [
@@ -120,7 +128,9 @@ class OrganizationClient(ServiceClient):
         :raises OrganizationNotFound: If the organization doesn't exist.
         :raises OrganizationNotSet: If neither ``org`` nor
             :data:`Beaker.config.default_org <beaker.Config.default_org>` are set.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         org = self.resolve_org(org)
         account_name = account if isinstance(account, str) else account.name

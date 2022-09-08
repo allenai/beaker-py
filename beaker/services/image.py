@@ -22,7 +22,8 @@ class ImageClient(ServiceClient):
         :param image: The Beaker image ID or name.
 
         :raises ImageNotFound: If the image can't be found on Beaker.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
 
         def _get(id: str) -> Image:
@@ -70,7 +71,8 @@ class ImageClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
 
         """
         self.validate_beaker_name(name)
@@ -176,7 +178,8 @@ class ImageClient(ServiceClient):
 
         :raises ImageNotFound: If the image can't be found on Beaker.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         image_id = self.resolve_image(image).id
         return Image.from_json(
@@ -196,7 +199,8 @@ class ImageClient(ServiceClient):
 
         :raises ImageNotFound: If the image can't be found on Beaker.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         image_id = self.resolve_image(image).id
         self.request(
@@ -216,7 +220,8 @@ class ImageClient(ServiceClient):
         :raises ValueError: If the image name is invalid.
         :raises ImageConflict: If an image with the given name already exists.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         self.validate_beaker_name(name)
         image_id = self.resolve_image(image).id
@@ -242,7 +247,8 @@ class ImageClient(ServiceClient):
 
         :raises ImageNotFound: If the image can't be found on Beaker.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         image_id = self.resolve_image(image).id
         repo = ImageRepo.from_json(self.request(f"images/{image_id}/repository").json())

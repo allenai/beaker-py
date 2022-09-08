@@ -10,6 +10,7 @@ Exceptions that can be raised by the :class:`~beaker.Beaker` client.
 from pydantic import ValidationError  # noqa: F401, re-imported here for convenience
 from requests.exceptions import (  # noqa: F401, re-imported here for convenience
     HTTPError,
+    RequestException,
 )
 
 ValidationError.__doc__ = """
