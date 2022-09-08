@@ -22,7 +22,8 @@ class SecretClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace = self.resolve_workspace(workspace, read_only_ok=True)
         return Secret.from_json(
@@ -47,7 +48,8 @@ class SecretClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace = self.resolve_workspace(workspace, read_only_ok=True)
         name = secret.name if isinstance(secret, Secret) else secret
@@ -70,7 +72,8 @@ class SecretClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace = self.resolve_workspace(workspace)
         return Secret.from_json(
@@ -93,7 +96,8 @@ class SecretClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         workspace = self.resolve_workspace(workspace)
         name = secret.name if isinstance(secret, Secret) else secret

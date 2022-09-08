@@ -15,7 +15,9 @@ class NodeClient(ServiceClient):
         :param node_id: The ID of the node.
 
         :raises NodeNotFound: If the node doesn't exist.
-        :raises HTTPError: Any other HTTP error that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         return Node.from_json(
             self.request(

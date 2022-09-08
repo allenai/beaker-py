@@ -22,7 +22,9 @@ class AccountClient(ServiceClient):
         """
         Check who you are authenticated as.
 
-        :raises HTTPError: Any unexpected HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         return Account.from_json(self.request("user").json())
 
@@ -30,7 +32,9 @@ class AccountClient(ServiceClient):
         """
         List all organizations you are a member of.
 
-        :raises HTTPError: Any unexpected HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         return [Organization.from_json(d) for d in self.request("user/orgs").json()["data"]]
 
@@ -41,7 +45,9 @@ class AccountClient(ServiceClient):
         :param account: The account name or ID.
 
         :raises AccountNotFound: If the account doesn't exist.
-        :raises HTTPError: Any unexpected HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         return Account.from_json(
             self.request(

@@ -57,6 +57,9 @@ class Beaker:
 
     RECOVERABLE_SERVER_ERROR_CODES = (429, 500, 502, 503, 504)
     MAX_RETRIES = 5
+    BACKOFF_FACTOR = 1
+    BACKOFF_MAX = 120
+
     API_VERSION = "v3"
 
     def __init__(
@@ -144,7 +147,7 @@ class Beaker:
                         f"https://github.com/allenai/beaker-py/releases/tag/v{latest_version}\n",
                         UserWarning,
                     )
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+        except Exception:
             pass
 
     @classmethod
@@ -199,10 +202,8 @@ class Beaker:
         retries = Retry(
             total=self.MAX_RETRIES * 2,
             connect=self.MAX_RETRIES,
-            read=self.MAX_RETRIES,
             status=self.MAX_RETRIES,
-            other=self.MAX_RETRIES,
-            backoff_factor=1,
+            backoff_factor=self.BACKOFF_FACTOR,
             status_forcelist=self.RECOVERABLE_SERVER_ERROR_CODES,
         )
         session.mount(

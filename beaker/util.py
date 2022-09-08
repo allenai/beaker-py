@@ -2,10 +2,12 @@ import re
 import time
 from collections import OrderedDict
 from datetime import datetime, timedelta
+from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, TypeVar, Union
 
 from .aliases import PathOrStr
+from .exceptions import RequestException
 
 if TYPE_CHECKING:
     from .services.service_client import ServiceClient
@@ -101,3 +103,31 @@ def split_timestamp(s: bytes) -> Optional[str]:
         return match.group(1).decode()
     else:
         return None
+
+
+def retriable(on_failure: Optional[Callable[..., None]] = None):
+    """
+    Use to make a service client method more robust by allowing retries.
+    """
+
+    def parametrize_decorator(func: Callable[..., T]):
+        @wraps(func)
+        def retriable_method(*args, **kwargs) -> T:
+            from .client import Beaker
+
+            retries = 0
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except RequestException:
+                    if retries < Beaker.MAX_RETRIES:
+                        if on_failure is not None:
+                            on_failure()
+                        time.sleep(min(Beaker.BACKOFF_FACTOR * (2**retries), Beaker.BACKOFF_MAX))
+                        retries += 1
+                    else:
+                        raise
+
+        return retriable_method
+
+    return parametrize_decorator

@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Deque, Dict, Generator, Optional, Tuple, Union
@@ -6,10 +7,11 @@ from typing import TYPE_CHECKING, Deque, Dict, Generator, Optional, Tuple, Union
 from ..aliases import PathOrStr
 from ..data_model import *
 from ..exceptions import *
-from ..util import path_is_relative_to
+from ..util import path_is_relative_to, retriable
 from .service_client import ServiceClient
 
 if TYPE_CHECKING:
+    from requests import Response
     from rich.progress import Progress, TaskID
 
 
@@ -34,7 +36,8 @@ class DatasetClient(ServiceClient):
         :param dataset: The dataset ID or name.
 
         :raises DatasetNotFound: If the dataset can't be found.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
 
         """
 
@@ -102,7 +105,8 @@ class DatasetClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         self.validate_beaker_name(name)
         workspace_id = self.resolve_workspace(workspace).id
@@ -157,7 +161,8 @@ class DatasetClient(ServiceClient):
 
         :raises DatasetNotFound: If the dataset can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         dataset_id = self.resolve_dataset(dataset).id
         return Dataset.from_json(
@@ -195,7 +200,8 @@ class DatasetClient(ServiceClient):
         :raises ChecksumFailedError: If ``validate_checksum=True`` and the digest of one of the
             downloaded files doesn't match the expected digest.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         dataset = self.resolve_dataset(dataset)
         if dataset.storage is None:
@@ -268,20 +274,21 @@ class DatasetClient(ServiceClient):
         file: Union[str, FileInfo],
         offset: int = 0,
         length: int = -1,
-        max_retries: int = 5,
         quiet: bool = False,
         validate_checksum: bool = True,
     ) -> Generator[bytes, None, None]:
         """
         Stream download the contents of a single file from a dataset.
 
+        .. seealso::
+            :meth:`get_file()` is similar but returns the entire contents at once instead of
+            a generator over the contents.
+
         :param dataset: The dataset ID, name, or object.
         :param file: The path of the file within the dataset or the corresponding
             :class:`~beaker.data_model.dataset.FileInfo` object.
         :param offset: Offset to start from, in bytes.
         :param length: Number of bytes to read.
-        :param max_retries: Number of times to restart the download when HTTP errors occur.
-            Errors can be expected for very large files.
         :param quiet: If ``True``, progress won't be displayed.
         :param validate_checksum: If ``True``, the checksum of the downloaded bytes will be verified.
 
@@ -291,7 +298,8 @@ class DatasetClient(ServiceClient):
         :raises ChecksumFailedError: If ``validate_checksum=True`` and the digest of the downloaded
             bytes don't match the expected digest.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
 
         :examples:
 
@@ -315,11 +323,63 @@ class DatasetClient(ServiceClient):
                 file_info,
                 offset=offset,
                 length=length,
-                max_retries=max_retries,
                 validate_checksum=validate_checksum,
             ):
                 progress.update(task_id, advance=len(bytes_chunk))
                 yield bytes_chunk
+
+    def get_file(
+        self,
+        dataset: Union[str, Dataset],
+        file: Union[str, FileInfo],
+        offset: int = 0,
+        length: int = -1,
+        quiet: bool = False,
+        validate_checksum: bool = True,
+    ) -> bytes:
+        """
+        Download the contents of a single file from a dataset.
+
+        .. seealso::
+            :meth:`stream_file()` is similar but returns a generator over the contents.
+
+        :param dataset: The dataset ID, name, or object.
+        :param file: The path of the file within the dataset or the corresponding
+            :class:`~beaker.data_model.dataset.FileInfo` object.
+        :param offset: Offset to start from, in bytes.
+        :param length: Number of bytes to read.
+        :param quiet: If ``True``, progress won't be displayed.
+        :param validate_checksum: If ``True``, the checksum of the downloaded bytes will be verified.
+
+        :raises DatasetNotFound: If the dataset can't be found.
+        :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
+        :raises FileNotFoundError: If the file doesn't exist in the dataset.
+        :raises ChecksumFailedError: If ``validate_checksum=True`` and the digest of the downloaded
+            bytes don't match the expected digest.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+
+        :examples:
+
+        >>> contents = beaker.dataset.get_file(squad_dataset_name, "squad-train.arrow", quiet=True)
+        <BLANKLINE>
+        """
+
+        @retriable()
+        def _get_file() -> bytes:
+            return b"".join(
+                self.stream_file(
+                    dataset,
+                    file,
+                    offset=offset,
+                    length=length,
+                    quiet=quiet,
+                    validate_checksum=validate_checksum,
+                )
+            )
+
+        return _get_file()
 
     def file_info(self, dataset: Union[str, Dataset], file_name: str) -> FileInfo:
         """
@@ -332,7 +392,8 @@ class DatasetClient(ServiceClient):
         :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
         :raises FileNotFoundError: If the file doesn't exist in the dataset.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         dataset = self.resolve_dataset(dataset, ensure_storage=True)
         assert dataset.storage is not None
@@ -362,7 +423,8 @@ class DatasetClient(ServiceClient):
 
         :raises DatasetNotFound: If the dataset can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         dataset_id = self.resolve_dataset(dataset).id
         self.request(
@@ -404,7 +466,8 @@ class DatasetClient(ServiceClient):
         :raises UnexpectedEOFError: If a source is an empty file, or if a source is a directory and
             the contents of one of the directory's files changes while creating the dataset.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         dataset = self.resolve_dataset(dataset)
         if dataset.committed is not None:
@@ -484,7 +547,8 @@ class DatasetClient(ServiceClient):
         :raises DatasetNotFound: If the dataset can't be found.
         :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         dataset = self.resolve_dataset(dataset)
         if dataset.storage is None:
@@ -503,7 +567,8 @@ class DatasetClient(ServiceClient):
 
         :raises DatasetNotFound: If the dataset can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         total = 0
         for file_info in self.ls(dataset):
@@ -522,7 +587,8 @@ class DatasetClient(ServiceClient):
         :raises DatasetNotFound: If the dataset can't be found.
         :raises DatasetConflict: If a dataset by that name already exists.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         self.validate_beaker_name(name)
         dataset_id = self.resolve_dataset(dataset).id
@@ -579,30 +645,42 @@ class DatasetClient(ServiceClient):
             digest: Optional[str] = None
 
             if size > self.REQUEST_SIZE_LIMIT:
-                response = self.request(
-                    "uploads",
-                    method="POST",
-                    token=dataset.storage.token,
-                    base_url=dataset.storage.address,
-                )
-                upload_id = response.headers[self.HEADER_UPLOAD_ID]
+
+                @retriable()
+                def get_upload_id() -> str:
+                    assert dataset.storage is not None  # for mypy
+                    response = self.request(
+                        "uploads",
+                        method="POST",
+                        token=dataset.storage.token,
+                        base_url=dataset.storage.address,
+                    )
+                    return response.headers[self.HEADER_UPLOAD_ID]
+
+                upload_id = get_upload_id()
 
                 written = 0
                 while written < size:
                     chunk = source_file_wrapper.read(self.REQUEST_SIZE_LIMIT)
                     if not chunk:
                         break
-                    response = self.request(
-                        f"uploads/{upload_id}",
-                        method="PATCH",
-                        data=chunk,
-                        token=dataset.storage.token,
-                        base_url=dataset.storage.address,
-                        headers={
-                            self.HEADER_UPLOAD_LENGTH: str(size),
-                            self.HEADER_UPLOAD_OFFSET: str(written),
-                        },
-                    )
+
+                    @retriable()
+                    def upload() -> "Response":
+                        assert dataset.storage is not None  # for mypy
+                        return self.request(
+                            f"uploads/{upload_id}",
+                            method="PATCH",
+                            data=chunk,
+                            token=dataset.storage.token,
+                            base_url=dataset.storage.address,
+                            headers={
+                                self.HEADER_UPLOAD_LENGTH: str(size),
+                                self.HEADER_UPLOAD_OFFSET: str(written),
+                            },
+                        )
+
+                    response = upload()
                     written += len(chunk)
 
                     digest = response.headers.get(self.HEADER_DIGEST)
@@ -614,19 +692,24 @@ class DatasetClient(ServiceClient):
 
                 body = None
 
-            self.request(
-                f"datasets/{dataset.storage.id}/files/{str(target)}",
-                method="PUT",
-                data=body,
-                token=dataset.storage.token,
-                base_url=dataset.storage.address,
-                headers=None if not digest else {self.HEADER_DIGEST: digest},
-                stream=body is not None,
-                exceptions_for_status={
-                    403: DatasetWriteError(dataset.id),
-                    404: DatasetNotFound(self._not_found_err_msg(dataset.id)),
-                },
-            )
+            @retriable()
+            def finalize():
+                assert dataset.storage is not None  # for mypy
+                self.request(
+                    f"datasets/{dataset.storage.id}/files/{str(target)}",
+                    method="PUT",
+                    data=body,
+                    token=dataset.storage.token,
+                    base_url=dataset.storage.address,
+                    headers=None if not digest else {self.HEADER_DIGEST: digest},
+                    stream=body is not None,
+                    exceptions_for_status={
+                        403: DatasetWriteError(dataset.id),
+                        404: DatasetNotFound(self._not_found_err_msg(dataset.id)),
+                    },
+                )
+
+            finalize()
 
             return source_file_wrapper.total_read
 
@@ -661,12 +744,11 @@ class DatasetClient(ServiceClient):
         chunk_size: int = 1024,
         offset: int = 0,
         length: int = -1,
-        max_retries: int = 5,
         validate_checksum: bool = True,
     ) -> Generator[bytes, None, None]:
         import hashlib
 
-        def stream_file(offset: int, length: int) -> Generator[bytes, None, None]:
+        def stream_file() -> Generator[bytes, None, None]:
             headers = {}
             if offset > 0 and length > 0:
                 headers["Range"] = f"bytes={offset}-{offset + length - 1}"
@@ -688,16 +770,20 @@ class DatasetClient(ServiceClient):
         retries = 0
         while True:
             try:
-                for chunk in stream_file(offset, length):
+                for chunk in stream_file():
                     offset += len(chunk)
                     if sha256_hash is not None:
                         sha256_hash.update(chunk)
                     yield chunk
                 break
-            except HTTPError:
-                if retries >= max_retries:
+            except RequestException:
+                if retries < self.beaker.MAX_RETRIES:
+                    time.sleep(
+                        min(self.beaker.BACKOFF_FACTOR * (2**retries), self.beaker.BACKOFF_MAX)
+                    )
+                    retries += 1
+                else:
                     raise
-                retries += 1
 
         # Validate digest.
         if sha256_hash is not None:
@@ -722,15 +808,26 @@ class DatasetClient(ServiceClient):
         total_bytes = 0
         target_dir = target_path.parent
         target_dir.mkdir(exist_ok=True, parents=True)
-        tmp_target = tempfile.NamedTemporaryFile("w+b", dir=target_dir, delete=False, suffix=".tmp")
-        try:
-            for chunk in self._stream_file(storage, file_info, validate_checksum=validate_checksum):
-                total_bytes += len(chunk)
-                tmp_target.write(chunk)
-                progress.update(task_id, advance=len(chunk))
-            os.replace(tmp_target.name, target_path)
-        finally:
-            tmp_target.close()
-            if os.path.exists(tmp_target.name):
-                os.remove(tmp_target.name)
-        return total_bytes
+
+        @retriable(on_failure=lambda: progress.advance(task_id, -total_bytes))
+        def download() -> int:
+            nonlocal total_bytes
+
+            tmp_target = tempfile.NamedTemporaryFile(
+                "w+b", dir=target_dir, delete=False, suffix=".tmp"
+            )
+            try:
+                for chunk in self._stream_file(
+                    storage, file_info, validate_checksum=validate_checksum
+                ):
+                    total_bytes += len(chunk)
+                    tmp_target.write(chunk)
+                    progress.update(task_id, advance=len(chunk))
+                os.replace(tmp_target.name, target_path)
+            finally:
+                tmp_target.close()
+                if os.path.exists(tmp_target.name):
+                    os.remove(tmp_target.name)
+            return total_bytes
+
+        return download()

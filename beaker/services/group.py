@@ -18,7 +18,8 @@ class GroupClient(ServiceClient):
 
         :raises GroupNotFound: If the group can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
 
         def _get(id: str) -> Group:
@@ -61,7 +62,8 @@ class GroupClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         self.validate_beaker_name(name)
         workspace = self.resolve_workspace(workspace)
@@ -89,7 +91,8 @@ class GroupClient(ServiceClient):
 
         :raises GroupNotFound: If the group can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         group_id = self.resolve_group(group).id
         self.request(
@@ -109,7 +112,8 @@ class GroupClient(ServiceClient):
         :raises GroupNotFound: If the group can't be found.
         :raises GroupConflict: If a group by that name already exists.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         self.validate_beaker_name(name)
         group_id = self.resolve_group(group).id
@@ -135,7 +139,8 @@ class GroupClient(ServiceClient):
         :raises GroupNotFound: If the group can't be found.
         :raises ExperimentNotFound: If any of the given experiments don't exist.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         group_id = self.resolve_group(group).id
         exp_ids: List[str] = list(
@@ -158,7 +163,8 @@ class GroupClient(ServiceClient):
         :raises GroupNotFound: If the group can't be found.
         :raises ExperimentNotFound: If any of the given experiments don't exist.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         group_id = self.resolve_group(group).id
         exp_ids: List[str] = list(
@@ -179,7 +185,8 @@ class GroupClient(ServiceClient):
 
         :raises GroupNotFound: If the group can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         group_id = self.resolve_group(group).id
         exp_ids = self.request(
@@ -203,7 +210,8 @@ class GroupClient(ServiceClient):
 
         :raises GroupNotFound: If the group can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         group_id = self.resolve_group(group).id
         resp = self.request(

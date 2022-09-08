@@ -23,7 +23,9 @@ class JobClient(ServiceClient):
         :param job_id: The ID of the Beaker job.
 
         :raises JobNotFound: If the job can't be found.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         return Job.from_json(
             self.request(
@@ -131,7 +133,9 @@ class JobClient(ServiceClient):
             (e.g. a :class:`~datetime.timedelta` or a string like "42m").
 
         :raises JobNotFound: If the job can't be found.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         job_id = job.id if isinstance(job, Job) else job
         opts = {}
@@ -174,7 +178,9 @@ class JobClient(ServiceClient):
         :param job: The Beaker job ID or object.
 
         :raises JobNotFound: If the job can't be found.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         job_id = job.id if isinstance(job, Job) else job
         return self.request(
@@ -193,7 +199,9 @@ class JobClient(ServiceClient):
         :param job: The Beaker job ID or object.
 
         :raises JobNotFound: If the job can't be found.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         job = self.get(job.id if isinstance(job, Job) else job)
         if job.execution is None:
@@ -208,7 +216,9 @@ class JobClient(ServiceClient):
         :param job: The Beaker job ID or object.
 
         :raises JobNotFound: If the job can't be found.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         job_id = job.id if isinstance(job, Job) else job
         return Job.from_json(
@@ -227,7 +237,9 @@ class JobClient(ServiceClient):
         :param job: The Beaker job ID or object.
 
         :raises JobNotFound: If the job can't be found.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         job_id = job.id if isinstance(job, Job) else job
         return Job.from_json(
@@ -275,7 +287,8 @@ class JobClient(ServiceClient):
         :raises DuplicateJobError: If the same job is given as an argument more than once.
         :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         job_id_to_position: Dict[str, int] = {}
         jobs_to_wait_on: List[Job] = []
@@ -331,7 +344,8 @@ class JobClient(ServiceClient):
         :raises DuplicateJobError: If the same job is given as an argument more than once.
         :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         yield from self._as_completed(
             *jobs,
@@ -376,7 +390,8 @@ class JobClient(ServiceClient):
         :raises JobTimeoutError: If the ``timeout`` expires.
         :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
 
         :examples:
 
@@ -419,22 +434,36 @@ class JobClient(ServiceClient):
             return None
 
         def pull_logs_since(updated_job: Job, final: bool = False):
-            buffer = b""
-            for chunk in self.logs(updated_job, quiet=True, since=last_timestamp):
-                lines = (buffer + chunk).splitlines(keepends=True)
-                if chunk.endswith(b"\n"):
+            retries = 0
+            while True:
+                try:
                     buffer = b""
-                elif lines:
-                    # Last line in chunk is not a complete line.
-                    lines, buffer = lines[:-1], lines[-1]
-                for line in lines:
-                    line_to_yield = get_line_to_yield(line)
-                    if line_to_yield is not None:
-                        yield line_to_yield
-            if final and buffer:
-                line_to_yield = get_line_to_yield(buffer + b"\n")
-                if line_to_yield is not None:
-                    yield line_to_yield
+                    for chunk in self.logs(updated_job, quiet=True, since=last_timestamp):
+                        lines = (buffer + chunk).splitlines(keepends=True)
+                        if chunk.endswith(b"\n"):
+                            buffer = b""
+                        elif lines:
+                            # Last line in chunk is not a complete line.
+                            lines, buffer = lines[:-1], lines[-1]
+                        for line in lines:
+                            line_to_yield = get_line_to_yield(line)
+                            if line_to_yield is not None:
+                                yield line_to_yield
+                    if final and buffer:
+                        line_to_yield = get_line_to_yield(buffer + b"\n")
+                        if line_to_yield is not None:
+                            yield line_to_yield
+                    break
+                except RequestException:
+                    if retries < self.beaker.MAX_RETRIES:
+                        time.sleep(
+                            min(
+                                self.beaker.BACKOFF_FACTOR * (2**retries), self.beaker.BACKOFF_MAX
+                            )
+                        )
+                        retries += 1
+                    else:
+                        raise
 
         updated_job: Job
         while True:

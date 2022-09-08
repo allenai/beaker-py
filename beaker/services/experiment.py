@@ -24,7 +24,8 @@ class ExperimentClient(ServiceClient):
 
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
 
         def _get(id: str) -> Experiment:
@@ -67,7 +68,8 @@ class ExperimentClient(ServiceClient):
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
 
         """
         self.validate_beaker_name(name)
@@ -96,7 +98,8 @@ class ExperimentClient(ServiceClient):
 
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         experiment_id = self.resolve_experiment(experiment).id
         return ExperimentSpec.from_json(
@@ -115,7 +118,8 @@ class ExperimentClient(ServiceClient):
 
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         experiment_id = self.resolve_experiment(experiment).id
         self.request(
@@ -132,7 +136,8 @@ class ExperimentClient(ServiceClient):
 
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         experiment_id = self.resolve_experiment(experiment).id
         self.request(
@@ -150,7 +155,8 @@ class ExperimentClient(ServiceClient):
 
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         experiment = self.resolve_experiment(experiment)
         if delete_results_datasets:
@@ -178,7 +184,8 @@ class ExperimentClient(ServiceClient):
         :raises ValueError: If the new name is invalid.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         self.validate_beaker_name(name)
         experiment_id = self.resolve_experiment(experiment).id
@@ -202,7 +209,8 @@ class ExperimentClient(ServiceClient):
 
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
 
         :examples:
 
@@ -256,7 +264,8 @@ class ExperimentClient(ServiceClient):
         :raises TaskNotFound: If the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         exp = self.resolve_experiment(experiment)
         job = self.latest_job(exp, task=task, ensure_finalized=False)
@@ -292,7 +301,8 @@ class ExperimentClient(ServiceClient):
         :raises TaskNotFound: If the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         exp = self.resolve_experiment(experiment)
         job = self.latest_job(exp, task=task, ensure_finalized=True)
@@ -320,7 +330,8 @@ class ExperimentClient(ServiceClient):
         :raises TaskNotFound: If the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         exp = self.resolve_experiment(experiment)
         job = self.latest_job(exp, task=task, ensure_finalized=True)
@@ -368,7 +379,8 @@ class ExperimentClient(ServiceClient):
         :raises TaskStoppedError: If ``strict=True`` and a task is stopped
             before a corresponding job is initialized.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         exp_id_to_position: Dict[str, int] = {}
         exps_to_wait_on: List[Experiment] = []
@@ -427,7 +439,8 @@ class ExperimentClient(ServiceClient):
         :raises TaskStoppedError: If ``strict=True`` and a task is stopped
             before a corresponding job is initialized.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         if timeout is not None and timeout <= 0:
             raise ValueError("'timeout' must be a positive number")
@@ -626,7 +639,8 @@ class ExperimentClient(ServiceClient):
         :raises TaskStoppedError: If ``strict=True`` and a task is stopped
             before a corresponding job is initialized.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
 
         :examples:
 
@@ -682,7 +696,8 @@ class ExperimentClient(ServiceClient):
         :raises TaskNotFound: If the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         experiment = self.resolve_experiment(experiment)
         experiment_url = f"{self.config.agent_address}/ex/{self.url_quote(experiment.id)}"
@@ -719,7 +734,8 @@ class ExperimentClient(ServiceClient):
         :raises TaskNotFound: If the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         return self._latest_job(
             self._task(experiment, task).jobs, ensure_finalized=ensure_finalized

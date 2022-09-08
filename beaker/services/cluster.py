@@ -18,7 +18,8 @@ class ClusterClient(ServiceClient):
 
         :raises ClusterNotFound: If the cluster doesn't exist.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
 
         def _get(id: str) -> Cluster:
@@ -73,7 +74,8 @@ class ClusterClient(ServiceClient):
         :raises ValueError: If the cluster name or requested resources are invalid.
         :raises ClusterConflict: If a cluster by that name already exists.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         organization, cluster_name = self.resolve_cluster_name(name).split("/", 1)
 
@@ -105,7 +107,8 @@ class ClusterClient(ServiceClient):
 
         :raises ClusterNotFound: If the cluster doesn't exist.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         cluster_name = self.resolve_cluster(cluster).full_name
         return Cluster.from_json(
@@ -125,7 +128,8 @@ class ClusterClient(ServiceClient):
 
         :raises ClusterNotFound: If the cluster doesn't exist.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         cluster_name = self.resolve_cluster(cluster).full_name
         self.request(
@@ -145,15 +149,16 @@ class ClusterClient(ServiceClient):
         :raises OrganizationNotSet: If neither ``org`` nor
             :data:`Beaker.config.default_org <beaker.Config.default_org>` are set.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
-        org = self.resolve_org(org)
+        org_id = self.resolve_org(org).id
         return [
             Cluster.from_json(d)
             for d in self.request(
-                f"clusters/{org.id}",
+                f"clusters/{org_id}",
                 method="GET",
-                exceptions_for_status={404: OrganizationNotFound(org.id)},
+                exceptions_for_status={404: OrganizationNotFound(org_id)},
             ).json()["data"]
         ]
 
@@ -165,7 +170,8 @@ class ClusterClient(ServiceClient):
 
         :raises ClusterNotFound: If the cluster doesn't exist.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         cluster_name = self.resolve_cluster(cluster).full_name
         return [
@@ -185,7 +191,8 @@ class ClusterClient(ServiceClient):
 
         :raises ClusterNotFound: If the cluster doesn't exist.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
         cluster = self.resolve_cluster(cluster)
         nodes = self.nodes(cluster)
@@ -272,7 +279,8 @@ class ClusterClient(ServiceClient):
 
         :raises ClusterNotFound: If one of the clusters doesn't exist.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises HTTPError: Any other HTTP exception that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
         """
 
         def node_is_compat(node_shape: NodeResources) -> bool:
