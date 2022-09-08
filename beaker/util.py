@@ -4,7 +4,7 @@ from collections import OrderedDict
 from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Type, TypeVar, Union
 
 from .aliases import PathOrStr
 from .exceptions import RequestException
@@ -105,7 +105,10 @@ def split_timestamp(s: bytes) -> Optional[str]:
         return None
 
 
-def retriable(on_failure: Optional[Callable[..., None]] = None):
+def retriable(
+    on_failure: Optional[Callable[..., None]] = None,
+    recoverable_errors: Tuple[Type[Exception], ...] = (RequestException,),
+):
     """
     Use to make a service client method more robust by allowing retries.
     """
@@ -119,7 +122,7 @@ def retriable(on_failure: Optional[Callable[..., None]] = None):
             while True:
                 try:
                     return func(*args, **kwargs)
-                except RequestException:
+                except recoverable_errors:
                     if retries < Beaker.MAX_RETRIES:
                         if on_failure is not None:
                             on_failure()

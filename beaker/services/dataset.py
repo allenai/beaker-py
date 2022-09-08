@@ -366,7 +366,7 @@ class DatasetClient(ServiceClient):
         <BLANKLINE>
         """
 
-        @retriable()
+        @retriable(recoverable_errors=(RequestException, ChecksumFailedError))
         def _get_file() -> bytes:
             return b"".join(
                 self.stream_file(
