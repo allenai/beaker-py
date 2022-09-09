@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Made `Beaker.dataset.fetch()` more robust to corrupted downloads.
+
 ## [v1.8.0](https://github.com/allenai/beaker-py/releases/tag/v1.8.0) - 2022-09-08
 
 ### Added

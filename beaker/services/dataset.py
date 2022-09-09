@@ -809,7 +809,10 @@ class DatasetClient(ServiceClient):
         target_dir = target_path.parent
         target_dir.mkdir(exist_ok=True, parents=True)
 
-        @retriable(on_failure=lambda: progress.advance(task_id, -total_bytes))
+        @retriable(
+            on_failure=lambda: progress.advance(task_id, -total_bytes),
+            recoverable_errors=(RequestException, ChecksumFailedError),
+        )
         def download() -> int:
             nonlocal total_bytes
 
