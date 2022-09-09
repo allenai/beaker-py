@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Changed
+
+- Added better debug logging when recoverable errors happen.
+
 ### Fixed
 
 - Made `Beaker.dataset.fetch()` more robust to corrupted downloads.

@@ -1,5 +1,4 @@
 import os
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Deque, Dict, Generator, Optional, Tuple, Union
@@ -7,7 +6,7 @@ from typing import TYPE_CHECKING, Deque, Dict, Generator, Optional, Tuple, Union
 from ..aliases import PathOrStr
 from ..data_model import *
 from ..exceptions import *
-from ..util import path_is_relative_to, retriable
+from ..util import log_and_wait, path_is_relative_to, retriable
 from .service_client import ServiceClient
 
 if TYPE_CHECKING:
@@ -776,11 +775,9 @@ class DatasetClient(ServiceClient):
                         sha256_hash.update(chunk)
                     yield chunk
                 break
-            except RequestException:
+            except RequestException as err:
                 if retries < self.beaker.MAX_RETRIES:
-                    time.sleep(
-                        min(self.beaker.BACKOFF_FACTOR * (2**retries), self.beaker.BACKOFF_MAX)
-                    )
+                    log_and_wait(retries, err)
                     retries += 1
                 else:
                     raise

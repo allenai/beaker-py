@@ -1,3 +1,4 @@
+import logging
 import os
 from contextlib import contextmanager
 from typing import Generator, Optional, Tuple, Union
@@ -61,6 +62,8 @@ class Beaker:
     BACKOFF_MAX = 120
 
     API_VERSION = "v3"
+
+    logger = logging.getLogger("beaker")
 
     def __init__(
         self,

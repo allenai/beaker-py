@@ -105,6 +105,14 @@ def split_timestamp(s: bytes) -> Optional[str]:
         return None
 
 
+def log_and_wait(retries_so_far: int, err: Exception) -> None:
+    from .client import Beaker
+
+    retry_in = min(Beaker.BACKOFF_FACTOR * (2**retries_so_far), Beaker.BACKOFF_MAX)
+    Beaker.logger.debug("Request failed with: %s\nRetrying in %d seconds...", err, retry_in)
+    time.sleep(retry_in)
+
+
 def retriable(
     on_failure: Optional[Callable[..., None]] = None,
     recoverable_errors: Tuple[Type[Exception], ...] = (RequestException,),
@@ -122,11 +130,11 @@ def retriable(
             while True:
                 try:
                     return func(*args, **kwargs)
-                except recoverable_errors:
+                except recoverable_errors as err:
                     if retries < Beaker.MAX_RETRIES:
                         if on_failure is not None:
                             on_failure()
-                        time.sleep(min(Beaker.BACKOFF_FACTOR * (2**retries), Beaker.BACKOFF_MAX))
+                        log_and_wait(retries, err)
                         retries += 1
                     else:
                         raise

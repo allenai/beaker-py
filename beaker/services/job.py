@@ -409,7 +409,7 @@ class JobClient(ServiceClient):
         ...
 
         """
-        from ..util import split_timestamp
+        from ..util import log_and_wait, split_timestamp
 
         if timeout is not None and timeout <= 0:
             raise ValueError("'timeout' must be a positive number")
@@ -454,13 +454,9 @@ class JobClient(ServiceClient):
                         if line_to_yield is not None:
                             yield line_to_yield
                     break
-                except RequestException:
+                except RequestException as err:
                     if retries < self.beaker.MAX_RETRIES:
-                        time.sleep(
-                            min(
-                                self.beaker.BACKOFF_FACTOR * (2**retries), self.beaker.BACKOFF_MAX
-                            )
-                        )
+                        log_and_wait(retries, err)
                         retries += 1
                     else:
                         raise
