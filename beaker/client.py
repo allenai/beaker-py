@@ -77,10 +77,6 @@ class Beaker:
         session: Optional[Union[bool, requests.Session]] = None,
         pool_maxsize: Optional[int] = None,
     ):
-        # See if there's a newer version, and if so, suggest that the user upgrades.
-        if check_for_upgrades:
-            self._check_for_upgrades()
-
         self._config = config
         self._docker: Optional[docker.DockerClient] = None
         self._session: Optional[requests.Session] = (
@@ -115,6 +111,10 @@ class Beaker:
             if self._config.default_org == "":
                 raise ValueError("'default_org' cannot be an empty string")
             self.organization.get(self._config.default_org)
+
+        # See if there's a newer version, and if so, suggest that the user upgrades.
+        if check_for_upgrades:
+            self._check_for_upgrades()
 
     def __str__(self) -> str:
         return (
