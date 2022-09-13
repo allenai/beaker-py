@@ -79,12 +79,12 @@ class Beaker:
     ):
         self._config = config
         self._docker: Optional[docker.DockerClient] = None
+        self._pool_maxsize = pool_maxsize or min(100, (os.cpu_count() or 16) * 6)
         self._session: Optional[requests.Session] = (
             None
             if not session
             else (session if isinstance(session, requests.Session) else self._make_session())
         )
-        self._pool_maxsize = pool_maxsize or min(100, (os.cpu_count() or 16) * 6)
         self._timeout = timeout
 
         # Initialize service clients:
