@@ -41,6 +41,10 @@ class Beaker:
             around indefinitely, consider using the :meth:`session()` context manager
             intermittently instead.
 
+    :param pool_maxsize: The maximum size of the connection pool to use.
+        If not specified, a large default value will be used based on a multiple of the number
+        of CPUs available.
+
     The easiest way to initialize a Beaker client is with :meth:`.from_env()`:
 
     >>> beaker = Beaker.from_env()
@@ -71,6 +75,7 @@ class Beaker:
         check_for_upgrades: bool = True,
         timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
         session: Optional[Union[bool, requests.Session]] = None,
+        pool_maxsize: Optional[int] = None,
     ):
         # See if there's a newer version, and if so, suggest that the user upgrades.
         if check_for_upgrades:
@@ -83,6 +88,7 @@ class Beaker:
             if not session
             else (session if isinstance(session, requests.Session) else self._make_session())
         )
+        self._pool_maxsize = pool_maxsize or min(100, (os.cpu_count() or 16) * 6)
         self._timeout = timeout
 
         # Initialize service clients:
@@ -159,6 +165,7 @@ class Beaker:
         check_for_upgrades: bool = True,
         timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
         session: Optional[Union[bool, requests.Session]] = None,
+        pool_maxsize: Optional[int] = None,
         **overrides,
     ) -> "Beaker":
         """
@@ -183,6 +190,10 @@ class Beaker:
                 around indefinitely, consider using the :meth:`session()` context manager
                 intermittently instead.
 
+        :param pool_maxsize: The maximum size of the connection pool to use.
+            If not specified, a large default value will be used based on a multiple of the number
+            of CPUs available.
+
         :param overrides: Fields in the :class:`Config` to override.
 
         .. note::
@@ -198,6 +209,7 @@ class Beaker:
             check_for_upgrades=check_for_upgrades,
             timeout=timeout,
             session=session,
+            pool_maxsize=pool_maxsize,
         )
 
     def _make_session(self) -> requests.Session:
@@ -209,9 +221,7 @@ class Beaker:
             backoff_factor=self.BACKOFF_FACTOR,
             status_forcelist=self.RECOVERABLE_SERVER_ERROR_CODES,
         )
-        session.mount(
-            "https://", HTTPAdapter(max_retries=retries, pool_maxsize=(os.cpu_count() or 16) * 2)
-        )
+        session.mount("https://", HTTPAdapter(max_retries=retries, pool_maxsize=self._pool_maxsize))
         return session
 
     @contextmanager
