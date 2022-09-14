@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.9.0](https://github.com/allenai/beaker-py/releases/tag/v1.9.0) - 2022-09-14
+
 ### Added
 
 - Added `pool_maxsize` argument to `Beaker` client.
