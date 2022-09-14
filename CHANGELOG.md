@@ -12,6 +12,11 @@ use patch releases for compatibility fixes instead.
 ### Added
 
 - Added `pool_maxsize` argument to `Beaker` client.
+- Added `canceled_for` and `canceled_code` fields to `Job.status`.
+
+### Fixed
+
+- `Beaker.experiment.(wait_for|as_completed)` won't fail when a job is preempted.
 
 ## [v1.8.1](https://github.com/allenai/beaker-py/releases/tag/v1.8.1) - 2022-09-09
 
