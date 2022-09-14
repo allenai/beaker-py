@@ -552,22 +552,31 @@ class ExperimentClient(ServiceClient):
                         quiet=quiet,
                         _progress=jobs_progress,
                     ):
-                        finalized_jobs.add(job.id)
-
                         assert job.execution is not None
                         exp_id = job.execution.experiment
+                        task_id = job.execution.task
 
-                        # Ensure job was successful if `strict==True`.
-                        if strict:
-                            job.check()
+                        if job.status.canceled_code in {
+                            CanceledCode.system_preemption,
+                            CanceledCode.user_preemption,
+                        }:
+                            # Job was preempted. Another job will start soon so we just stop
+                            # tracking this one.
+                            exp_to_task_to_job[exp_id][task_id] = None
+                        else:
+                            finalized_jobs.add(job.id)
 
-                        # Update progress display.
-                        experiments_progress.advance(exp_to_progress_task[exp_id])
+                            # Ensure job was successful if `strict==True`.
+                            if strict:
+                                job.check()
 
-                        # Check if corresponding experiment is now finalized.
-                        if experiment_finalized(exp_id) and exp_id in incomplete_exps:
-                            # Experiment has just completed, yield it.
-                            yield complete_experiment(exp_id)
+                            # Update progress display.
+                            experiments_progress.advance(exp_to_progress_task[exp_id])
+
+                            # Check if corresponding experiment is now finalized.
+                            if experiment_finalized(exp_id) and exp_id in incomplete_exps:
+                                # Experiment has just completed, yield it.
+                                yield complete_experiment(exp_id)
                 else:
                     # Wait for `poll_interval` to give Beaker a chance to register jobs.
                     time.sleep(poll_interval)

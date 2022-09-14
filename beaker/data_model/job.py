@@ -22,6 +22,14 @@ class CurrentJobStatus(str, Enum):
     failed = "failed"
     finalized = "finalized"
     canceled = "canceled"
+    preempted = "preempted"
+
+
+class CanceledCode(int, Enum):
+    not_set = 0
+    system_preemption = 1
+    user_preemption = 2
+    idle = 3
 
 
 class JobStatus(BaseModel):
@@ -32,6 +40,8 @@ class JobStatus(BaseModel):
     failed: Optional[datetime] = None
     finalized: Optional[datetime] = None
     canceled: Optional[datetime] = None
+    canceled_for: Optional[str] = None
+    canceled_code: Optional[CanceledCode] = None
     idle_since: Optional[datetime] = None
     exit_code: Optional[int] = None
     message: Optional[str] = None
@@ -58,7 +68,10 @@ class JobStatus(BaseModel):
         elif self.exited is not None:
             return CurrentJobStatus.exited
         elif self.canceled is not None:
-            return CurrentJobStatus.canceled
+            if self.canceled_code in {CanceledCode.system_preemption, CanceledCode.user_preemption}:
+                return CurrentJobStatus.preempted
+            else:
+                return CurrentJobStatus.canceled
         elif self.idle_since is not None:
             return CurrentJobStatus.idle
         elif self.started is not None:
@@ -134,6 +147,9 @@ class Job(BaseModel):
 
     @property
     def is_done(self) -> bool:
+        """
+        Same as :meth:`is_finalized()`, kept for backwards compatibility.
+        """
         return self.status.current == CurrentJobStatus.finalized
 
     def check(self):
@@ -155,13 +171,6 @@ class Job(BaseModel):
 class Jobs(BaseModel):
     data: Optional[Tuple[Job, ...]] = None
     next: Optional[str] = None
-
-
-class CanceledCode(int, Enum):
-    not_set = 0
-    system_preemption = 1
-    user_preemption = 2
-    idle = 3
 
 
 class JobStatusUpdate(BaseModel):
