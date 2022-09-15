@@ -219,9 +219,3 @@ Exceptions
 
 .. automodule:: beaker.exceptions
    :members:
-
-.. autoexception:: beaker.exceptions.HTTPError
-
-.. autoexception:: beaker.exceptions.RequestException
-
-.. autoexception:: beaker.exceptions.ValidationError
