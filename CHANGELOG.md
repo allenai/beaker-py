@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.9.1](https://github.com/allenai/beaker-py/releases/tag/v1.9.1) - 2022-09-15
+
 ### Changed
 
 - `beaker-py` will issue warnings now when unknown fields are encountered.
