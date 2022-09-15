@@ -6,7 +6,7 @@ from typing import Generator, Optional, Tuple, Union
 import docker
 import requests
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util.retry import Retry
 
 from .config import Config
 from .data_model import *

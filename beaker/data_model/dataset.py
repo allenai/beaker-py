@@ -7,6 +7,19 @@ from .account import Account
 from .base import BaseModel
 from .workspace import WorkspaceRef
 
+__all__ = [
+    "DatasetStorage",
+    "DatasetSize",
+    "Dataset",
+    "DatasetStorageInfo",
+    "Digest",
+    "FileInfo",
+    "DatasetManifest",
+    "DatasetsPage",
+    "DatasetSpec",
+    "DatasetPatch",
+]
+
 
 class DatasetStorage(BaseModel):
     id: str

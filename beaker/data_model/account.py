@@ -2,6 +2,8 @@ from typing import Optional
 
 from .base import BaseModel
 
+__all__ = ["Account"]
+
 
 class Account(BaseModel):
     id: str

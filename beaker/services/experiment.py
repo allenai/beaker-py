@@ -1,6 +1,16 @@
 import time
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Sequence, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 from ..aliases import PathOrStr
 from ..data_model import *

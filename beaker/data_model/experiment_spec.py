@@ -6,6 +6,20 @@ from pydantic import Field, root_validator, validator
 from ..aliases import PathOrStr
 from .base import BaseModel
 
+__all__ = [
+    "ImageSource",
+    "EnvVar",
+    "DataSource",
+    "DataMount",
+    "ResultSpec",
+    "TaskResources",
+    "Priority",
+    "TaskContext",
+    "TaskSpec",
+    "SpecVersion",
+    "ExperimentSpec",
+]
+
 
 class ImageSource(BaseModel, frozen=False):
     """
@@ -155,7 +169,6 @@ class DataMount(BaseModel, frozen=False):
         beaker: Optional[str] = None,
         host_path: Optional[str] = None,
         result: Optional[str] = None,
-        url: Optional[str] = None,
         secret: Optional[str] = None,
     ) -> "DataMount":
         """
@@ -176,7 +189,6 @@ class DataMount(BaseModel, frozen=False):
                 beaker=beaker,
                 host_path=host_path,
                 result=result,
-                url=url,
                 secret=secret,
             ),
         )

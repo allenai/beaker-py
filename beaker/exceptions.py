@@ -18,6 +18,45 @@ Raised when data passed into a :mod:`DataModel <beaker.data_model>` is invalid.
 """
 
 
+__all__ = [
+    "BeakerError",
+    "ValidationError",
+    "HTTPError",
+    "RequestException",
+    "AccountNotFound",
+    "OrganizationNotFound",
+    "OrganizationNotSet",
+    "ConfigurationError",
+    "ImageNotFound",
+    "ImageConflict",
+    "WorkspaceNotFound",
+    "WorkspaceWriteError",
+    "WorkspaceConflict",
+    "ClusterNotFound",
+    "ClusterConflict",
+    "ExperimentNotFound",
+    "ExperimentConflict",
+    "DatasetConflict",
+    "DatasetNotFound",
+    "UnexpectedEOFError",
+    "JobNotFound",
+    "WorkspaceNotSet",
+    "NodeNotFound",
+    "DatasetWriteError",
+    "DatasetReadError",
+    "SecretNotFound",
+    "GroupConflict",
+    "GroupNotFound",
+    "DuplicateJobError",
+    "DuplicateExperimentError",
+    "TaskNotFound",
+    "ChecksumFailedError",
+    "TaskStoppedError",
+    "JobFailedError",
+    "JobTimeoutError",
+]
+
+
 class BeakerError(Exception):
     """
     Base class for all Beaker errors other than :exc:`HTTPError`, which is re-exported

@@ -8,6 +8,8 @@ from .base import BaseModel, MappedSequence
 from .job import Job
 from .workspace import WorkspaceRef
 
+__all__ = ["Experiment", "Task", "Tasks", "ExperimentsPage", "ExperimentPatch"]
+
 
 class Experiment(BaseModel):
     id: str

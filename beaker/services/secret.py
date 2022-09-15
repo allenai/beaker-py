@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 from ..data_model import *
 from ..exceptions import *

@@ -6,6 +6,8 @@ from .account import Account
 from .base import BaseModel
 from .workspace import WorkspaceRef
 
+__all__ = ["Group", "GroupSpec", "GroupParameterType", "GroupParameter", "GroupPatch"]
+
 
 class Group(BaseModel):
     id: str
