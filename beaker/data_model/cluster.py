@@ -30,6 +30,7 @@ class Cluster(BaseModel):
     capacity: int
     preemptible: bool
     status: ClusterStatus
+    status_message: Optional[str] = None
     node_spec: Optional[NodeResources] = None
     """
     The requested node configuration.

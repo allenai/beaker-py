@@ -6,7 +6,7 @@ from pydantic import Field, validator
 
 from .account import Account
 from .base import BaseModel
-from .experiment_spec import Priority, TaskSpec
+from .experiment_spec import DataMount, EnvVar, ImageSource, Priority, TaskSpec
 
 __all__ = [
     "CurrentJobStatus",
@@ -21,6 +21,7 @@ __all__ = [
     "Jobs",
     "JobStatusUpdate",
     "JobPatch",
+    "Session",
 ]
 
 
@@ -121,6 +122,7 @@ class JobExecution(BaseModel):
     experiment: str
     spec: TaskSpec
     result: ExecutionResult
+    workspace: Optional[str] = None
 
 
 class JobKind(str, Enum):
@@ -130,6 +132,17 @@ class JobKind(str, Enum):
 
     execution = "execution"
     session = "session"
+
+
+class Session(BaseModel):
+    command: Optional[Tuple[str]] = None
+    env_vars: Optional[Tuple[EnvVar]] = None
+    datasets: Optional[Tuple[DataMount]] = None
+    image: Optional[ImageSource] = None
+    save_image: bool = False
+    ports: Optional[Tuple[int]] = None
+    priority: Optional[Priority] = None
+    work_dir: Optional[str] = None
 
 
 class Job(BaseModel):
@@ -151,6 +164,7 @@ class Job(BaseModel):
     node: Optional[str] = None
     requests: Optional[JobRequests] = None
     limits: Optional[JobLimits] = None
+    session: Optional[Session] = None
 
     @property
     def display_name(self) -> str:

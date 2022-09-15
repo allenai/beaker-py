@@ -38,6 +38,7 @@ class Task(BaseModel):
     created: datetime
     schedulable: bool = False
     jobs: Tuple[Job, ...] = Field(default_factory=tuple)
+    owner: Optional[Account] = None
 
     @property
     def display_name(self) -> str:
