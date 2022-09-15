@@ -8,6 +8,8 @@ from .base import BaseModel, MappedSequence
 from .job import Job
 from .workspace import WorkspaceRef
 
+__all__ = ["Experiment", "Task", "Tasks", "ExperimentsPage", "ExperimentPatch"]
+
 
 class Experiment(BaseModel):
     id: str
@@ -36,6 +38,7 @@ class Task(BaseModel):
     created: datetime
     schedulable: bool = False
     jobs: Tuple[Job, ...] = Field(default_factory=tuple)
+    owner: Optional[Account] = None
 
     @property
     def display_name(self) -> str:

@@ -7,6 +7,8 @@ from pydantic import validator
 from .base import BaseModel
 from .node import NodeResources, NodeUtilization
 
+__all__ = ["ClusterStatus", "Cluster", "ClusterUtilization", "ClusterSpec", "ClusterPatch"]
+
 
 class ClusterStatus(str, Enum):
     """
@@ -28,6 +30,7 @@ class Cluster(BaseModel):
     capacity: int
     preemptible: bool
     status: ClusterStatus
+    status_message: Optional[str] = None
     node_spec: Optional[NodeResources] = None
     """
     The requested node configuration.

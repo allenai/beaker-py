@@ -1,6 +1,18 @@
 import logging
+import warnings
 from enum import Enum
-from typing import Any, Dict, Iterator, Mapping, Sequence, Type, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Iterator,
+    Mapping,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from pydantic import BaseModel as _BaseModel
 from pydantic import ValidationError, root_validator
@@ -9,7 +21,17 @@ from ..util import to_lower_camel, to_snake_case
 
 T = TypeVar("T")
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("beaker")
+
+
+__all__ = ["BaseModel", "MappedSequence"]
+
+
+BUG_REPORT_URL = (
+    "https://github.com/allenai/beaker-py/issues/new?assignees=&labels=bug&template=bug_report.yml"
+)
+
+_VALIDATION_WARNINGS_ISSUED: Set[Tuple[str, str]] = set()
 
 
 class BaseModel(_BaseModel):
@@ -23,11 +45,29 @@ class BaseModel(_BaseModel):
         frozen = True
 
     @root_validator(pre=True)
-    def _rename_to_snake_case(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_and_rename_to_snake_case(  # type: ignore
+        cls: Type["BaseModel"], values: Dict[str, Any]  # type: ignore
+    ) -> Dict[str, Any]:
         """
         Raw data from the Beaker server will use lower camel case.
         """
-        return {to_snake_case(k): v for k, v in values.items()}
+        as_snake_case = {to_snake_case(k): v for k, v in values.items()}
+        for key, value in as_snake_case.items():
+            if key not in cls.__fields__:
+                warn_about = (cls.__name__, key)
+                if warn_about not in _VALIDATION_WARNINGS_ISSUED:
+                    _VALIDATION_WARNINGS_ISSUED.add(warn_about)
+                    warnings.warn(
+                        f"Found unknown field '{key}: {value}' for data model '{cls.__name__}'. "
+                        "This may be a newly added field that hasn't been defined in beaker-py yet. "
+                        "Please submit an issue report about this here:\n"
+                        f"{BUG_REPORT_URL}",
+                        RuntimeWarning,
+                    )
+        return as_snake_case
+
+    def __str__(self) -> str:
+        return self.__repr__()
 
     def __getitem__(self, key):
         try:

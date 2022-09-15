@@ -8,6 +8,20 @@ from .account import Account
 from .base import BaseModel
 from .workspace import WorkspaceRef
 
+__all__ = [
+    "Image",
+    "ImagesPage",
+    "ImageRepoAuth",
+    "ImageRepo",
+    "DockerLayerProgress",
+    "DockerLayerUploadStatus",
+    "DockerLayerDownloadStatus",
+    "DockerLayerUploadState",
+    "DockerLayerDownloadState",
+    "ImageSpec",
+    "ImagePatch",
+]
+
 
 class Image(BaseModel):
     id: str

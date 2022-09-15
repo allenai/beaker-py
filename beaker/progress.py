@@ -65,7 +65,7 @@ class BufferedReaderWithProgress(io.BufferedReader):
         self.handle.__enter__()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, *_):
         self.close()
 
     @property
@@ -148,10 +148,10 @@ class BufferedReaderWithProgress(io.BufferedReader):
     def detach(self):
         return self.handle.detach()
 
-    def write(self, s) -> int:
+    def write(self, _) -> int:
         raise io.UnsupportedOperation("write")
 
-    def writelines(self, lines):
+    def writelines(self, _):
         raise io.UnsupportedOperation("write")
 
 

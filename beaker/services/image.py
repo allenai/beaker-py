@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union, cast
 
 from docker.models.images import Image as DockerImage
 
@@ -79,7 +79,7 @@ class ImageClient(ServiceClient):
         workspace = self.resolve_workspace(workspace)
 
         # Get local Docker image object.
-        image = self.docker.images.get(image_tag)
+        image = cast(DockerImage, self.docker.images.get(image_tag))
 
         # Create new image on Beaker.
         image_id = self.request(
@@ -318,7 +318,7 @@ class ImageClient(ServiceClient):
                         completed=1,
                     )
 
-        local_image = self.docker.images.get(repo.image_tag)
+        local_image = cast(DockerImage, self.docker.images.get(repo.image_tag))
         return local_image
 
     def url(self, image: Union[str, Image]) -> str:

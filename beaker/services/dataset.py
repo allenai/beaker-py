@@ -485,7 +485,7 @@ class DatasetClient(ServiceClient):
                 if source.is_file():
                     target_path = Path(source.name) if strip_path else source
                     if target is not None:
-                        target_path = Path(target) / target_path
+                        target_path = Path(str(target)) / target_path
                     size = source.lstat().st_size
                     if size == 0:
                         raise UnexpectedEOFError(f"'{source}', empty files are not allowed")
@@ -497,7 +497,7 @@ class DatasetClient(ServiceClient):
                             continue
                         target_path = path.relative_to(source) if strip_path else path
                         if target is not None:
-                            target_path = Path(target) / target_path
+                            target_path = Path(str(target)) / target_path
                         size = path.lstat().st_size
                         if size == 0:
                             continue

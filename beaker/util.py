@@ -4,13 +4,10 @@ from collections import OrderedDict
 from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Optional, Tuple, Type, TypeVar, Union
 
 from .aliases import PathOrStr
 from .exceptions import RequestException
-
-if TYPE_CHECKING:
-    from .services.service_client import ServiceClient
 
 
 def to_lower_camel(s: str) -> str:
@@ -62,9 +59,9 @@ def cached_property(ttl: float = 60):
     See :meth:`~beaker.services.account.AccountClient.name`, for example.
     """
 
-    def ttl_cached_property(prop: Callable[[Any], T]):
+    def ttl_cached_property(prop) -> property:
         @property  # type: ignore[misc]
-        def prop_with_cache(self: "ServiceClient") -> T:
+        def prop_with_cache(self):
             key = (prop.__qualname__, repr(self.config))
             cached = _property_cache.get(key)
             if cached is not None:
@@ -77,7 +74,7 @@ def cached_property(ttl: float = 60):
                 _property_cache.popitem(last=False)
             return value
 
-        return prop_with_cache
+        return prop_with_cache  # type: ignore[return-value]
 
     return ttl_cached_property
 
@@ -121,7 +118,7 @@ def retriable(
     Use to make a service client method more robust by allowing retries.
     """
 
-    def parametrize_decorator(func: Callable[..., T]):
+    def parametrize_decorator(func: Callable[..., T]) -> Callable[..., T]:
         @wraps(func)
         def retriable_method(*args, **kwargs) -> T:
             from .client import Beaker

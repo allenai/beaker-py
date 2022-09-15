@@ -5,6 +5,19 @@ from typing import Dict, List, Optional, Tuple
 from .account import Account
 from .base import BaseModel
 
+__all__ = [
+    "WorkspaceSize",
+    "Workspace",
+    "WorkspaceRef",
+    "WorkspacePage",
+    "WorkspaceSpec",
+    "WorkspaceTransferSpec",
+    "Permission",
+    "WorkspacePermissions",
+    "WorkspacePatch",
+    "WorkspacePermissionsPatch",
+]
+
 
 class WorkspaceSize(BaseModel):
     datasets: int
@@ -35,6 +48,7 @@ class WorkspaceRef(BaseModel):
 class WorkspacePage(BaseModel):
     data: Tuple[Workspace, ...]
     next_cursor: Optional[str] = None
+    org: Optional[str] = None
 
 
 class WorkspaceSpec(BaseModel):
