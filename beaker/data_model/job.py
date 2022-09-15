@@ -135,12 +135,12 @@ class JobKind(str, Enum):
 
 
 class Session(BaseModel):
-    command: Optional[Tuple[str]] = None
-    env_vars: Optional[Tuple[EnvVar]] = None
-    datasets: Optional[Tuple[DataMount]] = None
+    command: Optional[Tuple[str, ...]] = None
+    env_vars: Optional[Tuple[EnvVar, ...]] = None
+    datasets: Optional[Tuple[DataMount, ...]] = None
     image: Optional[ImageSource] = None
     save_image: bool = False
-    ports: Optional[Tuple[int]] = None
+    ports: Optional[Tuple[int, ...]] = None
     priority: Optional[Priority] = None
     work_dir: Optional[str] = None
 
