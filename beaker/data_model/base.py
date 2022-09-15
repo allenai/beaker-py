@@ -52,14 +52,13 @@ class BaseModel(_BaseModel):
         Raw data from the Beaker server will use lower camel case.
         """
         as_snake_case = {to_snake_case(k): v for k, v in values.items()}
-        valid_fields = cls.schema()["properties"]
-        for key in as_snake_case:
-            if key not in valid_fields:
+        for key, value in as_snake_case.items():
+            if key not in cls.__fields__:
                 warn_about = (cls.__name__, key)
                 if warn_about not in _VALIDATION_WARNINGS_ISSUED:
                     _VALIDATION_WARNINGS_ISSUED.add(warn_about)
                     warnings.warn(
-                        f"Found unknown field '{key}' for data model '{cls.__name__}'. "
+                        f"Found unknown field '{key}: {value}' for data model '{cls.__name__}'. "
                         "This may be a newly added field that hasn't been defined in beaker-py yet. "
                         "Please submit an issue report about this here:\n"
                         f"{BUG_REPORT_URL}",

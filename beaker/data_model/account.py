@@ -10,3 +10,4 @@ class Account(BaseModel):
     name: str
     display_name: str
     institution: Optional[str] = None
+    pronouns: Optional[str] = None
