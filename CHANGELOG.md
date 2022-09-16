@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `Beaker.workspace.clear()` method for removing all items from a workspace.
+
 ## [v1.9.1](https://github.com/allenai/beaker-py/releases/tag/v1.9.1) - 2022-09-15
 
 ### Changed

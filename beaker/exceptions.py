@@ -23,6 +23,7 @@ __all__ = [
     "ValidationError",
     "HTTPError",
     "RequestException",
+    "NotFoundError",
     "AccountNotFound",
     "OrganizationNotFound",
     "OrganizationNotSet",
@@ -65,11 +66,17 @@ class BeakerError(Exception):
     """
 
 
-class AccountNotFound(BeakerError):
+class NotFoundError(BeakerError):
+    """
+    Base class for all "not found" error types.
+    """
+
+
+class AccountNotFound(NotFoundError):
     pass
 
 
-class OrganizationNotFound(BeakerError):
+class OrganizationNotFound(NotFoundError):
     """
     Raised when a specified organization doesn't exist.
     """
@@ -88,7 +95,7 @@ class ConfigurationError(BeakerError):
     """
 
 
-class ImageNotFound(BeakerError):
+class ImageNotFound(NotFoundError):
     pass
 
 
@@ -98,7 +105,7 @@ class ImageConflict(BeakerError):
     """
 
 
-class WorkspaceNotFound(BeakerError):
+class WorkspaceNotFound(NotFoundError):
     pass
 
 
@@ -114,7 +121,7 @@ class WorkspaceConflict(BeakerError):
     """
 
 
-class ClusterNotFound(BeakerError):
+class ClusterNotFound(NotFoundError):
     pass
 
 
@@ -124,7 +131,7 @@ class ClusterConflict(BeakerError):
     """
 
 
-class ExperimentNotFound(BeakerError):
+class ExperimentNotFound(NotFoundError):
     pass
 
 
@@ -140,7 +147,7 @@ class DatasetConflict(BeakerError):
     """
 
 
-class DatasetNotFound(BeakerError):
+class DatasetNotFound(NotFoundError):
     pass
 
 
@@ -150,7 +157,7 @@ class UnexpectedEOFError(BeakerError):
     """
 
 
-class JobNotFound(BeakerError):
+class JobNotFound(NotFoundError):
     pass
 
 
@@ -160,7 +167,7 @@ class WorkspaceNotSet(BeakerError):
     """
 
 
-class NodeNotFound(BeakerError):
+class NodeNotFound(NotFoundError):
     pass
 
 
@@ -177,7 +184,7 @@ class DatasetReadError(BeakerError):
     """
 
 
-class SecretNotFound(BeakerError):
+class SecretNotFound(NotFoundError):
     pass
 
 
@@ -187,7 +194,7 @@ class GroupConflict(BeakerError):
     """
 
 
-class GroupNotFound(BeakerError):
+class GroupNotFound(NotFoundError):
     pass
 
 
@@ -203,7 +210,7 @@ class DuplicateExperimentError(BeakerError):
     """
 
 
-class TaskNotFound(BeakerError):
+class TaskNotFound(NotFoundError):
     pass
 
 

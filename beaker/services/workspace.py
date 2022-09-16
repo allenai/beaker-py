@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Dict, List, Optional, Union
 
 from ..data_model import *
@@ -616,6 +617,78 @@ class WorkspaceClient(ServiceClient):
         """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
         return f"{self.config.agent_address}/ws/{workspace_name}"
+
+    def clear(
+        self,
+        workspace: Optional[Union[str, Workspace]] = None,
+        groups: bool = True,
+        experiments: bool = True,
+        images: bool = True,
+        datasets: bool = True,
+        secrets: bool = True,
+    ):
+        """
+        Remove groups, experiments, images, datasets, and secrets from a workspace.
+
+        :param workspace: The Beaker workspace name, or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param groups: Whether to delete groups.
+        :param experiments: Whether to delete experiments.
+        :param images: Whether to delete images.
+        :param datasets: Whether to delete datasets.
+        :param secrets: Whether to delete secrets.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
+        import concurrent.futures
+
+        deletion_counts: Dict[str, int] = defaultdict(int)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            deletion_futures = []
+
+            if groups:
+                for group in self.groups(workspace):
+                    future = executor.submit(self.beaker.group.delete, group)
+                    deletion_futures.append(future)
+                    deletion_counts["groups_deleted"] += 1
+
+            if experiments:
+                for experiment in self.experiments(workspace):
+                    future = executor.submit(self.beaker.experiment.delete, experiment)
+                    deletion_futures.append(future)
+                    deletion_counts["experiments_deleted"] += 1
+
+            if images:
+                for image in self.images(workspace):
+                    future = executor.submit(self.beaker.image.delete, image)
+                    deletion_futures.append(future)
+                    deletion_counts["images_deleted"] += 1
+
+            if datasets:
+                for dataset in self.datasets(workspace):
+                    future = executor.submit(self.beaker.dataset.delete, dataset)
+                    deletion_futures.append(future)
+                    deletion_counts["datasets_deleted"] += 1
+
+            if secrets:
+                for secret in self.secrets(workspace):
+                    future = executor.submit(self.beaker.secret.delete, secret, workspace)
+                    deletion_futures.append(future)
+                    deletion_counts["secrets_deleted"] += 1
+
+            done, _ = concurrent.futures.wait(deletion_futures)
+            for future in done:
+                try:
+                    future.result()
+                except NotFoundError:
+                    pass
+
+        return WorkspaceClearResult(**deletion_counts)
 
     def _not_found_err_msg(self, workspace: str) -> str:
         return (

@@ -16,6 +16,7 @@ __all__ = [
     "WorkspacePermissions",
     "WorkspacePatch",
     "WorkspacePermissionsPatch",
+    "WorkspaceClearResult",
 ]
 
 
@@ -91,3 +92,11 @@ class WorkspacePatch(BaseModel):
 class WorkspacePermissionsPatch(BaseModel):
     public: Optional[bool] = None
     authorizations: Optional[Dict[str, Permission]] = None
+
+
+class WorkspaceClearResult(BaseModel):
+    groups_deleted: int = 0
+    experiments_deleted: int = 0
+    images_deleted: int = 0
+    datasets_deleted: int = 0
+    secrets_deleted: int = 0
