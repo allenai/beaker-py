@@ -164,14 +164,21 @@ class DatasetClient(ServiceClient):
             Beaker server.
         """
         dataset_id = self.resolve_dataset(dataset).id
-        return Dataset.from_json(
-            self.request(
-                f"datasets/{self.url_quote(dataset_id)}",
-                method="PATCH",
-                data=DatasetPatch(commit=True),
-                exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset))},
-            ).json()
-        )
+
+        @retriable()
+        def commit() -> Dataset:
+            # It's okay to retry this because committing a dataset multiple
+            # times does nothing.
+            return Dataset.from_json(
+                self.request(
+                    f"datasets/{self.url_quote(dataset_id)}",
+                    method="PATCH",
+                    data=DatasetPatch(commit=True),
+                    exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset))},
+                ).json()
+            )
+
+        return commit()
 
     def fetch(
         self,

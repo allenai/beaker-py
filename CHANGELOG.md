@@ -13,6 +13,10 @@ use patch releases for compatibility fixes instead.
 
 - Added `Beaker.workspace.clear()` method for removing all items from a workspace.
 
+### Fixed
+
+- Made `Beaker.dataset.commit()` more robust by allowing automatic retries for recoverable errors.
+
 ## [v1.9.1](https://github.com/allenai/beaker-py/releases/tag/v1.9.1) - 2022-09-15
 
 ### Changed
