@@ -1,6 +1,6 @@
 import io
 import time
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from rich.console import Console
 from rich.live import Live
@@ -54,12 +54,22 @@ class TaskStatusColumn(ProgressColumn):
 
 
 class BufferedReaderWithProgress(io.BufferedReader):
-    def __init__(self, handle: io.BufferedReader, progress: Progress, task_id: TaskID):
-        super().__init__(handle.raw)
+    def __init__(
+        self,
+        handle: Union[io.BufferedReader, io.BytesIO],
+        progress: Progress,
+        task_id: TaskID,
+        close_handle: bool = True,
+    ):
         self.handle = handle
         self.progress = progress
         self.task_id = task_id
         self.total_read = 0
+        self.close_handle = close_handle
+
+    @property
+    def mode(self) -> str:
+        return "rb"
 
     def __enter__(self) -> "BufferedReaderWithProgress":
         self.handle.__enter__()
@@ -73,7 +83,8 @@ class BufferedReaderWithProgress(io.BufferedReader):
         return self.handle.closed
 
     def close(self):
-        self.handle.close()
+        if self.close_handle:
+            self.handle.close()
 
     def fileno(self):
         return self.handle.fileno()
@@ -94,7 +105,10 @@ class BufferedReaderWithProgress(io.BufferedReader):
         return False
 
     def peek(self, size: int = 0) -> bytes:
-        return self.handle.peek(size)
+        if isinstance(self.handle, io.BytesIO):
+            return self.handle.getvalue()[:size]
+        else:
+            return self.handle.peek(size)
 
     def read(self, size: Optional[int] = None) -> bytes:
         out = self.handle.read(size)

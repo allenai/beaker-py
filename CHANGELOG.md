@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `Beaker.dataset.upload()` for uploading raw bytes to a file in a dataset.
+
 ## [v1.9.2](https://github.com/allenai/beaker-py/releases/tag/v1.9.2) - 2022-09-21
 
 ### Added

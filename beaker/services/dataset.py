@@ -1,3 +1,4 @@
+import io
 import os
 from datetime import datetime
 from pathlib import Path
@@ -486,8 +487,8 @@ class DatasetClient(ServiceClient):
             total_bytes = 0
             # map source path to (target_path, size)
             path_info: Dict[Path, Tuple[Path, int]] = {}
-            for name in sources:
-                source = Path(name)
+            for source in sources:
+                source = Path(source)
                 strip_path = strip_paths or not path_is_relative_to(source, ".")
                 if source.is_file():
                     target_path = Path(source.name) if strip_path else source
@@ -543,6 +544,40 @@ class DatasetClient(ServiceClient):
                         # If the size of the file has changed since we started, adjust total.
                         total_bytes += actual_size - original_size
                         progress.update(bytes_task, total=total_bytes)
+
+    def upload(
+        self,
+        dataset: Union[str, Dataset],
+        source: bytes,
+        target: PathOrStr,
+        quiet: bool = False,
+    ) -> None:
+        """
+        Upload raw bytes to an uncommitted dataset.
+
+        :param dataset: The dataset ID, name, or object.
+        :param source: The raw bytes to upload to the dataset.
+        :param target: The name to assign to the file for the bytes in the dataset.
+        :param quiet: If ``True``, progress won't be displayed.
+
+        :raises DatasetNotFound: If the dataset can't be found.
+        :raises DatasetWriteError: If the dataset was already committed.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
+        dataset = self.resolve_dataset(dataset)
+        if dataset.committed is not None:
+            raise DatasetWriteError(dataset.id)
+
+        from ..progress import get_dataset_sync_progress
+
+        size = len(source)
+        with get_dataset_sync_progress(quiet) as progress:
+            task_id = progress.add_task("Uploading source")
+            if size is not None:
+                progress.update(task_id, total=size)
+            self._upload_file(dataset, size, source, target, progress, task_id)
 
     def ls(self, dataset: Union[str, Dataset]) -> Generator[FileInfo, None, None]:
         """
@@ -632,21 +667,28 @@ class DatasetClient(ServiceClient):
         self,
         dataset: Dataset,
         size: int,
-        source: PathOrStr,
+        source: Union[PathOrStr, bytes],
         target: PathOrStr,
         progress: "Progress",
         task_id: "TaskID",
         ignore_errors: bool = False,
     ) -> int:
-        source = Path(source)
+        from ..progress import BufferedReaderWithProgress
+
         assert dataset.storage is not None
-        if ignore_errors and not source.exists():
-            return 0
 
-        with source.open("rb") as source_file:
-            from ..progress import BufferedReaderWithProgress
+        source_file_wrapper: BufferedReaderWithProgress
+        if isinstance(source, (str, Path, os.PathLike)):
+            source = Path(source)
+            if ignore_errors and not source.exists():
+                return 0
+            source_file_wrapper = BufferedReaderWithProgress(source.open("rb"), progress, task_id)
+        elif isinstance(source, bytes):
+            source_file_wrapper = BufferedReaderWithProgress(io.BytesIO(source), progress, task_id)
+        else:
+            raise ValueError(f"Expected path-like or raw bytes, got {type(source)}")
 
-            source_file_wrapper = BufferedReaderWithProgress(source_file, progress, task_id)
+        try:
             body: Optional[BufferedReaderWithProgress] = source_file_wrapper
             digest: Optional[str] = None
 
@@ -718,6 +760,8 @@ class DatasetClient(ServiceClient):
             finalize()
 
             return source_file_wrapper.total_read
+        finally:
+            source_file_wrapper.close()
 
     def _iter_files(self, storage: DatasetStorage) -> Generator[FileInfo, None, None]:
         from collections import deque
