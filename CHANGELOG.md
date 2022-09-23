@@ -9,6 +9,15 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added missing fields `cordoned`, `cordon_reason`, `cordon_agent_id` to data model for `Node`.
+
+### Fixed
+
+- Made `expiry` field optional for `Node` data model.
+- `Beaker.cluster.filter_available()` will ignore cordoned nodes.
+
 ## [v1.10.0](https://github.com/allenai/beaker-py/releases/tag/v1.10.0) - 2022-09-21
 
 ### Added

@@ -254,6 +254,7 @@ class ClusterClient(ServiceClient):
                             else max(0, node.limits.cpu_count - node_to_util[node.id]["cpus_used"]),
                             gpu_type=node.limits.gpu_type,
                         ),
+                        cordoned=node.cordoned is not None,
                     )
                     for node in nodes
                 ]
@@ -306,7 +307,7 @@ class ClusterClient(ServiceClient):
                 available.append(cluster_utilization)
             else:
                 for node_util in cluster_utilization.nodes:
-                    if node_is_compat(node_util.free):
+                    if not node_util.cordoned and node_is_compat(node_util.free):
                         return cluster_utilization
 
             return None

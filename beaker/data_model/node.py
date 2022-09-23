@@ -17,8 +17,11 @@ class Node(BaseModel):
     id: str
     hostname: str
     created: datetime
-    expiry: datetime
     limits: NodeResources
+    expiry: Optional[datetime] = None
+    cordoned: Optional[datetime] = None
+    cordon_reason: Optional[str] = None
+    cordon_agent_id: Optional[str] = None
 
 
 class NodeUtilization(BaseModel):
@@ -28,3 +31,4 @@ class NodeUtilization(BaseModel):
     running_jobs: int
     used: NodeResources
     free: NodeResources
+    cordoned: bool = False
