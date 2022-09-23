@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.10.1](https://github.com/allenai/beaker-py/releases/tag/v1.10.1) - 2022-09-23
+
 ### Added
 
 - Added missing fields `cordoned`, `cordon_reason`, `cordon_agent_id` to data model for `Node`.
