@@ -108,7 +108,7 @@ class JobRequests(BaseModel):
     gpu_count: Optional[int] = None
     cpu_count: Optional[float] = None
     memory: Optional[str] = None
-    sharedMemory: Optional[str] = None
+    shared_memory: Optional[str] = None
 
 
 class JobLimits(BaseModel):
