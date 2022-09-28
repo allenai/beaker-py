@@ -279,9 +279,9 @@ class TaskContext(BaseModel, frozen=False):
 
     @validator("priority")
     def _validate_priority(cls, v: str) -> str:
-        if v is not None and v not in {"preemptible", "low", "normal", "high"}:
+        if v is not None and v not in set(Priority):
             raise ValueError(
-                "Invalided 'priority'. Value must be one of 'preemptible', 'low', 'normal', or 'high'."
+                f"Invalided 'priority'. Value must be one of {[p.value for p in Priority]} (got '{v}')."
             )
         return v
 
