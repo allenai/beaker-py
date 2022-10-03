@@ -1,6 +1,6 @@
 requests
 packaging
 pydantic>=1.8.2,<1.11
-rich>=12.3,<12.6
+rich>=12.3,<12.7
 PyYAML
 docker>=5.0,<7.0
