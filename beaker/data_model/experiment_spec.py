@@ -262,7 +262,7 @@ class TaskContext(BaseModel, frozen=False):
         if a task is re-run at a future date.
     """
 
-    cluster: str
+    cluster: Optional[str]
     """
     The full name or ID of a Beaker cluster on which the task should run.
     """

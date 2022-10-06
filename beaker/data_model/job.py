@@ -158,7 +158,7 @@ class Job(BaseModel):
     kind: JobKind
     author: Account
     workspace: str
-    cluster: str
+    cluster: Optional[str]
     status: JobStatus
     execution: Optional[JobExecution] = None
     node: Optional[str] = None
