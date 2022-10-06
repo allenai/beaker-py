@@ -813,7 +813,8 @@ class ExperimentClient(ServiceClient):
                 if env_var.secret is not None:
                     self.beaker.secret.get(env_var.secret, workspace=workspace)
             # Make sure cluster exists.
-            self.beaker.cluster.get(task.context.cluster)
+            if task.context.cluster:
+                self.beaker.cluster.get(task.context.cluster)
 
     def _latest_job(self, jobs: Sequence[Job], ensure_finalized: bool = False) -> Optional[Job]:
         if ensure_finalized:

@@ -16,7 +16,7 @@ on:
 
 env:
   CACHE_PREFIX: v0  # Change this to invalidate existing cache.
-  DEFAULT_PYTHON: 3.7
+  DEFAULT_PYTHON: 3.8
   BEAKER_WORKSPACE: ai2/petew-testing
 
 jobs:
@@ -62,7 +62,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python: [3.7]
+        python: [3.8]
         task:
           - name: Lint
             run: |
