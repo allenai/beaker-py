@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.11.0](https://github.com/allenai/beaker-py/releases/tag/v1.11.0) - 2022-10-06
+
 ### Changed
 
 - The cluster field in `Job` and `TaskContext` is now optional.
