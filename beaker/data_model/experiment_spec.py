@@ -312,6 +312,17 @@ class TaskSpec(BaseModel, frozen=False):
     Context describes how and where this task should run.
     """
 
+    constraints: Optional[Dict[str, List[str]]]
+    """
+    Each task can have many constraints. And each constraint can have many values.
+    Constraints are rules that change where a task is executed,
+    by influencing the scheduler's placement of the workload.
+
+    .. important::
+        Because constraints depend on external configuration, a given constraints may be invalid or unavailable
+        if a task is re-run at a future date.
+    """
+
     name: Optional[str] = None
     """
     Name is used for display and to refer to the task throughout the spec.
@@ -357,7 +368,7 @@ class TaskSpec(BaseModel, frozen=False):
     def new(
         cls,
         name: str,
-        cluster: str,
+        cluster: Optional[str] = None,
         beaker_image: Optional[str] = None,
         docker_image: Optional[str] = None,
         result_path: str = "/unused",
@@ -570,6 +581,29 @@ class TaskSpec(BaseModel, frozen=False):
             update={
                 "env_vars": [d.copy(deep=True) for d in self.env_vars or []]
                 + [EnvVar(name=name, value=value, secret=secret)]
+            },
+        )
+
+    def with_constraint(self, constraint_type: str, constraint_values: List[str]) -> "TaskSpec":
+        """
+        Return a new :class:`TaskSpec` with the given :data:`constraint`.
+
+        :param constraint_type: The type of constraint, e.g.  :data:`cluster`.
+        :param constraint_values: The list of constraint values, such as a list of cluster names.
+
+        :examples:
+
+        >>> task_spec = TaskSpec.new(
+        ...     "hello-world",
+        ...     "ai2/gpu-cluster",
+        ...     docker_image="hello-world",
+        ... ).with_constraint('cluster', ['ai2/cpu-cluster'])
+        >>> assert task_spec.constraints['cluster'] == ['ai2/cpu-cluster']
+        """
+        return self.copy(
+            deep=True,
+            update={
+                "constraints": {**(self.constraints or {}), constraint_type: constraint_values},
             },
         )
 

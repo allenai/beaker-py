@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added missing `constraints` field to `TaskSpec` data model.
+
 ## [v1.11.1](https://github.com/allenai/beaker-py/releases/tag/v1.11.1) - 2022-10-07
 
 ### Fixed
