@@ -23,6 +23,7 @@ class Node(BaseModel):
     cordon_reason: Optional[str] = None
     cordon_agent_id: Optional[str] = None
     cluster_id: Optional[str] = None
+    account_id: Optional[str] = None
 
 
 class NodeUtilization(BaseModel):
