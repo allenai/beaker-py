@@ -143,6 +143,7 @@ class Session(BaseModel):
     ports: Optional[Tuple[int, ...]] = None
     priority: Optional[Priority] = None
     work_dir: Optional[str] = None
+    identity: Optional[str] = None
 
 
 class Job(BaseModel):
