@@ -10,7 +10,6 @@ from ..config import Config
 from ..data_model import *
 from ..exceptions import *
 from ..util import retriable
-from ..version import VERSION
 
 if TYPE_CHECKING:
     from ..client import Beaker
