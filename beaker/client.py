@@ -69,6 +69,7 @@ class Beaker:
     BACKOFF_MAX = 120
 
     API_VERSION = "v3"
+    CLIENT_VERSION = VERSION
 
     logger = logging.getLogger("beaker")
 
@@ -131,8 +132,7 @@ class Beaker:
             f")"
         )
 
-    @staticmethod
-    def _check_for_upgrades():
+    def _check_for_upgrades(self):
         global _LATEST_VERSION_CHECKED
 
         if _LATEST_VERSION_CHECKED:
@@ -150,9 +150,9 @@ class Beaker:
             if response.ok:
                 latest_version = packaging.version.parse(response.json()["tag_name"])
                 _LATEST_VERSION_CHECKED = True
-                if latest_version > packaging.version.parse(VERSION):
+                if latest_version > packaging.version.parse(self.CLIENT_VERSION):
                     warnings.warn(
-                        f"You're using beaker-py v{VERSION}, "
+                        f"You're using beaker-py v{self.CLIENT_VERSION}, "
                         f"but a newer version (v{latest_version}) is available.\n\n"
                         f"Please upgrade with `pip install --upgrade beaker-py`.\n\n"
                         f"You can find the release notes for v{latest_version} at "
