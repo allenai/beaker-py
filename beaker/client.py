@@ -12,6 +12,7 @@ from .config import Config
 from .data_model import *
 from .exceptions import *
 from .services import *
+from .version import VERSION
 
 __all__ = ["Beaker"]
 
@@ -45,6 +46,8 @@ class Beaker:
         If not specified, a large default value will be used based on a multiple of the number
         of CPUs available.
 
+    :param user_agent: Override the "User-Agent" header used in requests to the Beaker server.
+
     The easiest way to initialize a Beaker client is with :meth:`.from_env()`:
 
     >>> beaker = Beaker.from_env()
@@ -66,6 +69,7 @@ class Beaker:
     BACKOFF_MAX = 120
 
     API_VERSION = "v3"
+    CLIENT_VERSION = VERSION
 
     logger = logging.getLogger("beaker")
 
@@ -76,10 +80,12 @@ class Beaker:
         timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
         session: Optional[Union[bool, requests.Session]] = None,
         pool_maxsize: Optional[int] = None,
+        user_agent: str = f"beaker-py v{VERSION}",
     ):
         self._config = config
         self._docker: Optional[docker.DockerClient] = None
         self._pool_maxsize = pool_maxsize or min(100, (os.cpu_count() or 16) * 6)
+        self.user_agent = user_agent
         self._session: Optional[requests.Session] = (
             None
             if not session
@@ -126,8 +132,7 @@ class Beaker:
             f")"
         )
 
-    @staticmethod
-    def _check_for_upgrades():
+    def _check_for_upgrades(self):
         global _LATEST_VERSION_CHECKED
 
         if _LATEST_VERSION_CHECKED:
@@ -138,8 +143,6 @@ class Beaker:
         import packaging.version
         import requests
 
-        from .version import VERSION
-
         try:
             response = requests.get(
                 "https://api.github.com/repos/allenai/beaker-py/releases/latest", timeout=1
@@ -147,9 +150,9 @@ class Beaker:
             if response.ok:
                 latest_version = packaging.version.parse(response.json()["tag_name"])
                 _LATEST_VERSION_CHECKED = True
-                if latest_version > packaging.version.parse(VERSION):
+                if latest_version > packaging.version.parse(self.CLIENT_VERSION):
                     warnings.warn(
-                        f"You're using beaker-py v{VERSION}, "
+                        f"You're using beaker-py v{self.CLIENT_VERSION}, "
                         f"but a newer version (v{latest_version}) is available.\n\n"
                         f"Please upgrade with `pip install --upgrade beaker-py`.\n\n"
                         f"You can find the release notes for v{latest_version} at "
@@ -166,6 +169,7 @@ class Beaker:
         timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
         session: Optional[Union[bool, requests.Session]] = None,
         pool_maxsize: Optional[int] = None,
+        user_agent: str = f"beaker-py v{VERSION}",
         **overrides,
     ) -> "Beaker":
         """
@@ -194,6 +198,8 @@ class Beaker:
             If not specified, a large default value will be used based on a multiple of the number
             of CPUs available.
 
+        :param user_agent: Override the "User-Agent" header used in requests to the Beaker server.
+
         :param overrides: Fields in the :class:`Config` to override.
 
         .. note::
@@ -210,6 +216,7 @@ class Beaker:
             timeout=timeout,
             session=session,
             pool_maxsize=pool_maxsize,
+            user_agent=user_agent,
         )
 
     def _make_session(self) -> requests.Session:
