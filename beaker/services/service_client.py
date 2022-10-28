@@ -52,7 +52,7 @@ class ServiceClient:
             default_headers = {
                 "Authorization": f"Bearer {token or self.config.user_token}",
                 "Content-Type": "application/json",
-                "User-Agent": f"beaker-py v{VERSION}",
+                "User-Agent": self.beaker.user_agent,
             }
             if headers is not None:
                 default_headers.update(headers)

@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added customizable `user_agent` attribute to `Beaker` client.
+
 ### Fixed
 
 - Added missing `account_id` field to `Node` data model.

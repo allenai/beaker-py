@@ -12,6 +12,7 @@ from .config import Config
 from .data_model import *
 from .exceptions import *
 from .services import *
+from .version import VERSION
 
 __all__ = ["Beaker"]
 
@@ -45,6 +46,8 @@ class Beaker:
         If not specified, a large default value will be used based on a multiple of the number
         of CPUs available.
 
+    :param user_agent: Override the "User-Agent" header used in requests to the Beaker server.
+
     The easiest way to initialize a Beaker client is with :meth:`.from_env()`:
 
     >>> beaker = Beaker.from_env()
@@ -76,10 +79,12 @@ class Beaker:
         timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
         session: Optional[Union[bool, requests.Session]] = None,
         pool_maxsize: Optional[int] = None,
+        user_agent: Optional[str] = f"beaker-py v{VERSION}",
     ):
         self._config = config
         self._docker: Optional[docker.DockerClient] = None
         self._pool_maxsize = pool_maxsize or min(100, (os.cpu_count() or 16) * 6)
+        self.user_agent = user_agent
         self._session: Optional[requests.Session] = (
             None
             if not session
@@ -137,8 +142,6 @@ class Beaker:
 
         import packaging.version
         import requests
-
-        from .version import VERSION
 
         try:
             response = requests.get(
