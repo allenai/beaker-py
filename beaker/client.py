@@ -80,7 +80,7 @@ class Beaker:
         timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
         session: Optional[Union[bool, requests.Session]] = None,
         pool_maxsize: Optional[int] = None,
-        user_agent: Optional[str] = f"beaker-py v{VERSION}",
+        user_agent: str = f"beaker-py v{VERSION}",
     ):
         self._config = config
         self._docker: Optional[docker.DockerClient] = None
@@ -169,6 +169,7 @@ class Beaker:
         timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
         session: Optional[Union[bool, requests.Session]] = None,
         pool_maxsize: Optional[int] = None,
+        user_agent: str = f"beaker-py v{VERSION}",
         **overrides,
     ) -> "Beaker":
         """
@@ -197,6 +198,8 @@ class Beaker:
             If not specified, a large default value will be used based on a multiple of the number
             of CPUs available.
 
+        :param user_agent: Override the "User-Agent" header used in requests to the Beaker server.
+
         :param overrides: Fields in the :class:`Config` to override.
 
         .. note::
@@ -213,6 +216,7 @@ class Beaker:
             timeout=timeout,
             session=session,
             pool_maxsize=pool_maxsize,
+            user_agent=user_agent,
         )
 
     def _make_session(self) -> requests.Session:
