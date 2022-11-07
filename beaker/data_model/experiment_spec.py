@@ -583,25 +583,24 @@ class TaskSpec(BaseModel, frozen=False):
             },
         )
 
-    def with_constraint(self, constraint_type: str, constraint_values: List[str]) -> "TaskSpec":
+    def with_constraint(self, **kwargs: List[str]) -> "TaskSpec":
         """
         Return a new :class:`TaskSpec` with the given :data:`constraint`.
 
-        :param constraint_type: The type of constraint, e.g.  :data:`cluster`.
-        :param constraint_values: The list of constraint values, such as a list of cluster names.
+        :param kwargs: Constraint name, constraint values.
 
         :examples:
 
         >>> task_spec = TaskSpec.new(
         ...     "hello-world",
         ...     docker_image="hello-world",
-        ... ).with_constraint('cluster', ['ai2/cpu-cluster'])
+        ... ).with_constraint(cluster=['ai2/cpu-cluster'])
         >>> assert task_spec.constraints['cluster'] == ['ai2/cpu-cluster']
         """
         return self.copy(
             deep=True,
             update={
-                "constraints": {**(self.constraints or {}), constraint_type: constraint_values},
+                "constraints": {**(self.constraints or {}), **kwargs},
             },
         )
 

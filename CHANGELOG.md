@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Changed
+
+- `TaskSpec.with_contraint` now takes `**kwargs` instead of two positional arguments.
+
 ## [v1.11.3](https://github.com/allenai/beaker-py/releases/tag/v1.11.3) - 2022-10-28
 
 ### Added
