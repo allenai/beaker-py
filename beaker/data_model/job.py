@@ -201,6 +201,7 @@ class Job(BaseModel):
 class Jobs(BaseModel):
     data: Optional[Tuple[Job, ...]] = None
     next: Optional[str] = None
+    next_cursor: Optional[str] = None
 
 
 class JobStatusUpdate(BaseModel):
