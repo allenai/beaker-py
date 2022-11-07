@@ -100,10 +100,10 @@ class JobClient(ServiceClient):
             page = Jobs.from_json(self.request("jobs", method="GET", query=request_opts).json())
             if page.data:
                 jobs.extend(page.data)
-            if not page.next:
+            if not page.next and not page.next_cursor:
                 break
             else:
-                request_opts["cursor"] = page.next
+                request_opts["cursor"] = page.next or page.next_cursor
 
         return jobs
 
