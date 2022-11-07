@@ -457,7 +457,6 @@ class TaskSpec(BaseModel, frozen=False):
 
         >>> task_spec = TaskSpec.new(
         ...     "hello-world",
-        ...     "ai2/gpu-cluster",
         ...     docker_image="hello-world",
         ... ).with_context(cluster="ai2/general-cirrascale")
         >>> assert task_spec.context.cluster == "ai2/general-cirrascale"
