@@ -594,7 +594,6 @@ class TaskSpec(BaseModel, frozen=False):
 
         >>> task_spec = TaskSpec.new(
         ...     "hello-world",
-        ...     "ai2/gpu-cluster",
         ...     docker_image="hello-world",
         ... ).with_constraint('cluster', ['ai2/cpu-cluster'])
         >>> assert task_spec.constraints['cluster'] == ['ai2/cpu-cluster']
