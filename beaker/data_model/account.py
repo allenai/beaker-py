@@ -11,3 +11,4 @@ class Account(BaseModel):
     display_name: str
     institution: Optional[str] = None
     pronouns: Optional[str] = None
+    email: Optional[str] = None
