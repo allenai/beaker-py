@@ -360,7 +360,7 @@ class WorkspaceClient(ServiceClient):
                 ).json()
             )
             experiments.extend(page.data)
-            cursor = page.next_cursor
+            cursor = page.next_cursor or page.next
             if not cursor:
                 break
             if limit is not None and len(experiments) >= limit:

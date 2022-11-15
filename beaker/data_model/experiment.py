@@ -64,6 +64,7 @@ class Tasks(MappedSequence[Task]):
 class ExperimentsPage(BaseModel):
     data: Tuple[Experiment, ...]
     next_cursor: Optional[str] = None
+    next: Optional[str] = None
 
 
 class ExperimentPatch(BaseModel):
