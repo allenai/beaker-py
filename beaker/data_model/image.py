@@ -25,15 +25,16 @@ __all__ = [
 
 class Image(BaseModel):
     id: str
-    name: Optional[str] = None
-    full_name: Optional[str] = None
-    description: Optional[str] = None
     original_tag: str
     owner: Account
     author: Account
     created: datetime
-    committed: Optional[datetime] = None
     workspace_ref: WorkspaceRef
+    name: Optional[str] = None
+    full_name: Optional[str] = None
+    description: Optional[str] = None
+    committed: Optional[datetime] = None
+    size: Optional[int] = None
 
     @property
     def display_name(self) -> str:

@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added missing `size` field to `Image` data model
+
 ## [v1.11.4](https://github.com/allenai/beaker-py/releases/tag/v1.11.4) - 2022-11-07
 
 ### Changed
