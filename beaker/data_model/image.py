@@ -54,6 +54,7 @@ class Image(BaseModel):
 class ImagesPage(BaseModel):
     data: Tuple[Image, ...]
     next_cursor: Optional[str] = None
+    next: Optional[str] = None
 
 
 class ImageRepoAuth(BaseModel):
