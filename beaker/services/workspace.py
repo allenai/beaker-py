@@ -260,7 +260,7 @@ class WorkspaceClient(ServiceClient):
                 ).json()
             )
             workspaces.extend(page.data)
-            cursor = page.next_cursor
+            cursor = page.next_cursor or page.next
             if not cursor:
                 break
             if limit and len(workspaces) >= limit:
@@ -310,7 +310,7 @@ class WorkspaceClient(ServiceClient):
                 ).json()
             )
             images.extend(page.data)
-            cursor = page.next_cursor
+            cursor = page.next_cursor or page.next
             if not cursor:
                 break
             if limit is not None and len(images) >= limit:
@@ -418,7 +418,7 @@ class WorkspaceClient(ServiceClient):
                 ).json()
             )
             datasets.extend(page.data)
-            cursor = page.next_cursor
+            cursor = page.next_cursor or page.next
             if not cursor:
                 break
             if limit is not None and len(datasets) >= limit:

@@ -49,6 +49,7 @@ class WorkspaceRef(BaseModel):
 class WorkspacePage(BaseModel):
     data: Tuple[Workspace, ...]
     next_cursor: Optional[str] = None
+    next: Optional[str] = None
     org: Optional[str] = None
 
 

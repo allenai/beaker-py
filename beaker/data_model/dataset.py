@@ -155,6 +155,7 @@ class DatasetManifest(BaseModel):
 class DatasetsPage(BaseModel):
     data: Tuple[Dataset, ...]
     next_cursor: Optional[str] = None
+    next: Optional[str] = None
 
 
 class DatasetSpec(BaseModel):
