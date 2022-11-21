@@ -172,12 +172,12 @@ class ExperimentClient(ServiceClient):
         if delete_results_datasets:
             for task in self.tasks(experiment):
                 for job in task.jobs:
-                    dataset = self.beaker.job.results(job)
-                    if dataset is not None:
-                        try:
+                    try:
+                        dataset = self.beaker.job.results(job)
+                        if dataset is not None:
                             self.beaker.dataset.delete(dataset)
-                        except DatasetNotFound:
-                            pass
+                    except DatasetNotFound:
+                        pass
         self.request(
             f"experiments/{self.url_quote(experiment.id)}",
             method="DELETE",
