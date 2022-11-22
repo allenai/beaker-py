@@ -162,7 +162,6 @@ class DatasetsPage(BaseModel):
 class DatasetSpec(BaseModel):
     workspace: Optional[str] = None
     description: Optional[str] = None
-    fileheap: Optional[bool] = None
 
 
 class DatasetPatch(BaseModel):

@@ -118,9 +118,7 @@ class DatasetClient(ServiceClient):
                     "datasets",
                     method="POST",
                     query={"name": name},
-                    data=DatasetSpec(
-                        workspace=workspace_id, description=description, fileheap=True
-                    ),
+                    data=DatasetSpec(workspace=workspace_id, description=description),
                     exceptions_for_status={409: DatasetConflict(name)},
                 ).json()
             )
