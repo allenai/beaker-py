@@ -26,6 +26,7 @@ class DatasetStorage(BaseModel):
     address: str
     token: str
     token_expires: datetime
+    url: Optional[str] = None
 
 
 class DatasetSize(BaseModel):

@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added missing `url` field to `DatasetStorage`.
+
 ## [v1.11.5](https://github.com/allenai/beaker-py/releases/tag/v1.11.5) - 2022-11-16
 
 ### Added
