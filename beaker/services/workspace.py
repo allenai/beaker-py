@@ -723,7 +723,7 @@ class WorkspaceClient(ServiceClient):
         :param images: Whether to delete images.
         :param datasets: Whether to delete datasets.
         :param secrets: Whether to delete secrets.
-        :param older_than: Only delete objects older than this date.
+        :param older_than: Only delete objects created before this date.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
