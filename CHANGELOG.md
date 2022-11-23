@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.12.0](https://github.com/allenai/beaker-py/releases/tag/v1.12.0) - 2022-11-23
+
 ### Added
 
 - Added `Beaker.workspace.iter_(images|experiments|datasets)` methods.
