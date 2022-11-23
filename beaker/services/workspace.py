@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime
 from typing import Dict, Generator, List, Optional, Union
 
 from ..data_model import *
@@ -710,6 +711,7 @@ class WorkspaceClient(ServiceClient):
         images: bool = True,
         datasets: bool = True,
         secrets: bool = True,
+        older_than: Optional[datetime] = None,
     ):
         """
         Remove groups, experiments, images, datasets, and secrets from a workspace.
@@ -721,6 +723,7 @@ class WorkspaceClient(ServiceClient):
         :param images: Whether to delete images.
         :param datasets: Whether to delete datasets.
         :param secrets: Whether to delete secrets.
+        :param older_than: Only delete objects older than this date.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
@@ -731,36 +734,50 @@ class WorkspaceClient(ServiceClient):
         """
         import concurrent.futures
 
+        def should_delete(created: Optional[datetime]) -> bool:
+            if older_than is None or created is None:
+                return True
+            if any([dt.tzinfo is None for dt in (created, older_than)]):
+                return created.replace(tzinfo=None) < older_than.replace(tzinfo=None)
+            else:
+                return created < older_than
+
         deletion_counts: Dict[str, int] = defaultdict(int)
         with concurrent.futures.ThreadPoolExecutor() as executor:
             deletion_futures = []
 
             if groups:
-                for group in self.groups(workspace):
+                for group in filter(lambda x: should_delete(x.created), self.groups(workspace)):
                     future = executor.submit(self.beaker.group.delete, group)
                     deletion_futures.append(future)
                     deletion_counts["groups_deleted"] += 1
 
             if experiments:
-                for experiment in self.iter_experiments(workspace):
+                for experiment in filter(
+                    lambda x: should_delete(x.created), self.iter_experiments(workspace)
+                ):
                     future = executor.submit(self.beaker.experiment.delete, experiment)
                     deletion_futures.append(future)
                     deletion_counts["experiments_deleted"] += 1
 
             if images:
-                for image in self.iter_images(workspace):
+                for image in filter(
+                    lambda x: should_delete(x.committed), self.iter_images(workspace)
+                ):
                     future = executor.submit(self.beaker.image.delete, image)
                     deletion_futures.append(future)
                     deletion_counts["images_deleted"] += 1
 
             if datasets:
-                for dataset in self.iter_datasets(workspace):
+                for dataset in filter(
+                    lambda x: should_delete(x.created), self.iter_datasets(workspace)
+                ):
                     future = executor.submit(self.beaker.dataset.delete, dataset)
                     deletion_futures.append(future)
                     deletion_counts["datasets_deleted"] += 1
 
             if secrets:
-                for secret in self.secrets(workspace):
+                for secret in filter(lambda x: should_delete(x.created), self.secrets(workspace)):
                     future = executor.submit(self.beaker.secret.delete, secret, workspace)
                     deletion_futures.append(future)
                     deletion_counts["secrets_deleted"] += 1

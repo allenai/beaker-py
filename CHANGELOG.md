@@ -12,6 +12,7 @@ use patch releases for compatibility fixes instead.
 ### Added
 
 - Added `Beaker.workspace.iter_(images|experiments|datasets)` methods.
+- Added `older_than` parameter to `Beaker.workspace.clear()` method.
 
 ## [v1.11.6](https://github.com/allenai/beaker-py/releases/tag/v1.11.6) - 2022-11-22
 
