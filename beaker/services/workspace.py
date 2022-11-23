@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, Optional, Union
+from typing import Dict, Generator, List, Optional, Union
 
 from ..data_model import *
 from ..exceptions import *
@@ -269,6 +269,57 @@ class WorkspaceClient(ServiceClient):
 
         return workspaces
 
+    def iter_images(
+        self,
+        workspace: Optional[Union[str, Workspace]] = None,
+        match: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Generator[Image, None, None]:
+        """
+        Iterate over the images in a workspace.
+
+        :param workspace: The Beaker workspace name or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param match: Only include images matching the text.
+        :param limit: Limit the number of images returned.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
+        workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
+        cursor: Optional[str] = None
+        query: Dict[str, str] = {}
+        if match is not None:
+            query["q"] = match
+
+        count = 0
+        while True:
+            query["cursor"] = cursor or ""
+            page = ImagesPage.from_json(
+                self.request(
+                    f"workspaces/{self.url_quote(workspace_name)}/images",
+                    method="GET",
+                    query=query,
+                    exceptions_for_status={
+                        404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
+                    },
+                ).json()
+            )
+
+            for image in page.data:
+                count += 1
+                yield image
+                if limit is not None and count >= limit:
+                    return
+
+            cursor = page.next_cursor or page.next
+            if not cursor:
+                break
+
     def images(
         self,
         workspace: Optional[Union[str, Workspace]] = None,
@@ -290,18 +341,41 @@ class WorkspaceClient(ServiceClient):
         :raises RequestException: Any other exception that can occur when contacting the
             Beaker server.
         """
+        return list(self.iter_images(workspace=workspace, match=match, limit=limit))
+
+    def iter_experiments(
+        self,
+        workspace: Optional[Union[str, Workspace]] = None,
+        match: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Generator[Experiment, None, None]:
+        """
+        Iterate over the experiments in a workspace.
+
+        :param workspace: The Beaker workspace name or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param match: Only include experiments matching the text.
+        :param limit: Limit the number of experiments returned.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
-        images: List[Image] = []
         cursor: Optional[str] = None
         query: Dict[str, str] = {}
         if match is not None:
             query["q"] = match
 
+        count = 0
         while True:
             query["cursor"] = cursor or ""
-            page = ImagesPage.from_json(
+            page = ExperimentsPage.from_json(
                 self.request(
-                    f"workspaces/{self.url_quote(workspace_name)}/images",
+                    f"workspaces/{self.url_quote(workspace_name)}/experiments",
                     method="GET",
                     query=query,
                     exceptions_for_status={
@@ -309,15 +383,16 @@ class WorkspaceClient(ServiceClient):
                     },
                 ).json()
             )
-            images.extend(page.data)
+
+            for experiment in page.data:
+                count += 1
+                yield experiment
+                if limit is not None and count >= limit:
+                    return
+
             cursor = page.next_cursor or page.next
             if not cursor:
                 break
-            if limit is not None and len(images) >= limit:
-                images = images[:limit]
-                break
-
-        return images
 
     def experiments(
         self,
@@ -340,18 +415,49 @@ class WorkspaceClient(ServiceClient):
         :raises RequestException: Any other exception that can occur when contacting the
             Beaker server.
         """
+        return list(self.iter_experiments(workspace=workspace, match=match, limit=limit))
+
+    def iter_datasets(
+        self,
+        workspace: Optional[Union[str, Workspace]] = None,
+        match: Optional[str] = None,
+        results: Optional[bool] = None,
+        uncommitted: Optional[bool] = None,
+        limit: Optional[int] = None,
+    ) -> Generator[Dataset, None, None]:
+        """
+        Iterate over the datasets in a workspace.
+
+        :param workspace: The Beaker workspace name, or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param match: Only include datasets matching the text.
+        :param results: Only include/exclude experiment result datasets.
+        :param uncommitted: Only include/exclude uncommitted datasets.
+        :param limit: Limit the number of datasets returned.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
-        experiments: List[Experiment] = []
         cursor: Optional[str] = None
         query: Dict[str, str] = {}
         if match is not None:
             query["q"] = match
+        if results is not None:
+            query["results"] = str(results).lower()
+        if uncommitted is not None:
+            query["committed"] = str(not uncommitted).lower()
 
+        count = 0
         while True:
             query["cursor"] = cursor or ""
-            page = ExperimentsPage.from_json(
+            page = DatasetsPage.from_json(
                 self.request(
-                    f"workspaces/{self.url_quote(workspace_name)}/experiments",
+                    f"workspaces/{self.url_quote(workspace_name)}/datasets",
                     method="GET",
                     query=query,
                     exceptions_for_status={
@@ -359,15 +465,16 @@ class WorkspaceClient(ServiceClient):
                     },
                 ).json()
             )
-            experiments.extend(page.data)
+
+            for dataset in page.data:
+                count += 1
+                yield dataset
+                if limit is not None and count >= limit:
+                    return
+
             cursor = page.next_cursor or page.next
             if not cursor:
                 break
-            if limit is not None and len(experiments) >= limit:
-                experiments = experiments[:limit]
-                break
-
-        return experiments
 
     def datasets(
         self,
@@ -394,38 +501,15 @@ class WorkspaceClient(ServiceClient):
         :raises RequestException: Any other exception that can occur when contacting the
             Beaker server.
         """
-        workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
-        datasets: List[Dataset] = []
-        cursor: Optional[str] = None
-        query: Dict[str, str] = {}
-        if match is not None:
-            query["q"] = match
-        if results is not None:
-            query["results"] = str(results).lower()
-        if uncommitted is not None:
-            query["committed"] = str(not uncommitted).lower()
-
-        while True:
-            query["cursor"] = cursor or ""
-            page = DatasetsPage.from_json(
-                self.request(
-                    f"workspaces/{self.url_quote(workspace_name)}/datasets",
-                    method="GET",
-                    query=query,
-                    exceptions_for_status={
-                        404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
-                    },
-                ).json()
+        return list(
+            self.iter_datasets(
+                workspace=workspace,
+                match=match,
+                results=results,
+                uncommitted=uncommitted,
+                limit=limit,
             )
-            datasets.extend(page.data)
-            cursor = page.next_cursor or page.next
-            if not cursor:
-                break
-            if limit is not None and len(datasets) >= limit:
-                datasets = datasets[:limit]
-                break
-
-        return datasets
+        )
 
     def secrets(self, workspace: Optional[Union[str, Workspace]] = None) -> List[Secret]:
         """
