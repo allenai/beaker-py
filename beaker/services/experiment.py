@@ -349,7 +349,10 @@ class ExperimentClient(ServiceClient):
             return None
         else:
             assert job.execution is not None  # for mypy
-            return self.beaker.dataset.get(job.execution.result.beaker)
+            try:
+                return self.beaker.dataset.get(job.execution.result.beaker)
+            except DatasetNotFound:
+                return None
 
     def wait_for(
         self,
