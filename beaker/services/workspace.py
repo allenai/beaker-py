@@ -1,5 +1,6 @@
 from collections import defaultdict
-from typing import Dict, List, Optional, Union
+from datetime import datetime
+from typing import Dict, Generator, List, Optional, Union
 
 from ..data_model import *
 from ..exceptions import *
@@ -269,6 +270,57 @@ class WorkspaceClient(ServiceClient):
 
         return workspaces
 
+    def iter_images(
+        self,
+        workspace: Optional[Union[str, Workspace]] = None,
+        match: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Generator[Image, None, None]:
+        """
+        Iterate over the images in a workspace.
+
+        :param workspace: The Beaker workspace name or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param match: Only include images matching the text.
+        :param limit: Limit the number of images returned.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
+        workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
+        cursor: Optional[str] = None
+        query: Dict[str, str] = {}
+        if match is not None:
+            query["q"] = match
+
+        count = 0
+        while True:
+            query["cursor"] = cursor or ""
+            page = ImagesPage.from_json(
+                self.request(
+                    f"workspaces/{self.url_quote(workspace_name)}/images",
+                    method="GET",
+                    query=query,
+                    exceptions_for_status={
+                        404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
+                    },
+                ).json()
+            )
+
+            for image in page.data:
+                count += 1
+                yield image
+                if limit is not None and count >= limit:
+                    return
+
+            cursor = page.next_cursor or page.next
+            if not cursor:
+                break
+
     def images(
         self,
         workspace: Optional[Union[str, Workspace]] = None,
@@ -290,18 +342,41 @@ class WorkspaceClient(ServiceClient):
         :raises RequestException: Any other exception that can occur when contacting the
             Beaker server.
         """
+        return list(self.iter_images(workspace=workspace, match=match, limit=limit))
+
+    def iter_experiments(
+        self,
+        workspace: Optional[Union[str, Workspace]] = None,
+        match: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> Generator[Experiment, None, None]:
+        """
+        Iterate over the experiments in a workspace.
+
+        :param workspace: The Beaker workspace name or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param match: Only include experiments matching the text.
+        :param limit: Limit the number of experiments returned.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
-        images: List[Image] = []
         cursor: Optional[str] = None
         query: Dict[str, str] = {}
         if match is not None:
             query["q"] = match
 
+        count = 0
         while True:
             query["cursor"] = cursor or ""
-            page = ImagesPage.from_json(
+            page = ExperimentsPage.from_json(
                 self.request(
-                    f"workspaces/{self.url_quote(workspace_name)}/images",
+                    f"workspaces/{self.url_quote(workspace_name)}/experiments",
                     method="GET",
                     query=query,
                     exceptions_for_status={
@@ -309,15 +384,16 @@ class WorkspaceClient(ServiceClient):
                     },
                 ).json()
             )
-            images.extend(page.data)
+
+            for experiment in page.data:
+                count += 1
+                yield experiment
+                if limit is not None and count >= limit:
+                    return
+
             cursor = page.next_cursor or page.next
             if not cursor:
                 break
-            if limit is not None and len(images) >= limit:
-                images = images[:limit]
-                break
-
-        return images
 
     def experiments(
         self,
@@ -340,18 +416,49 @@ class WorkspaceClient(ServiceClient):
         :raises RequestException: Any other exception that can occur when contacting the
             Beaker server.
         """
+        return list(self.iter_experiments(workspace=workspace, match=match, limit=limit))
+
+    def iter_datasets(
+        self,
+        workspace: Optional[Union[str, Workspace]] = None,
+        match: Optional[str] = None,
+        results: Optional[bool] = None,
+        uncommitted: Optional[bool] = None,
+        limit: Optional[int] = None,
+    ) -> Generator[Dataset, None, None]:
+        """
+        Iterate over the datasets in a workspace.
+
+        :param workspace: The Beaker workspace name, or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param match: Only include datasets matching the text.
+        :param results: Only include/exclude experiment result datasets.
+        :param uncommitted: Only include/exclude uncommitted datasets.
+        :param limit: Limit the number of datasets returned.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
-        experiments: List[Experiment] = []
         cursor: Optional[str] = None
         query: Dict[str, str] = {}
         if match is not None:
             query["q"] = match
+        if results is not None:
+            query["results"] = str(results).lower()
+        if uncommitted is not None:
+            query["committed"] = str(not uncommitted).lower()
 
+        count = 0
         while True:
             query["cursor"] = cursor or ""
-            page = ExperimentsPage.from_json(
+            page = DatasetsPage.from_json(
                 self.request(
-                    f"workspaces/{self.url_quote(workspace_name)}/experiments",
+                    f"workspaces/{self.url_quote(workspace_name)}/datasets",
                     method="GET",
                     query=query,
                     exceptions_for_status={
@@ -359,15 +466,16 @@ class WorkspaceClient(ServiceClient):
                     },
                 ).json()
             )
-            experiments.extend(page.data)
+
+            for dataset in page.data:
+                count += 1
+                yield dataset
+                if limit is not None and count >= limit:
+                    return
+
             cursor = page.next_cursor or page.next
             if not cursor:
                 break
-            if limit is not None and len(experiments) >= limit:
-                experiments = experiments[:limit]
-                break
-
-        return experiments
 
     def datasets(
         self,
@@ -394,38 +502,15 @@ class WorkspaceClient(ServiceClient):
         :raises RequestException: Any other exception that can occur when contacting the
             Beaker server.
         """
-        workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
-        datasets: List[Dataset] = []
-        cursor: Optional[str] = None
-        query: Dict[str, str] = {}
-        if match is not None:
-            query["q"] = match
-        if results is not None:
-            query["results"] = str(results).lower()
-        if uncommitted is not None:
-            query["committed"] = str(not uncommitted).lower()
-
-        while True:
-            query["cursor"] = cursor or ""
-            page = DatasetsPage.from_json(
-                self.request(
-                    f"workspaces/{self.url_quote(workspace_name)}/datasets",
-                    method="GET",
-                    query=query,
-                    exceptions_for_status={
-                        404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
-                    },
-                ).json()
+        return list(
+            self.iter_datasets(
+                workspace=workspace,
+                match=match,
+                results=results,
+                uncommitted=uncommitted,
+                limit=limit,
             )
-            datasets.extend(page.data)
-            cursor = page.next_cursor or page.next
-            if not cursor:
-                break
-            if limit is not None and len(datasets) >= limit:
-                datasets = datasets[:limit]
-                break
-
-        return datasets
+        )
 
     def secrets(self, workspace: Optional[Union[str, Workspace]] = None) -> List[Secret]:
         """
@@ -626,6 +711,7 @@ class WorkspaceClient(ServiceClient):
         images: bool = True,
         datasets: bool = True,
         secrets: bool = True,
+        older_than: Optional[datetime] = None,
     ):
         """
         Remove groups, experiments, images, datasets, and secrets from a workspace.
@@ -637,6 +723,7 @@ class WorkspaceClient(ServiceClient):
         :param images: Whether to delete images.
         :param datasets: Whether to delete datasets.
         :param secrets: Whether to delete secrets.
+        :param older_than: Only delete objects created before this date.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
@@ -647,36 +734,50 @@ class WorkspaceClient(ServiceClient):
         """
         import concurrent.futures
 
+        def should_delete(created: Optional[datetime]) -> bool:
+            if older_than is None or created is None:
+                return True
+            if any([dt.tzinfo is None for dt in (created, older_than)]):
+                return created.replace(tzinfo=None) < older_than.replace(tzinfo=None)
+            else:
+                return created < older_than
+
         deletion_counts: Dict[str, int] = defaultdict(int)
         with concurrent.futures.ThreadPoolExecutor() as executor:
             deletion_futures = []
 
             if groups:
-                for group in self.groups(workspace):
+                for group in filter(lambda x: should_delete(x.created), self.groups(workspace)):
                     future = executor.submit(self.beaker.group.delete, group)
                     deletion_futures.append(future)
                     deletion_counts["groups_deleted"] += 1
 
             if experiments:
-                for experiment in self.experiments(workspace):
+                for experiment in filter(
+                    lambda x: should_delete(x.created), self.iter_experiments(workspace)
+                ):
                     future = executor.submit(self.beaker.experiment.delete, experiment)
                     deletion_futures.append(future)
                     deletion_counts["experiments_deleted"] += 1
 
             if images:
-                for image in self.images(workspace):
+                for image in filter(
+                    lambda x: should_delete(x.committed), self.iter_images(workspace)
+                ):
                     future = executor.submit(self.beaker.image.delete, image)
                     deletion_futures.append(future)
                     deletion_counts["images_deleted"] += 1
 
             if datasets:
-                for dataset in self.datasets(workspace):
+                for dataset in filter(
+                    lambda x: should_delete(x.created), self.iter_datasets(workspace)
+                ):
                     future = executor.submit(self.beaker.dataset.delete, dataset)
                     deletion_futures.append(future)
                     deletion_counts["datasets_deleted"] += 1
 
             if secrets:
-                for secret in self.secrets(workspace):
+                for secret in filter(lambda x: should_delete(x.created), self.secrets(workspace)):
                     future = executor.submit(self.beaker.secret.delete, secret, workspace)
                     deletion_futures.append(future)
                     deletion_counts["secrets_deleted"] += 1
