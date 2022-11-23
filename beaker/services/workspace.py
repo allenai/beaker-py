@@ -742,19 +742,19 @@ class WorkspaceClient(ServiceClient):
                     deletion_counts["groups_deleted"] += 1
 
             if experiments:
-                for experiment in self.experiments(workspace):
+                for experiment in self.iter_experiments(workspace):
                     future = executor.submit(self.beaker.experiment.delete, experiment)
                     deletion_futures.append(future)
                     deletion_counts["experiments_deleted"] += 1
 
             if images:
-                for image in self.images(workspace):
+                for image in self.iter_images(workspace):
                     future = executor.submit(self.beaker.image.delete, image)
                     deletion_futures.append(future)
                     deletion_counts["images_deleted"] += 1
 
             if datasets:
-                for dataset in self.datasets(workspace):
+                for dataset in self.iter_datasets(workspace):
                     future = executor.submit(self.beaker.dataset.delete, dataset)
                     deletion_futures.append(future)
                     deletion_counts["datasets_deleted"] += 1
