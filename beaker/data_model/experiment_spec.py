@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field, root_validator, validator
 
 from ..aliases import PathOrStr
+from ..exceptions import *
 from .base import BaseModel
 
 __all__ = [
