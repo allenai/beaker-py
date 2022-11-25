@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field, root_validator, validator
 
 from ..aliases import PathOrStr
+from ..exceptions import *
 from .base import BaseModel
 
 __all__ = [
@@ -43,14 +44,6 @@ class ImageSource(BaseModel, frozen=False):
         If the tag is from a private registry, the cluster on which the task will run must
         be pre-configured to enable access.
     """
-
-    @root_validator(pre=True)
-    def _check_exactly_one_field_set(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if (values.get("beaker") is None) == (values.get("docker") is None):
-            raise ValueError(
-                "Exactly one of 'beaker' or 'docker' must be specified for image source"
-            )
-        return values
 
 
 class EnvVar(BaseModel, frozen=False):
@@ -718,3 +711,10 @@ class ExperimentSpec(BaseModel, frozen=False):
         'Hello, Mars!'
         """
         return self.copy(deep=True, update={"description": description})
+
+    def validate(self):
+        for task in self.tasks:
+            if (task.image.beaker is None) == (task.image.docker is None):
+                raise ExperimentSpecError(
+                    "Exactly one of 'beaker' or 'docker' must be specified for image source"
+                )

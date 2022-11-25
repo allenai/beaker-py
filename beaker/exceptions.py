@@ -230,3 +230,7 @@ class JobFailedError(BeakerError):
 
 class JobTimeoutError(BeakerError, TimeoutError):
     pass
+
+
+class ExperimentSpecError(BeakerError):
+    pass

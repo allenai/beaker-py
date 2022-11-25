@@ -6,16 +6,6 @@ from beaker.data_model import *
 from beaker.exceptions import ValidationError
 
 
-def test_image_source_validation():
-    with pytest.raises(ValidationError, match="'beaker' or 'docker'"):
-        ImageSource()
-
-    with pytest.raises(ValidationError, match="'beaker' or 'docker'"):
-        ImageSource(beaker="foo", docker="bar")
-
-    ImageSource(beaker="foo")
-
-
 def test_data_source_validation():
     with pytest.raises(ValidationError, match="Exactly one"):
         DataSource()
