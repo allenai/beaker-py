@@ -83,12 +83,10 @@ class ExperimentClient(ServiceClient):
 
         """
         self.validate_beaker_name(name)
-        json_spec: Dict[str, Any]
-        if isinstance(spec, ExperimentSpec):
-            json_spec = spec.to_json()
-        else:
+        if not isinstance(spec, ExperimentSpec):
             spec = ExperimentSpec.from_file(spec)
-            json_spec = spec.to_json()
+        spec.validate()
+        json_spec = spec.to_json()
         workspace = self.resolve_workspace(workspace)
         self._validate_spec(spec, workspace)
         experiment_data = self.request(
