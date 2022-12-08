@@ -54,11 +54,17 @@ class DatasetClient(ServiceClient):
             return _get(dataset)
         except DatasetNotFound:
             if "/" not in dataset:
-                # Now try with adding the account name.
+                # Try with adding the account name.
                 try:
                     return _get(f"{self.beaker.account.name}/{dataset}")
                 except DatasetNotFound:
                     pass
+
+                # Try searching the default workspace.
+                if self.config.default_workspace is not None:
+                    matches = self.beaker.workspace.datasets(match=dataset, limit=1)
+                    if matches:
+                        return matches[0]
             raise
 
     def create(
