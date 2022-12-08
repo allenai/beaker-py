@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.12.1](https://github.com/allenai/beaker-py/releases/tag/v1.12.1) - 2022-12-08
+
 ### Fixed
 
 - Improved `Beaker.(dataset|experiment|image).get()` when looking up objects in the default workspace that were created by other users.
