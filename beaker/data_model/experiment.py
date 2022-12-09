@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple
 from pydantic import Field
 
 from .account import Account
-from .base import BaseModel, MappedSequence, StrEnum
+from .base import BaseModel, BasePage, MappedSequence, StrEnum
 from .job import Job
 from .workspace import WorkspaceRef
 
@@ -61,10 +61,8 @@ class Tasks(MappedSequence[Task]):
         super().__init__(tasks, {task.name: task for task in tasks if task.name is not None})
 
 
-class ExperimentsPage(BaseModel):
+class ExperimentsPage(BasePage[Experiment]):
     data: Tuple[Experiment, ...]
-    next_cursor: Optional[str] = None
-    next: Optional[str] = None
 
 
 class ExperimentPatch(BaseModel):

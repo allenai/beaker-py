@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Optional, Tuple
 
 from .account import Account
-from .base import BaseModel, StrEnum
+from .base import BaseModel, BasePage, StrEnum
 from .workspace import WorkspaceRef
 
 __all__ = [
@@ -56,10 +56,8 @@ class GroupPatch(BaseModel):
     parameters: Optional[List[GroupParameter]] = None
 
 
-class GroupsPage(BaseModel):
+class GroupsPage(BasePage[Group]):
     data: Tuple[Group, ...]
-    next_cursor: Optional[str] = None
-    next: Optional[str] = None
 
 
 class GroupSort(StrEnum):

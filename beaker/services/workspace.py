@@ -1,11 +1,13 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, Generator, List, Optional, Union
+from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union
 
 from ..data_model import *
 from ..exceptions import *
 from ..util import format_cursor
 from .service_client import ServiceClient
+
+T = TypeVar("T")
 
 
 class WorkspaceClient(ServiceClient):
@@ -211,6 +213,43 @@ class WorkspaceClient(ServiceClient):
             },
         )
 
+    def _paginated_requests(
+        self,
+        page_class: Type[BasePage[T]],
+        path: str,
+        query: Dict[str, Any],
+        limit: Optional[int] = None,
+        workspace_name: Optional[str] = None,
+    ) -> Generator[T, None, None]:
+        if limit:
+            query["limit"] = str(limit)
+
+        exceptions_for_status: Optional[Dict[int, Exception]] = (
+            None
+            if workspace_name is None
+            else {404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))}
+        )
+
+        count = 0
+        while True:
+            page = page_class.from_json(
+                self.request(
+                    path,
+                    method="GET",
+                    query=query,
+                    exceptions_for_status=exceptions_for_status,
+                ).json()
+            )
+            for x in page.data:
+                count += 1
+                yield x
+                if limit is not None and count >= limit:
+                    return
+
+            query["cursor"] = page.next_cursor or page.next
+            if not query["cursor"]:
+                break
+
     def iter(
         self,
         org: Optional[Union[str, Organization]] = None,
@@ -238,27 +277,8 @@ class WorkspaceClient(ServiceClient):
             query["q"] = match
         if archived is not None:
             query["archived"] = str(archived).lower()
-        if limit:
-            query["limit"] = str(limit)
 
-        count = 0
-        while True:
-            page = WorkspacePage.from_json(
-                self.request(
-                    "workspaces",
-                    method="GET",
-                    query=query,
-                ).json()
-            )
-            for workspace in page.data:
-                count += 1
-                yield workspace
-                if limit is not None and count >= limit:
-                    return
-
-            query["cursor"] = page.next_cursor or page.next  # type: ignore
-            if not query["cursor"]:
-                break
+        yield from self._paginated_requests(WorkspacePage, "workspaces", query, limit=limit)
 
     def list(
         self,
@@ -342,31 +362,14 @@ class WorkspaceClient(ServiceClient):
         }
         if match is not None:
             query["q"] = match
-        if limit:
-            query["limit"] = str(limit)
 
-        count = 0
-        while True:
-            page = ImagesPage.from_json(
-                self.request(
-                    f"workspaces/{self.url_quote(workspace_name)}/images",
-                    method="GET",
-                    query=query,
-                    exceptions_for_status={
-                        404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
-                    },
-                ).json()
-            )
-
-            for image in page.data:
-                count += 1
-                yield image
-                if limit is not None and count >= limit:
-                    return
-
-            query["cursor"] = page.next_cursor or page.next  # type: ignore
-            if not query["cursor"]:
-                break
+        yield from self._paginated_requests(
+            ImagesPage,
+            f"workspaces/{self.url_quote(workspace_name)}/images",
+            query,
+            limit=limit,
+            workspace_name=workspace_name,
+        )
 
     def images(
         self,
@@ -443,31 +446,14 @@ class WorkspaceClient(ServiceClient):
         }
         if match is not None:
             query["q"] = match
-        if limit:
-            query["limit"] = str(limit)
 
-        count = 0
-        while True:
-            page = ExperimentsPage.from_json(
-                self.request(
-                    f"workspaces/{self.url_quote(workspace_name)}/experiments",
-                    method="GET",
-                    query=query,
-                    exceptions_for_status={
-                        404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
-                    },
-                ).json()
-            )
-
-            for experiment in page.data:
-                count += 1
-                yield experiment
-                if limit is not None and count >= limit:
-                    return
-
-            query["cursor"] = page.next_cursor or page.next  # type: ignore
-            if not query["cursor"]:
-                break
+        yield from self._paginated_requests(
+            ExperimentsPage,
+            f"workspaces/{self.url_quote(workspace_name)}/experiments",
+            query,
+            limit=limit,
+            workspace_name=workspace_name,
+        )
 
     def experiments(
         self,
@@ -552,31 +538,14 @@ class WorkspaceClient(ServiceClient):
             query["results"] = str(results).lower()
         if uncommitted is not None:
             query["committed"] = str(not uncommitted).lower()
-        if limit:
-            query["limit"] = str(limit)
 
-        count = 0
-        while True:
-            page = DatasetsPage.from_json(
-                self.request(
-                    f"workspaces/{self.url_quote(workspace_name)}/datasets",
-                    method="GET",
-                    query=query,
-                    exceptions_for_status={
-                        404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
-                    },
-                ).json()
-            )
-
-            for dataset in page.data:
-                count += 1
-                yield dataset
-                if limit is not None and count >= limit:
-                    return
-
-            query["cursor"] = page.next_cursor or page.next  # type: ignore
-            if not query["cursor"]:
-                break
+        yield from self._paginated_requests(
+            DatasetsPage,
+            f"workspaces/{self.url_quote(workspace_name)}/datasets",
+            query,
+            limit=limit,
+            workspace_name=workspace_name,
+        )
 
     def datasets(
         self,
@@ -685,31 +654,14 @@ class WorkspaceClient(ServiceClient):
         }
         if match is not None:
             query["q"] = match
-        if limit:
-            query["limit"] = str(limit)
 
-        count = 0
-        while True:
-            page = GroupsPage.from_json(
-                self.request(
-                    f"workspaces/{self.url_quote(workspace_name)}/groups",
-                    method="GET",
-                    query=query,
-                    exceptions_for_status={
-                        404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
-                    },
-                ).json()
-            )
-
-            for group in page.data:
-                count += 1
-                yield group
-                if limit is not None and count >= limit:
-                    return
-
-            query["cursor"] = page.next_cursor or page.next  # type: ignore
-            if not query["cursor"]:
-                break
+        yield from self._paginated_requests(
+            GroupsPage,
+            f"workspaces/{self.url_quote(workspace_name)}/groups",
+            query,
+            limit=limit,
+            workspace_name=workspace_name,
+        )
 
     def groups(
         self,

@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 from pydantic import validator
 
 from .account import Account
-from .base import BaseModel, StrEnum
+from .base import BaseModel, BasePage, StrEnum
 from .workspace import WorkspaceRef
 
 __all__ = [
@@ -51,10 +51,8 @@ class Image(BaseModel):
         return v
 
 
-class ImagesPage(BaseModel):
+class ImagesPage(BasePage[Image]):
     data: Tuple[Image, ...]
-    next_cursor: Optional[str] = None
-    next: Optional[str] = None
 
 
 class ImageRepoAuth(BaseModel):
