@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `cursor`, `sort_by` and ordering options to `Beaker.workspace.*` search methods.
+
 ## [v1.12.1](https://github.com/allenai/beaker-py/releases/tag/v1.12.1) - 2022-12-08
 
 ### Fixed

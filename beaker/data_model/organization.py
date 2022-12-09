@@ -1,9 +1,8 @@
 from datetime import datetime
-from enum import Enum
 from typing import Optional
 
 from .account import Account
-from .base import BaseModel
+from .base import BaseModel, StrEnum
 
 __all__ = ["Organization", "OrganizationRole", "OrganizationMember"]
 
@@ -17,7 +16,7 @@ class Organization(BaseModel):
     pronouns: Optional[str] = None
 
 
-class OrganizationRole(str, Enum):
+class OrganizationRole(StrEnum):
     admin = "admin"
     member = "member"
 

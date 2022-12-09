@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 from pydantic import Field, validator
 
 from .account import Account
-from .base import BaseModel
+from .base import BaseModel, StrEnum
 from .experiment_spec import DataMount, EnvVar, ImageSource, Priority, TaskSpec
 
 __all__ = [
@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 
-class CurrentJobStatus(str, Enum):
+class CurrentJobStatus(StrEnum):
     """
     The status of a job.
     """
@@ -41,7 +41,7 @@ class CurrentJobStatus(str, Enum):
     preempted = "preempted"
 
 
-class CanceledCode(int, Enum):
+class CanceledCode(Enum):
     not_set = 0
     system_preemption = 1
     user_preemption = 2
@@ -125,7 +125,7 @@ class JobExecution(BaseModel):
     workspace: Optional[str] = None
 
 
-class JobKind(str, Enum):
+class JobKind(StrEnum):
     """
     The kind of job.
     """

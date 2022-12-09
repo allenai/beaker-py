@@ -1,11 +1,10 @@
-from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from pydantic import Field, root_validator, validator
 
 from ..aliases import PathOrStr
 from ..exceptions import *
-from .base import BaseModel
+from .base import BaseModel, StrEnum
 
 __all__ = [
     "ImageSource",
@@ -238,7 +237,7 @@ class TaskResources(BaseModel, frozen=False):
     """
 
 
-class Priority(str, Enum):
+class Priority(StrEnum):
     urgent = "urgent"
     high = "high"
     normal = "normal"
@@ -305,7 +304,7 @@ class TaskSpec(BaseModel, frozen=False):
     Context describes how and where this task should run.
     """
 
-    constraints: Optional[Dict[str, List[str]]]
+    constraints: Optional[Dict[str, List[str]]] = None
     """
     Each task can have many constraints. And each constraint can have many values.
     Constraints are rules that change where a task is executed,
@@ -598,7 +597,7 @@ class TaskSpec(BaseModel, frozen=False):
         )
 
 
-class SpecVersion(str, Enum):
+class SpecVersion(StrEnum):
     v2 = "v2"
     v2_alpha = "v2-alpha"
 

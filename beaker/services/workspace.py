@@ -4,6 +4,7 @@ from typing import Dict, Generator, List, Optional, Union
 
 from ..data_model import *
 from ..exceptions import *
+from ..util import format_cursor
 from .service_client import ServiceClient
 
 
@@ -52,7 +53,7 @@ class WorkspaceClient(ServiceClient):
             raise
 
     def create(
-        self, workspace: str, description: Optional[str] = None, public: bool = False
+        self, workspace: str, *, description: Optional[str] = None, public: bool = False
     ) -> Workspace:
         """
         Create a workspace.
@@ -213,6 +214,7 @@ class WorkspaceClient(ServiceClient):
     def list(
         self,
         org: Optional[Union[str, Organization]] = None,
+        *,
         author: Optional[Union[str, Account]] = None,
         match: Optional[str] = None,
         archived: Optional[bool] = None,
@@ -273,8 +275,12 @@ class WorkspaceClient(ServiceClient):
     def iter_images(
         self,
         workspace: Optional[Union[str, Workspace]] = None,
+        *,
         match: Optional[str] = None,
         limit: Optional[int] = None,
+        sort_by: ImageSort = ImageSort.created,
+        descending: bool = True,
+        cursor: int = 0,
     ) -> Generator[Image, None, None]:
         """
         Iterate over the images in a workspace.
@@ -283,6 +289,9 @@ class WorkspaceClient(ServiceClient):
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param match: Only include images matching the text.
         :param limit: Limit the number of images returned.
+        :param sort_by: The field to sort the results by.
+        :param descending: Order the results in descending order according to the ``sort_by`` field.
+        :param cursor: Set the starting cursor for the query. You can use this to paginate the results.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
@@ -292,14 +301,16 @@ class WorkspaceClient(ServiceClient):
             Beaker server.
         """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
-        cursor: Optional[str] = None
-        query: Dict[str, str] = {}
+        query: Dict[str, str] = {
+            "field": str(sort_by),
+            "order": "descending" if descending else "ascending",
+            "cursor": format_cursor(cursor),
+        }
         if match is not None:
             query["q"] = match
 
         count = 0
         while True:
-            query["cursor"] = cursor or ""
             page = ImagesPage.from_json(
                 self.request(
                     f"workspaces/{self.url_quote(workspace_name)}/images",
@@ -317,15 +328,19 @@ class WorkspaceClient(ServiceClient):
                 if limit is not None and count >= limit:
                     return
 
-            cursor = page.next_cursor or page.next
-            if not cursor:
+            query["cursor"] = page.next_cursor or page.next  # type: ignore
+            if not query["cursor"]:
                 break
 
     def images(
         self,
         workspace: Optional[Union[str, Workspace]] = None,
+        *,
         match: Optional[str] = None,
         limit: Optional[int] = None,
+        sort_by: ImageSort = ImageSort.created,
+        descending: bool = True,
+        cursor: int = 0,
     ) -> List[Image]:
         """
         List the images in a workspace.
@@ -334,6 +349,9 @@ class WorkspaceClient(ServiceClient):
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param match: Only include images matching the text.
         :param limit: Limit the number of images returned.
+        :param sort_by: The field to sort the results by.
+        :param descending: Order the results in descending order according to the ``sort_by`` field.
+        :param cursor: Set the starting cursor for the query. You can use this to paginate the results.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
@@ -342,13 +360,26 @@ class WorkspaceClient(ServiceClient):
         :raises RequestException: Any other exception that can occur when contacting the
             Beaker server.
         """
-        return list(self.iter_images(workspace=workspace, match=match, limit=limit))
+        return list(
+            self.iter_images(
+                workspace=workspace,
+                match=match,
+                limit=limit,
+                sort_by=sort_by,
+                descending=descending,
+                cursor=cursor,
+            )
+        )
 
     def iter_experiments(
         self,
         workspace: Optional[Union[str, Workspace]] = None,
+        *,
         match: Optional[str] = None,
         limit: Optional[int] = None,
+        sort_by: ExperimentSort = ExperimentSort.created,
+        descending: bool = True,
+        cursor: int = 0,
     ) -> Generator[Experiment, None, None]:
         """
         Iterate over the experiments in a workspace.
@@ -357,6 +388,9 @@ class WorkspaceClient(ServiceClient):
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param match: Only include experiments matching the text.
         :param limit: Limit the number of experiments returned.
+        :param sort_by: The field to sort the results by.
+        :param descending: Order the results in descending order according to the ``sort_by`` field.
+        :param cursor: Set the starting cursor for the query. You can use this to paginate the results.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
@@ -366,14 +400,16 @@ class WorkspaceClient(ServiceClient):
             Beaker server.
         """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
-        cursor: Optional[str] = None
-        query: Dict[str, str] = {}
+        query: Dict[str, str] = {
+            "field": str(sort_by),
+            "order": "descending" if descending else "ascending",
+            "cursor": format_cursor(cursor),
+        }
         if match is not None:
             query["q"] = match
 
         count = 0
         while True:
-            query["cursor"] = cursor or ""
             page = ExperimentsPage.from_json(
                 self.request(
                     f"workspaces/{self.url_quote(workspace_name)}/experiments",
@@ -391,15 +427,19 @@ class WorkspaceClient(ServiceClient):
                 if limit is not None and count >= limit:
                     return
 
-            cursor = page.next_cursor or page.next
-            if not cursor:
+            query["cursor"] = page.next_cursor or page.next  # type: ignore
+            if not query["cursor"]:
                 break
 
     def experiments(
         self,
         workspace: Optional[Union[str, Workspace]] = None,
+        *,
         match: Optional[str] = None,
         limit: Optional[int] = None,
+        sort_by: ExperimentSort = ExperimentSort.created,
+        descending: bool = True,
+        cursor: int = 0,
     ) -> List[Experiment]:
         """
         List the experiments in a workspace.
@@ -408,6 +448,9 @@ class WorkspaceClient(ServiceClient):
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param match: Only include experiments matching the text.
         :param limit: Limit the number of experiments returned.
+        :param sort_by: The field to sort the results by.
+        :param descending: Order the results in descending order according to the ``sort_by`` field.
+        :param cursor: Set the starting cursor for the query. You can use this to paginate the results.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
@@ -416,15 +459,28 @@ class WorkspaceClient(ServiceClient):
         :raises RequestException: Any other exception that can occur when contacting the
             Beaker server.
         """
-        return list(self.iter_experiments(workspace=workspace, match=match, limit=limit))
+        return list(
+            self.iter_experiments(
+                workspace=workspace,
+                match=match,
+                limit=limit,
+                sort_by=sort_by,
+                descending=descending,
+                cursor=cursor,
+            )
+        )
 
     def iter_datasets(
         self,
         workspace: Optional[Union[str, Workspace]] = None,
+        *,
         match: Optional[str] = None,
         results: Optional[bool] = None,
         uncommitted: Optional[bool] = None,
         limit: Optional[int] = None,
+        sort_by: DatasetSort = DatasetSort.created,
+        descending: bool = True,
+        cursor: int = 0,
     ) -> Generator[Dataset, None, None]:
         """
         Iterate over the datasets in a workspace.
@@ -435,6 +491,9 @@ class WorkspaceClient(ServiceClient):
         :param results: Only include/exclude experiment result datasets.
         :param uncommitted: Only include/exclude uncommitted datasets.
         :param limit: Limit the number of datasets returned.
+        :param sort_by: The field to sort the results by.
+        :param descending: Order the results in descending order according to the ``sort_by`` field.
+        :param cursor: Set the starting cursor for the query. You can use this to paginate the results.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
@@ -444,8 +503,11 @@ class WorkspaceClient(ServiceClient):
             Beaker server.
         """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
-        cursor: Optional[str] = None
-        query: Dict[str, str] = {}
+        query: Dict[str, str] = {
+            "field": str(sort_by),
+            "order": "descending" if descending else "ascending",
+            "cursor": format_cursor(cursor),
+        }
         if match is not None:
             query["q"] = match
         if results is not None:
@@ -455,7 +517,6 @@ class WorkspaceClient(ServiceClient):
 
         count = 0
         while True:
-            query["cursor"] = cursor or ""
             page = DatasetsPage.from_json(
                 self.request(
                     f"workspaces/{self.url_quote(workspace_name)}/datasets",
@@ -473,17 +534,21 @@ class WorkspaceClient(ServiceClient):
                 if limit is not None and count >= limit:
                     return
 
-            cursor = page.next_cursor or page.next
-            if not cursor:
+            query["cursor"] = page.next_cursor or page.next  # type: ignore
+            if not query["cursor"]:
                 break
 
     def datasets(
         self,
         workspace: Optional[Union[str, Workspace]] = None,
+        *,
         match: Optional[str] = None,
         results: Optional[bool] = None,
         uncommitted: Optional[bool] = None,
         limit: Optional[int] = None,
+        sort_by: DatasetSort = DatasetSort.created,
+        descending: bool = True,
+        cursor: int = 0,
     ) -> List[Dataset]:
         """
         List the datasets in a workspace.
@@ -494,6 +559,9 @@ class WorkspaceClient(ServiceClient):
         :param results: Only include/exclude experiment result datasets.
         :param uncommitted: Only include/exclude uncommitted datasets.
         :param limit: Limit the number of datasets returned.
+        :param sort_by: The field to sort the results by.
+        :param descending: Order the results in descending order according to the ``sort_by`` field.
+        :param cursor: Set the starting cursor for the query. You can use this to paginate the results.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
@@ -509,6 +577,9 @@ class WorkspaceClient(ServiceClient):
                 results=results,
                 uncommitted=uncommitted,
                 limit=limit,
+                sort_by=sort_by,
+                descending=descending,
+                cursor=cursor,
             )
         )
 
@@ -538,12 +609,26 @@ class WorkspaceClient(ServiceClient):
             ).json()["data"]
         ]
 
-    def groups(self, workspace: Optional[Union[str, Workspace]] = None) -> List[Group]:
+    def iter_groups(
+        self,
+        workspace: Optional[Union[str, Workspace]] = None,
+        *,
+        match: Optional[str] = None,
+        limit: Optional[int] = None,
+        sort_by: GroupSort = GroupSort.created,
+        descending: bool = True,
+        cursor: int = 0,
+    ) -> Generator[Group, None, None]:
         """
-        List groups in a workspace.
+        Iterate over groups in a workspace.
 
         :param workspace: The Beaker workspace name, or object. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param match: Only include groups matching the text.
+        :param limit: Limit the number of groups returned.
+        :param sort_by: The field to sort the results by.
+        :param descending: Order the results in descending order according to the ``sort_by`` field.
+        :param cursor: Set the starting cursor for the query. You can use this to paginate the results.
 
         :raises WorkspaceNotFound: If the workspace doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
@@ -553,16 +638,75 @@ class WorkspaceClient(ServiceClient):
             Beaker server.
         """
         workspace_name = self.resolve_workspace(workspace, read_only_ok=True).full_name
-        return [
-            Group.from_json(d)
-            for d in self.request(
-                f"workspaces/{self.url_quote(workspace_name)}/groups",
-                method="GET",
-                exceptions_for_status={
-                    404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
-                },
-            ).json()["data"]
-        ]
+        query: Dict[str, str] = {
+            "field": str(sort_by),
+            "order": "descending" if descending else "ascending",
+            "cursor": format_cursor(cursor),
+        }
+        if match is not None:
+            query["q"] = match
+
+        count = 0
+        while True:
+            page = GroupsPage.from_json(
+                self.request(
+                    f"workspaces/{self.url_quote(workspace_name)}/groups",
+                    method="GET",
+                    query=query,
+                    exceptions_for_status={
+                        404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))
+                    },
+                ).json()
+            )
+
+            for group in page.data:
+                count += 1
+                yield group
+                if limit is not None and count >= limit:
+                    return
+
+            query["cursor"] = page.next_cursor or page.next  # type: ignore
+            if not query["cursor"]:
+                break
+
+    def groups(
+        self,
+        workspace: Optional[Union[str, Workspace]] = None,
+        *,
+        match: Optional[str] = None,
+        limit: Optional[int] = None,
+        sort_by: GroupSort = GroupSort.created,
+        descending: bool = True,
+        cursor: int = 0,
+    ) -> List[Group]:
+        """
+        List groups in a workspace.
+
+        :param workspace: The Beaker workspace name, or object. If not specified,
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :param match: Only include groups matching the text.
+        :param limit: Limit the number of groups returned.
+        :param sort_by: The field to sort the results by.
+        :param descending: Order the results in descending order according to the ``sort_by`` field.
+        :param cursor: Set the starting cursor for the query. You can use this to paginate the results.
+
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
+        return list(
+            self.iter_groups(
+                workspace=workspace,
+                match=match,
+                limit=limit,
+                sort_by=sort_by,
+                descending=descending,
+                cursor=cursor,
+            )
+        )
 
     def get_permissions(
         self, workspace: Optional[Union[str, Workspace]] = None
@@ -706,6 +850,7 @@ class WorkspaceClient(ServiceClient):
     def clear(
         self,
         workspace: Optional[Union[str, Workspace]] = None,
+        *,
         groups: bool = True,
         experiments: bool = True,
         images: bool = True,

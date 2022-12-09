@@ -2,7 +2,16 @@ import io
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Deque, Dict, Generator, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    ClassVar,
+    Deque,
+    Dict,
+    Generator,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from ..aliases import PathOrStr
 from ..data_model import *
@@ -27,7 +36,7 @@ class DatasetClient(ServiceClient):
     HEADER_LAST_MODIFIED = "Last-Modified"
     HEADER_CONTENT_LENGTH = "Content-Length"
 
-    REQUEST_SIZE_LIMIT = 32 * 1024 * 1024
+    REQUEST_SIZE_LIMIT: ClassVar[int] = 32 * 1024 * 1024
 
     def get(self, dataset: str) -> Dataset:
         """

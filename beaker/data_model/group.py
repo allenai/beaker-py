@@ -1,12 +1,19 @@
 from datetime import datetime
-from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from .account import Account
-from .base import BaseModel
+from .base import BaseModel, StrEnum
 from .workspace import WorkspaceRef
 
-__all__ = ["Group", "GroupSpec", "GroupParameterType", "GroupParameter", "GroupPatch"]
+__all__ = [
+    "Group",
+    "GroupSpec",
+    "GroupParameterType",
+    "GroupParameter",
+    "GroupPatch",
+    "GroupsPage",
+    "GroupSort",
+]
 
 
 class Group(BaseModel):
@@ -31,7 +38,7 @@ class GroupSpec(BaseModel):
     experiments: Optional[List[str]] = None
 
 
-class GroupParameterType(str, Enum):
+class GroupParameterType(StrEnum):
     metric = "metric"
     env = "env"
 
@@ -47,3 +54,17 @@ class GroupPatch(BaseModel):
     add_experiments: Optional[List[str]] = None
     remove_experiments: Optional[List[str]] = None
     parameters: Optional[List[GroupParameter]] = None
+
+
+class GroupsPage(BaseModel):
+    data: Tuple[Group, ...]
+    next_cursor: Optional[str] = None
+    next: Optional[str] = None
+
+
+class GroupSort(StrEnum):
+    created = "created"
+    modified = "modified"
+    author = "author"
+    group_name = "name"
+    group_name_or_description = "nameOrDescription"
