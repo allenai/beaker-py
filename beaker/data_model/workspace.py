@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
 from .account import Account
-from .base import BaseModel, StrEnum
+from .base import BaseModel, BasePage, StrEnum
 
 __all__ = [
     "WorkspaceSize",
@@ -46,10 +46,8 @@ class WorkspaceRef(BaseModel):
     full_name: str
 
 
-class WorkspacePage(BaseModel):
+class WorkspacePage(BasePage[Workspace]):
     data: Tuple[Workspace, ...]
-    next_cursor: Optional[str] = None
-    next: Optional[str] = None
     org: Optional[str] = None
 
 

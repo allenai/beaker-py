@@ -4,8 +4,10 @@ from enum import Enum
 from typing import (
     Any,
     Dict,
+    Generic,
     Iterator,
     Mapping,
+    Optional,
     Sequence,
     Set,
     Tuple,
@@ -24,7 +26,7 @@ T = TypeVar("T")
 logger = logging.getLogger("beaker")
 
 
-__all__ = ["BaseModel", "MappedSequence", "StrEnum"]
+__all__ = ["BaseModel", "MappedSequence", "StrEnum", "BasePage"]
 
 
 BUG_REPORT_URL = (
@@ -149,3 +151,9 @@ class MappedSequence(Sequence[T], Mapping[str, T]):
 class StrEnum(str, Enum):
     def __str__(self) -> str:
         return self.value
+
+
+class BasePage(BaseModel, Generic[T]):
+    data: Tuple[T, ...]
+    next_cursor: Optional[str] = None
+    next: Optional[str] = None

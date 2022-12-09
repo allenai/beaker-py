@@ -4,7 +4,7 @@ from typing import Optional, Tuple, Union
 from pydantic import validator
 
 from .account import Account
-from .base import BaseModel, StrEnum
+from .base import BaseModel, BasePage, StrEnum
 from .workspace import WorkspaceRef
 
 __all__ = [
@@ -154,10 +154,8 @@ class DatasetManifest(BaseModel):
     cursor: Optional[str] = None
 
 
-class DatasetsPage(BaseModel):
+class DatasetsPage(BasePage[Dataset]):
     data: Tuple[Dataset, ...]
-    next_cursor: Optional[str] = None
-    next: Optional[str] = None
 
 
 class DatasetSpec(BaseModel):
