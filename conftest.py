@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def unique_name() -> str:
-    return petname.generate() + "-" + str(uuid.uuid4())[:8]
+    return petname.generate() + "-" + str(uuid.uuid4())[:8]  # type: ignore
 
 
 def beaker_object_fixture(client: Beaker, service: str):

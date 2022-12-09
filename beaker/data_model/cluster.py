@@ -1,16 +1,15 @@
 from datetime import datetime
-from enum import Enum
 from typing import Optional, Tuple
 
 from pydantic import validator
 
-from .base import BaseModel
+from .base import BaseModel, StrEnum
 from .node import NodeResources, NodeUtilization
 
 __all__ = ["ClusterStatus", "Cluster", "ClusterUtilization", "ClusterSpec", "ClusterPatch"]
 
 
-class ClusterStatus(str, Enum):
+class ClusterStatus(StrEnum):
     """
     Current status of a cluster.
     """

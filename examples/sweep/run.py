@@ -8,7 +8,7 @@ from beaker import *
 
 
 def unique_name() -> str:
-    return petname.generate() + "-" + str(uuid.uuid4())[:8]
+    return petname.generate() + "-" + str(uuid.uuid4())[:8]  # type: ignore
 
 
 def main(image: str, workspace: str, cluster: str):

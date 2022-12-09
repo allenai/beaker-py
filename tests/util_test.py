@@ -1,3 +1,4 @@
+import base64
 import time
 
 import pytest
@@ -41,3 +42,9 @@ def test_cached_property(client: Beaker, alternate_workspace_name):
 
     client.config.default_workspace = alternate_workspace_name
     assert service_client.x == 3
+
+
+def test_format_cursor():
+    cursor = 100
+    formatted = format_cursor(100)
+    assert int.from_bytes(base64.urlsafe_b64decode(formatted), "little") == cursor

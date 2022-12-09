@@ -7,6 +7,7 @@ def test_image_get(client: Beaker, hello_world_image_name: str):
     # Get by ID.
     client.image.get(image.id)
     # Get by name.
+    assert image.name is not None
     client.image.get(image.name)
 
 

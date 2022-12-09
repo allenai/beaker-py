@@ -35,7 +35,7 @@ class Config:
     The address of the Beaker server.
     """
 
-    default_org: Optional[str] = None
+    default_org: Optional[str] = "ai2"
     """
     Default Beaker organization to use.
     """

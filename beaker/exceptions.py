@@ -55,6 +55,7 @@ __all__ = [
     "TaskStoppedError",
     "JobFailedError",
     "JobTimeoutError",
+    "ExperimentSpecError",
 ]
 
 

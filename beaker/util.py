@@ -1,3 +1,4 @@
+import base64
 import re
 import time
 from collections import OrderedDict
@@ -139,3 +140,10 @@ def retriable(
         return retriable_method
 
     return parametrize_decorator
+
+
+def format_cursor(cursor: int) -> str:
+    if cursor < 0:
+        raise ValueError("cursor must be >= 0")
+
+    return base64.urlsafe_b64encode(cursor.to_bytes(8, "little")).decode()

@@ -1,11 +1,10 @@
 from datetime import datetime
-from enum import Enum
 from typing import Optional, Tuple
 
 from pydantic import validator
 
 from .account import Account
-from .base import BaseModel
+from .base import BaseModel, StrEnum
 from .workspace import WorkspaceRef
 
 __all__ = [
@@ -20,6 +19,7 @@ __all__ = [
     "DockerLayerDownloadState",
     "ImageSpec",
     "ImagePatch",
+    "ImageSort",
 ]
 
 
@@ -73,7 +73,7 @@ class DockerLayerProgress(BaseModel):
     total: Optional[int] = None
 
 
-class DockerLayerUploadStatus(str, Enum):
+class DockerLayerUploadStatus(StrEnum):
     preparing = "preparing"
     waiting = "waiting"
     pushing = "pushing"
@@ -81,7 +81,7 @@ class DockerLayerUploadStatus(str, Enum):
     already_exists = "layer already exists"
 
 
-class DockerLayerDownloadStatus(str, Enum):
+class DockerLayerDownloadStatus(StrEnum):
     waiting = "waiting"
     downloading = "downloading"
     download_complete = "download complete"
@@ -122,3 +122,9 @@ class ImagePatch(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     commit: Optional[bool] = None
+
+
+class ImageSort(StrEnum):
+    created = "created"
+    author = "author"
+    image_name = "name"
