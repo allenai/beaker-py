@@ -1,9 +1,8 @@
 from datetime import datetime
-from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
 from .account import Account
-from .base import BaseModel
+from .base import BaseModel, StrEnum
 
 __all__ = [
     "WorkspaceSize",
@@ -17,6 +16,7 @@ __all__ = [
     "WorkspacePatch",
     "WorkspacePermissionsPatch",
     "WorkspaceClearResult",
+    "WorkspaceSort",
 ]
 
 
@@ -49,6 +49,7 @@ class WorkspaceRef(BaseModel):
 class WorkspacePage(BaseModel):
     data: Tuple[Workspace, ...]
     next_cursor: Optional[str] = None
+    next: Optional[str] = None
     org: Optional[str] = None
 
 
@@ -63,7 +64,7 @@ class WorkspaceTransferSpec(BaseModel):
     ids: List[str]
 
 
-class Permission(str, Enum):
+class Permission(StrEnum):
     """
     Workspace permission levels.
     """
@@ -100,3 +101,9 @@ class WorkspaceClearResult(BaseModel):
     images_deleted: int = 0
     datasets_deleted: int = 0
     secrets_deleted: int = 0
+
+
+class WorkspaceSort(StrEnum):
+    created = "created"
+    modified = "modified"
+    workspace_name = "name"

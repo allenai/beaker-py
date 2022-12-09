@@ -3,7 +3,7 @@ import os
 import warnings
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
-from typing import ClassVar, Optional
+from typing import ClassVar, Optional, Set
 
 import yaml
 
@@ -35,7 +35,7 @@ class Config:
     The address of the Beaker server.
     """
 
-    default_org: Optional[str] = None
+    default_org: Optional[str] = "ai2"
     """
     Default Beaker organization to use.
     """
@@ -53,6 +53,7 @@ class Config:
     ADDRESS_KEY: ClassVar[str] = "BEAKER_ADDR"
     CONFIG_PATH_KEY: ClassVar[str] = "BEAKER_CONFIG"
     TOKEN_KEY: ClassVar[str] = "BEAKER_TOKEN"
+    IGNORE_FIELDS: ClassVar[Set[str]] = {"updater_timestamp", "updater_message"}
 
     def __str__(self) -> str:
         fields_str = "user_token=***, " + ", ".join(
@@ -111,6 +112,9 @@ class Config:
             field_names = {f.name for f in fields(cls)}
             data = yaml.load(config_file, Loader=yaml.SafeLoader)
             for key in list(data.keys()):
+                if key in cls.IGNORE_FIELDS:
+                    data.pop(key)
+                    continue
                 value = data[key]
                 if key not in field_names:
                     del data[key]

@@ -51,11 +51,17 @@ class ExperimentClient(ServiceClient):
             return _get(experiment)
         except ExperimentNotFound:
             if "/" not in experiment:
-                # Now try with adding the account name.
+                # Try with adding the account name.
                 try:
                     return _get(f"{self.beaker.account.name}/{experiment}")
                 except ExperimentNotFound:
                     pass
+
+                # Try searching the default workspace.
+                if self.config.default_workspace is not None:
+                    matches = self.beaker.workspace.experiments(match=experiment, limit=1)
+                    if matches:
+                        return matches[0]
             raise
 
     def create(
@@ -83,12 +89,10 @@ class ExperimentClient(ServiceClient):
 
         """
         self.validate_beaker_name(name)
-        json_spec: Dict[str, Any]
-        if isinstance(spec, ExperimentSpec):
-            json_spec = spec.to_json()
-        else:
+        if not isinstance(spec, ExperimentSpec):
             spec = ExperimentSpec.from_file(spec)
-            json_spec = spec.to_json()
+        spec.validate()
+        json_spec = spec.to_json()
         workspace = self.resolve_workspace(workspace)
         self._validate_spec(spec, workspace)
         experiment_data = self.request(
@@ -172,12 +176,12 @@ class ExperimentClient(ServiceClient):
         if delete_results_datasets:
             for task in self.tasks(experiment):
                 for job in task.jobs:
-                    dataset = self.beaker.job.results(job)
-                    if dataset is not None:
-                        try:
+                    try:
+                        dataset = self.beaker.job.results(job)
+                        if dataset is not None:
                             self.beaker.dataset.delete(dataset)
-                        except DatasetNotFound:
-                            pass
+                    except DatasetNotFound:
+                        pass
         self.request(
             f"experiments/{self.url_quote(experiment.id)}",
             method="DELETE",
@@ -349,7 +353,10 @@ class ExperimentClient(ServiceClient):
             return None
         else:
             assert job.execution is not None  # for mypy
-            return self.beaker.dataset.get(job.execution.result.beaker)
+            try:
+                return self.beaker.dataset.get(job.execution.result.beaker)
+            except DatasetNotFound:
+                return None
 
     def wait_for(
         self,

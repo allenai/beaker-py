@@ -1,10 +1,10 @@
-from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from pydantic import Field, root_validator, validator
 
 from ..aliases import PathOrStr
-from .base import BaseModel
+from ..exceptions import *
+from .base import BaseModel, StrEnum
 
 __all__ = [
     "ImageSource",
@@ -43,14 +43,6 @@ class ImageSource(BaseModel, frozen=False):
         If the tag is from a private registry, the cluster on which the task will run must
         be pre-configured to enable access.
     """
-
-    @root_validator(pre=True)
-    def _check_exactly_one_field_set(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if (values.get("beaker") is None) == (values.get("docker") is None):
-            raise ValueError(
-                "Exactly one of 'beaker' or 'docker' must be specified for image source"
-            )
-        return values
 
 
 class EnvVar(BaseModel, frozen=False):
@@ -245,7 +237,7 @@ class TaskResources(BaseModel, frozen=False):
     """
 
 
-class Priority(str, Enum):
+class Priority(StrEnum):
     urgent = "urgent"
     high = "high"
     normal = "normal"
@@ -312,7 +304,7 @@ class TaskSpec(BaseModel, frozen=False):
     Context describes how and where this task should run.
     """
 
-    constraints: Optional[Dict[str, List[str]]]
+    constraints: Optional[Dict[str, List[str]]] = None
     """
     Each task can have many constraints. And each constraint can have many values.
     Constraints are rules that change where a task is executed,
@@ -605,7 +597,7 @@ class TaskSpec(BaseModel, frozen=False):
         )
 
 
-class SpecVersion(str, Enum):
+class SpecVersion(StrEnum):
     v2 = "v2"
     v2_alpha = "v2-alpha"
 
@@ -718,3 +710,10 @@ class ExperimentSpec(BaseModel, frozen=False):
         'Hello, Mars!'
         """
         return self.copy(deep=True, update={"description": description})
+
+    def validate(self):
+        for task in self.tasks:
+            if (task.image.beaker is None) == (task.image.docker is None):
+                raise ExperimentSpecError(
+                    "Exactly one of 'beaker' or 'docker' must be specified for image source"
+                )

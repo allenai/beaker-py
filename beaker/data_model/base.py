@@ -24,7 +24,7 @@ T = TypeVar("T")
 logger = logging.getLogger("beaker")
 
 
-__all__ = ["BaseModel", "MappedSequence"]
+__all__ = ["BaseModel", "MappedSequence", "StrEnum"]
 
 
 BUG_REPORT_URL = (
@@ -144,3 +144,8 @@ class MappedSequence(Sequence[T], Mapping[str, T]):
 
     def values(self):
         return self._mapping.values()
+
+
+class StrEnum(str, Enum):
+    def __str__(self) -> str:
+        return self.value

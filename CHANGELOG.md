@@ -9,6 +9,43 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `cursor`, `sort_by` and ordering options to `Beaker.workspace.*` search methods.
+
+## [v1.12.1](https://github.com/allenai/beaker-py/releases/tag/v1.12.1) - 2022-12-08
+
+### Fixed
+
+- Improved `Beaker.(dataset|experiment|image).get()` when looking up objects in the default workspace that were created by other users.
+
+## [v1.12.0](https://github.com/allenai/beaker-py/releases/tag/v1.12.0) - 2022-11-23
+
+### Added
+
+- Added `Beaker.workspace.iter_(images|experiments|datasets)` methods.
+- Added `older_than` parameter to `Beaker.workspace.clear()` method.
+
+### Fixed
+
+- Fixed `Beaker.experiment.results()` when dataset no longer exists. It will now return `None` instead of failing with `DatasetNotFound`.
+
+## [v1.11.6](https://github.com/allenai/beaker-py/releases/tag/v1.11.6) - 2022-11-22
+
+### Added
+
+- Added missing `url` field to `DatasetStorage`.
+
+### Removed
+
+- Removed old field `fileheap` from `DatasetSpec`.
+
+## [v1.11.5](https://github.com/allenai/beaker-py/releases/tag/v1.11.5) - 2022-11-16
+
+### Added
+
+- Added missing `size` field to `Image` data model
+
 ## [v1.11.4](https://github.com/allenai/beaker-py/releases/tag/v1.11.4) - 2022-11-07
 
 ### Changed

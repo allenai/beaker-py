@@ -4,7 +4,7 @@ from typing import Optional, Tuple, Union
 from pydantic import validator
 
 from .account import Account
-from .base import BaseModel
+from .base import BaseModel, StrEnum
 from .workspace import WorkspaceRef
 
 __all__ = [
@@ -18,6 +18,7 @@ __all__ = [
     "DatasetsPage",
     "DatasetSpec",
     "DatasetPatch",
+    "DatasetSort",
 ]
 
 
@@ -26,6 +27,7 @@ class DatasetStorage(BaseModel):
     address: str
     token: str
     token_expires: datetime
+    url: Optional[str] = None
 
 
 class DatasetSize(BaseModel):
@@ -155,15 +157,22 @@ class DatasetManifest(BaseModel):
 class DatasetsPage(BaseModel):
     data: Tuple[Dataset, ...]
     next_cursor: Optional[str] = None
+    next: Optional[str] = None
 
 
 class DatasetSpec(BaseModel):
     workspace: Optional[str] = None
     description: Optional[str] = None
-    fileheap: Optional[bool] = None
 
 
 class DatasetPatch(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     commit: Optional[bool] = None
+
+
+class DatasetSort(StrEnum):
+    created = "created"
+    author = "author"
+    dataset_name = "name"
+    dataset_name_or_description = "nameOrDescription"

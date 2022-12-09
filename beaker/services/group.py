@@ -35,7 +35,7 @@ class GroupClient(ServiceClient):
             return _get(group)
         except GroupNotFound:
             if "/" not in group:
-                # Now try with adding the account name.
+                # Try with adding the account name.
                 try:
                     return _get(f"{self.beaker.account.name}/{group}")
                 except GroupNotFound:

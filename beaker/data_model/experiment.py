@@ -4,11 +4,11 @@ from typing import List, Optional, Tuple
 from pydantic import Field
 
 from .account import Account
-from .base import BaseModel, MappedSequence
+from .base import BaseModel, MappedSequence, StrEnum
 from .job import Job
 from .workspace import WorkspaceRef
 
-__all__ = ["Experiment", "Task", "Tasks", "ExperimentsPage", "ExperimentPatch"]
+__all__ = ["Experiment", "Task", "Tasks", "ExperimentsPage", "ExperimentPatch", "ExperimentSort"]
 
 
 class Experiment(BaseModel):
@@ -64,8 +64,16 @@ class Tasks(MappedSequence[Task]):
 class ExperimentsPage(BaseModel):
     data: Tuple[Experiment, ...]
     next_cursor: Optional[str] = None
+    next: Optional[str] = None
 
 
 class ExperimentPatch(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+
+
+class ExperimentSort(StrEnum):
+    created = "created"
+    author = "author"
+    experiment_name = "name"
+    experiment_name_or_description = "nameOrDescription"

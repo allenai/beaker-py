@@ -24,8 +24,10 @@ def test_experiment_get(client: Beaker, hello_world_experiment_id: str):
     assert exp.jobs
     assert exp.jobs[0].status.current == CurrentJobStatus.finalized
     # Get with name.
+    assert exp.name is not None
     client.experiment.get(exp.name)
     # Get with full name.
+    assert exp.full_name is not None
     client.experiment.get(exp.full_name)
 
 

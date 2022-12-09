@@ -6,16 +6,6 @@ from beaker.data_model import *
 from beaker.exceptions import ValidationError
 
 
-def test_image_source_validation():
-    with pytest.raises(ValidationError, match="'beaker' or 'docker'"):
-        ImageSource()
-
-    with pytest.raises(ValidationError, match="'beaker' or 'docker'"):
-        ImageSource(beaker="foo", docker="bar")
-
-    ImageSource(beaker="foo")
-
-
 def test_data_source_validation():
     with pytest.raises(ValidationError, match="Exactly one"):
         DataSource()
@@ -24,7 +14,7 @@ def test_data_source_validation():
         DataSource(beaker="foo", host_path="bar")
 
     with pytest.raises(ValidationError, match="Exactly one"):
-        DataSource(beaker="foo", hostPath="bar")
+        DataSource(beaker="foo", hostPath="bar")  # type: ignore
 
     assert DataSource(host_path="bar").host_path == "bar"
 
@@ -76,15 +66,15 @@ def test_experiment_spec_validation():
             tasks=[
                 TaskSpec(
                     name="main",
-                    image={"docker": "hello-world"},
-                    context={"cluster": "foo"},
-                    result={"path": "/unused"},
+                    image={"docker": "hello-world"},  # type: ignore
+                    context={"cluster": "foo"},  # type: ignore
+                    result={"path": "/unused"},  # type: ignore
                 ),
                 TaskSpec(
                     name="main",
-                    image={"docker": "hello-world"},
-                    context={"cluster": "bar"},
-                    result={"path": "/unused"},
+                    image={"docker": "hello-world"},  # type: ignore
+                    context={"cluster": "bar"},  # type: ignore
+                    result={"path": "/unused"},  # type: ignore
                 ),
             ]
         )

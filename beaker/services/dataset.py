@@ -2,7 +2,16 @@ import io
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Deque, Dict, Generator, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    ClassVar,
+    Deque,
+    Dict,
+    Generator,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from ..aliases import PathOrStr
 from ..data_model import *
@@ -27,7 +36,7 @@ class DatasetClient(ServiceClient):
     HEADER_LAST_MODIFIED = "Last-Modified"
     HEADER_CONTENT_LENGTH = "Content-Length"
 
-    REQUEST_SIZE_LIMIT = 32 * 1024 * 1024
+    REQUEST_SIZE_LIMIT: ClassVar[int] = 32 * 1024 * 1024
 
     def get(self, dataset: str) -> Dataset:
         """
@@ -54,11 +63,17 @@ class DatasetClient(ServiceClient):
             return _get(dataset)
         except DatasetNotFound:
             if "/" not in dataset:
-                # Now try with adding the account name.
+                # Try with adding the account name.
                 try:
                     return _get(f"{self.beaker.account.name}/{dataset}")
                 except DatasetNotFound:
                     pass
+
+                # Try searching the default workspace.
+                if self.config.default_workspace is not None:
+                    matches = self.beaker.workspace.datasets(match=dataset, limit=1)
+                    if matches:
+                        return matches[0]
             raise
 
     def create(
@@ -118,9 +133,7 @@ class DatasetClient(ServiceClient):
                     "datasets",
                     method="POST",
                     query={"name": name},
-                    data=DatasetSpec(
-                        workspace=workspace_id, description=description, fileheap=True
-                    ),
+                    data=DatasetSpec(workspace=workspace_id, description=description),
                     exceptions_for_status={409: DatasetConflict(name)},
                 ).json()
             )
