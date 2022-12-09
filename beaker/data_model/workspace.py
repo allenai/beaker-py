@@ -16,6 +16,7 @@ __all__ = [
     "WorkspacePatch",
     "WorkspacePermissionsPatch",
     "WorkspaceClearResult",
+    "WorkspaceSort",
 ]
 
 
@@ -100,3 +101,9 @@ class WorkspaceClearResult(BaseModel):
     images_deleted: int = 0
     datasets_deleted: int = 0
     secrets_deleted: int = 0
+
+
+class WorkspaceSort(StrEnum):
+    created = "created"
+    modified = "modified"
+    workspace_name = "name"

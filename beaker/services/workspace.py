@@ -211,7 +211,7 @@ class WorkspaceClient(ServiceClient):
             },
         )
 
-    def list(
+    def iter(
         self,
         org: Optional[Union[str, Organization]] = None,
         *,
@@ -219,29 +219,17 @@ class WorkspaceClient(ServiceClient):
         match: Optional[str] = None,
         archived: Optional[bool] = None,
         limit: Optional[int] = None,
-    ) -> List[Workspace]:
-        """
-        List workspaces belonging to an organization.
-
-        :param org: The organization name or object. If not specified,
-            :data:`Beaker.config.default_org <beaker.Config.default_org>` is used.
-        :param author: Only list workspaces authored by this account.
-        :param match: Only include workspaces matching the text.
-        :param archived: Only include/exclude archived workspaces.
-        :param limit: Limit the number of workspaces returned.
-
-        :raises OrganizationNotFound: If the organization doesn't exist.
-        :raises OrganizationNotSet: If neither ``org`` nor
-            :data:`Beaker.config.default_org <beaker.Config.default_org>` are set.
-        :raises AccountNotFound: If the author account doesn't exist.
-        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
-        :raises RequestException: Any other exception that can occur when contacting the
-            Beaker server.
-        """
+        sort_by: WorkspaceSort = WorkspaceSort.created,
+        descending: bool = True,
+        cursor: int = 0,
+    ) -> Generator[Workspace, None, None]:
         org = self.resolve_org(org)
-        workspaces: List[Workspace] = []
-        cursor: Optional[str] = None
-        query: Dict[str, str] = {"org": org.id}
+        query: Dict[str, str] = {
+            "org": org.id,
+            "field": str(sort_by),
+            "order": "descending" if descending else "ascending",
+            "cursor": format_cursor(cursor),
+        }
         if author is not None:
             query["author"] = (
                 author.name if isinstance(author, Account) else self.beaker.account.get(author).name
@@ -253,8 +241,8 @@ class WorkspaceClient(ServiceClient):
         if limit:
             query["limit"] = str(limit)
 
+        count = 0
         while True:
-            query["cursor"] = cursor or ""
             page = WorkspacePage.from_json(
                 self.request(
                     "workspaces",
@@ -262,15 +250,61 @@ class WorkspaceClient(ServiceClient):
                     query=query,
                 ).json()
             )
-            workspaces.extend(page.data)
-            cursor = page.next_cursor or page.next
-            if not cursor:
-                break
-            if limit and len(workspaces) >= limit:
-                workspaces = workspaces[:limit]
+            for workspace in page.data:
+                count += 1
+                yield workspace
+                if limit is not None and count >= limit:
+                    return
+
+            query["cursor"] = page.next_cursor or page.next  # type: ignore
+            if not query["cursor"]:
                 break
 
-        return workspaces
+    def list(
+        self,
+        org: Optional[Union[str, Organization]] = None,
+        *,
+        author: Optional[Union[str, Account]] = None,
+        match: Optional[str] = None,
+        archived: Optional[bool] = None,
+        limit: Optional[int] = None,
+        sort_by: WorkspaceSort = WorkspaceSort.created,
+        descending: bool = True,
+        cursor: int = 0,
+    ) -> List[Workspace]:
+        """
+        List workspaces belonging to an organization.
+
+        :param org: The organization name or object. If not specified,
+            :data:`Beaker.config.default_org <beaker.Config.default_org>` is used.
+        :param author: Only list workspaces authored by this account.
+        :param match: Only include workspaces matching the text.
+        :param archived: Only include/exclude archived workspaces.
+        :param limit: Limit the number of workspaces returned.
+        :param sort_by: The field to sort the results by.
+        :param descending: Order the results in descending order according to the ``sort_by`` field.
+        :param cursor: Set the starting cursor for the query. You can use this to paginate the results.
+
+        :raises OrganizationNotFound: If the organization doesn't exist.
+        :raises OrganizationNotSet: If neither ``org`` nor
+            :data:`Beaker.config.default_org <beaker.Config.default_org>` are set.
+        :raises AccountNotFound: If the author account doesn't exist.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
+        return list(
+            self.iter(
+                org=org,
+                author=author,
+                match=match,
+                archived=archived,
+                limit=limit,
+                sort_by=sort_by,
+                descending=descending,
+                cursor=cursor,
+            )
+        )
 
     def iter_images(
         self,
@@ -308,6 +342,8 @@ class WorkspaceClient(ServiceClient):
         }
         if match is not None:
             query["q"] = match
+        if limit:
+            query["limit"] = str(limit)
 
         count = 0
         while True:
@@ -407,6 +443,8 @@ class WorkspaceClient(ServiceClient):
         }
         if match is not None:
             query["q"] = match
+        if limit:
+            query["limit"] = str(limit)
 
         count = 0
         while True:
@@ -514,6 +552,8 @@ class WorkspaceClient(ServiceClient):
             query["results"] = str(results).lower()
         if uncommitted is not None:
             query["committed"] = str(not uncommitted).lower()
+        if limit:
+            query["limit"] = str(limit)
 
         count = 0
         while True:
@@ -645,6 +685,8 @@ class WorkspaceClient(ServiceClient):
         }
         if match is not None:
             query["q"] = match
+        if limit:
+            query["limit"] = str(limit)
 
         count = 0
         while True:
