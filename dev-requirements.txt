@@ -9,7 +9,7 @@ types-PyYAML
 
 # Automatic code formatting
 black==22.6.0
-isort==5.10.1
+isort==5.11.2
 
 # Running tests
 pytest
