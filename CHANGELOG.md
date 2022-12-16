@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Removed
+
+- Removed deprecated `url` field from `FileInfo` data model.
+
 ## [v1.13.0](https://github.com/allenai/beaker-py/releases/tag/v1.13.0) - 2022-12-09
 
 ### Added

@@ -136,11 +136,6 @@ class FileInfo(BaseModel, arbitrary_types_allowed=True):
     The size of the file, if known.
     """
 
-    url: Optional[str] = None
-    """
-    A URL that can be used to directly download the file.
-    """
-
     @validator("digest", pre=True)
     def _validate_digest(cls, v: Union[str, Digest]) -> Digest:
         if isinstance(v, Digest):
