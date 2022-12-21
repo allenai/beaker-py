@@ -11,7 +11,8 @@ use patch releases for compatibility fixes instead.
 
 ### Added
 
-- Adding missing `urlv2` field to `DatasetStorage` data model.
+- Added missing `urlv2` field to `DatasetStorage` data model.
+- Added missing `constraints` field to `Session` data model.
 
 ### Removed
 
