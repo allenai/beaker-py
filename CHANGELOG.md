@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Adding missing `urlv2` field to `DatasetStorage` data model.
+
 ### Removed
 
 - Removed deprecated `url` field from `FileInfo` data model.
