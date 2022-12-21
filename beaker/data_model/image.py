@@ -93,6 +93,7 @@ class DockerLayerUploadState(BaseModel):
     id: str
     status: DockerLayerUploadStatus
     progress_detail: DockerLayerProgress
+    progress: Optional[str] = None
 
     @validator("status", pre=True)
     def _validate_status(cls, v: str) -> str:
@@ -103,6 +104,7 @@ class DockerLayerDownloadState(BaseModel):
     id: str
     status: DockerLayerDownloadStatus
     progress_detail: DockerLayerProgress
+    progress: Optional[str] = None
 
     @validator("status", pre=True)
     def _validate_status(cls, v: str) -> str:

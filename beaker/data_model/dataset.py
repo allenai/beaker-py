@@ -28,6 +28,7 @@ class DatasetStorage(BaseModel):
     token: str
     token_expires: datetime
     url: Optional[str] = None
+    urlv2: Optional[str] = None
 
 
 class DatasetSize(BaseModel):
@@ -135,6 +136,8 @@ class FileInfo(BaseModel, arbitrary_types_allowed=True):
     """
     The size of the file, if known.
     """
+
+    IGNORE_FIELDS = {"url"}
 
     @validator("digest", pre=True)
     def _validate_digest(cls, v: Union[str, Digest]) -> Digest:

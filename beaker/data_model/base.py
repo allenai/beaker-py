@@ -3,6 +3,7 @@ import warnings
 from enum import Enum
 from typing import (
     Any,
+    ClassVar,
     Dict,
     Generic,
     Iterator,
@@ -46,6 +47,8 @@ class BaseModel(_BaseModel):
         use_enum_values = True
         frozen = True
 
+    IGNORE_FIELDS: ClassVar[Set[str]] = set()
+
     @root_validator(pre=True)
     def _validate_and_rename_to_snake_case(  # type: ignore
         cls: Type["BaseModel"], values: Dict[str, Any]  # type: ignore
@@ -55,7 +58,7 @@ class BaseModel(_BaseModel):
         """
         as_snake_case = {to_snake_case(k): v for k, v in values.items()}
         for key, value in as_snake_case.items():
-            if key not in cls.__fields__:
+            if key not in cls.__fields__ and key not in cls.IGNORE_FIELDS:
                 warn_about = (cls.__name__, key)
                 if warn_about not in _VALIDATION_WARNINGS_ISSUED:
                     _VALIDATION_WARNINGS_ISSUED.add(warn_about)

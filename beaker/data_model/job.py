@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from pydantic import Field, validator
 
@@ -144,6 +144,7 @@ class Session(BaseModel):
     priority: Optional[Priority] = None
     work_dir: Optional[str] = None
     identity: Optional[str] = None
+    constraints: Optional[Dict[str, List[str]]] = None
 
 
 class Job(BaseModel):
