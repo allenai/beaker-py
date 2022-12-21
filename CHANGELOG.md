@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.13.1](https://github.com/allenai/beaker-py/releases/tag/v1.13.1) - 2022-12-21
+
 ### Added
 
 - Added missing `urlv2` field to `DatasetStorage` data model.
