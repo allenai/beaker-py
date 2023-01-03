@@ -1,13 +1,14 @@
 import io
 import os
+import urllib.parse
 from datetime import datetime
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     ClassVar,
-    Deque,
     Dict,
     Generator,
+    List,
     Optional,
     Tuple,
     Union,
@@ -230,51 +231,35 @@ class DatasetClient(ServiceClient):
         if dataset.storage is None:
             raise DatasetReadError(dataset.id)
 
-        storage_info = DatasetStorageInfo.from_json(
-            self.request(
-                f"datasets/{dataset.storage.id}",
-                method="GET",
-                token=dataset.storage.token,
-                base_url=dataset.storage.address,
-            ).json()
-        )
+        dataset_info = DatasetInfo.from_json(self.request(f"datasets/{dataset.id}/files").json())
+        total_bytes_to_download: int = dataset_info.size.bytes
+        total_downloaded: int = 0
 
         target = Path(target or Path("."))
         target.mkdir(exist_ok=True, parents=True)
 
-        total_bytes_to_download: Optional[int] = None
-        total_downloaded: int = 0
-        from ..progress import (
-            get_sized_dataset_fetch_progress,
-            get_unsized_dataset_fetch_progress,
-        )
+        from ..progress import get_sized_dataset_fetch_progress
 
-        if storage_info.size is not None and storage_info.size.final:
-            total_bytes_to_download = storage_info.size.bytes
-            progress = get_sized_dataset_fetch_progress(quiet)
-        else:
-            progress = get_unsized_dataset_fetch_progress(quiet)
+        progress = get_sized_dataset_fetch_progress(quiet)
 
         with progress:
             bytes_task = progress.add_task("Downloading dataset")
-            if total_bytes_to_download is not None:
-                progress.update(bytes_task, total=total_bytes_to_download)
+            progress.update(bytes_task, total=total_bytes_to_download)
 
             import concurrent.futures
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                 download_futures = []
-                for file_info in self._iter_files(dataset.storage):
+                for file_info in dataset_info.page.data:
                     assert file_info.size is not None
-                    if total_bytes_to_download is None:
-                        progress.update(bytes_task, total=total_downloaded + file_info.size + 1)
+                    progress.update(bytes_task, total=total_downloaded + file_info.size + 1)
                     target_path = target / Path(file_info.path)
                     if not force and target_path.exists():
                         raise FileExistsError(file_info.path)
                     future = executor.submit(
                         self._download_file,
-                        dataset.storage,
-                        file_info,
+                        dataset,
+                        file_info.path,
                         target_path,
                         progress,
                         bytes_task,
@@ -285,8 +270,7 @@ class DatasetClient(ServiceClient):
                 for future in concurrent.futures.as_completed(download_futures):
                     total_downloaded += future.result()
 
-            if total_bytes_to_download is None:
-                progress.update(bytes_task, total=total_downloaded, completed=total_downloaded)
+            progress.update(bytes_task, total=total_downloaded, completed=total_downloaded)
 
     def stream_file(
         self,
@@ -330,17 +314,14 @@ class DatasetClient(ServiceClient):
         <BLANKLINE>
         """
         dataset = self.resolve_dataset(dataset, ensure_storage=True)
-        assert dataset.storage is not None
-
-        file_info = file if isinstance(file, FileInfo) else self.file_info(dataset, file)
 
         from ..progress import get_unsized_dataset_fetch_progress
 
         with get_unsized_dataset_fetch_progress(quiet=quiet) as progress:
             task_id = progress.add_task("Downloading", total=None)
             for bytes_chunk in self._stream_file(
-                dataset.storage,
-                file_info,
+                dataset,
+                file.path if isinstance(file, FileInfo) else file,
                 offset=offset,
                 length=length,
                 validate_checksum=validate_checksum,
@@ -417,23 +398,44 @@ class DatasetClient(ServiceClient):
         """
         dataset = self.resolve_dataset(dataset, ensure_storage=True)
         assert dataset.storage is not None
-        response = self.request(
-            f"datasets/{dataset.storage.id}/files/{file_name}",
-            method="HEAD",
-            token=dataset.storage.token,
-            base_url=dataset.storage.address,
-            exceptions_for_status={404: FileNotFoundError(file_name)},
-        )
-        size_str = response.headers.get(self.HEADER_CONTENT_LENGTH)
-        size = int(size_str) if size_str else None
-        return FileInfo(
-            path=file_name,
-            digest=Digest(response.headers[self.HEADER_DIGEST]),
-            updated=datetime.strptime(
-                response.headers[self.HEADER_LAST_MODIFIED], "%a, %d %b %Y %H:%M:%S %Z"
-            ),
-            size=size,
-        )
+        if dataset.storage.scheme == "fh":
+            response = self.request(
+                f"datasets/{dataset.storage.id}/files/{file_name}",
+                method="HEAD",
+                token=dataset.storage.token,
+                base_url=dataset.storage.base_url,
+                exceptions_for_status={404: FileNotFoundError(file_name)},
+            )
+            size_str = response.headers.get(self.HEADER_CONTENT_LENGTH)
+            size = int(size_str) if size_str else None
+            return FileInfo(
+                path=file_name,
+                digest=Digest(response.headers[self.HEADER_DIGEST]),
+                updated=datetime.strptime(
+                    response.headers[self.HEADER_LAST_MODIFIED], "%a, %d %b %Y %H:%M:%S %Z"
+                ),
+                size=size,
+            )
+        else:
+            # TODO (epwalsh): make a HEAD request once Beaker supports that
+            # (https://github.com/allenai/beaker/issues/2961)
+            response = self.request(
+                f"datasets/{dataset.id}/files/{urllib.parse.quote(file_name, safe='')}",
+                stream=True,
+                exceptions_for_status={404: FileNotFoundError(file_name)},
+            )
+            response.close()
+            size_str = response.headers.get(self.HEADER_CONTENT_LENGTH)
+            size = int(size_str) if size_str else None
+            digest = response.headers.get(self.HEADER_DIGEST)
+            return FileInfo(
+                path=file_name,
+                digest=None if digest is None else Digest(digest),
+                updated=datetime.strptime(
+                    response.headers[self.HEADER_LAST_MODIFIED], "%a, %d %b %Y %H:%M:%S %Z"
+                ),
+                size=size,
+            )
 
     def delete(self, dataset: Union[str, Dataset]):
         """
@@ -592,7 +594,7 @@ class DatasetClient(ServiceClient):
                 progress.update(task_id, total=size)
             self._upload_file(dataset, size, source, target, progress, task_id)
 
-    def ls(self, dataset: Union[str, Dataset]) -> Generator[FileInfo, None, None]:
+    def ls(self, dataset: Union[str, Dataset]) -> List[FileInfo]:
         """
         List files in a dataset.
 
@@ -605,13 +607,8 @@ class DatasetClient(ServiceClient):
             Beaker server.
         """
         dataset = self.resolve_dataset(dataset)
-        if dataset.storage is None:
-            # Might need to get dataset again if 'storage' hasn't been set yet.
-            dataset = self.get(dataset.id)
-        if dataset.storage is None:
-            raise DatasetReadError(dataset.id)
-        for file_info in self._iter_files(dataset.storage):
-            yield file_info
+        info = DatasetInfo.from_json(self.request(f"datasets/{dataset.id}/files").json())
+        return list(info.page.data)
 
     def size(self, dataset: Union[str, Dataset]) -> int:
         """
@@ -624,11 +621,9 @@ class DatasetClient(ServiceClient):
         :raises RequestException: Any other exception that can occur when contacting the
             Beaker server.
         """
-        total = 0
-        for file_info in self.ls(dataset):
-            assert file_info.size is not None
-            total += file_info.size
-        return total
+        dataset = self.resolve_dataset(dataset)
+        info = DatasetInfo.from_json(self.request(f"datasets/{dataset.id}/files").json())
+        return info.size.bytes
 
     def rename(self, dataset: Union[str, Dataset], name: str) -> Dataset:
         """
@@ -689,6 +684,10 @@ class DatasetClient(ServiceClient):
         from ..progress import BufferedReaderWithProgress
 
         assert dataset.storage is not None
+        if dataset.storage.scheme != "fh":
+            raise NotImplementedError(
+                f"Datasets API is not implemented for '{dataset.storage.scheme}' backend yet"
+            )
 
         source_file_wrapper: BufferedReaderWithProgress
         if isinstance(source, (str, Path, os.PathLike)):
@@ -714,7 +713,7 @@ class DatasetClient(ServiceClient):
                         "uploads",
                         method="POST",
                         token=dataset.storage.token,
-                        base_url=dataset.storage.address,
+                        base_url=dataset.storage.base_url,
                     )
                     return response.headers[self.HEADER_UPLOAD_ID]
 
@@ -734,7 +733,7 @@ class DatasetClient(ServiceClient):
                             method="PATCH",
                             data=chunk,
                             token=dataset.storage.token,
-                            base_url=dataset.storage.address,
+                            base_url=dataset.storage.base_url,
                             headers={
                                 self.HEADER_UPLOAD_LENGTH: str(size),
                                 self.HEADER_UPLOAD_OFFSET: str(written),
@@ -761,7 +760,7 @@ class DatasetClient(ServiceClient):
                     method="PUT",
                     data=body,
                     token=dataset.storage.token,
-                    base_url=dataset.storage.address,
+                    base_url=dataset.storage.base_url,
                     headers=None if not digest else {self.HEADER_DIGEST: digest},
                     stream=body is not None,
                     exceptions_for_status={
@@ -776,34 +775,10 @@ class DatasetClient(ServiceClient):
         finally:
             source_file_wrapper.close()
 
-    def _iter_files(self, storage: DatasetStorage) -> Generator[FileInfo, None, None]:
-        from collections import deque
-
-        files: Deque[FileInfo] = deque([])
-        last_request: bool = False
-        cursor: Optional[str] = ""
-        while files or not last_request:
-            if files:
-                yield files.popleft()
-            else:
-                manifest = DatasetManifest.from_json(
-                    self.request(
-                        f"datasets/{storage.id}/manifest",
-                        method="GET",
-                        token=storage.token,
-                        base_url=storage.address,
-                        query={"cursor": cursor, "path": "", "url": True},
-                    ).json()
-                )
-                files.extend(manifest.files)
-                cursor = manifest.cursor
-                if not cursor:
-                    last_request = True
-
     def _stream_file(
         self,
-        storage: DatasetStorage,
-        file_info: FileInfo,
+        dataset: Dataset,
+        file: str,
         chunk_size: int = 1024,
         offset: int = 0,
         length: int = -1,
@@ -811,21 +786,25 @@ class DatasetClient(ServiceClient):
     ) -> Generator[bytes, None, None]:
         import hashlib
 
+        digest: Optional[Digest] = None
+
         def stream_file() -> Generator[bytes, None, None]:
+            nonlocal digest
+
             headers = {}
             if offset > 0 and length > 0:
                 headers["Range"] = f"bytes={offset}-{offset + length - 1}"
             elif offset > 0:
                 headers["Range"] = f"bytes={offset}-"
             response = self.request(
-                f"datasets/{storage.id}/files/{file_info.path}",
+                f"datasets/{dataset.id}/files/{urllib.parse.quote(file, safe='')}",
                 method="GET",
                 stream=True,
                 headers=headers,
-                token=storage.token,
-                base_url=storage.address,
-                exceptions_for_status={404: FileNotFoundError(file_info.path)},
+                exceptions_for_status={404: FileNotFoundError(file)},
             )
+            if self.HEADER_DIGEST in response.headers:
+                digest = Digest(response.headers[self.HEADER_DIGEST])
             for chunk in response.iter_content(chunk_size=chunk_size):
                 yield chunk
 
@@ -847,18 +826,17 @@ class DatasetClient(ServiceClient):
                     raise
 
         # Validate digest.
-        if sha256_hash is not None:
-            digest = Digest(sha256_hash.digest())
-            if file_info.digest != digest:
+        if digest is not None and sha256_hash is not None:
+            actual_digest = Digest(sha256_hash.digest())
+            if actual_digest != digest:
                 raise ChecksumFailedError(
-                    f"Checksum for '{file_info.path}' failed. "
-                    f"Expected '{file_info.digest}', got '{digest}'."
+                    f"Checksum for '{file}' failed. " f"Expected '{digest}', got '{actual_digest}'."
                 )
 
     def _download_file(
         self,
-        storage: DatasetStorage,
-        file_info: FileInfo,
+        dataset: Dataset,
+        file: str,
         target_path: Path,
         progress: "Progress",
         task_id: "TaskID",
@@ -881,9 +859,7 @@ class DatasetClient(ServiceClient):
                 "w+b", dir=target_dir, delete=False, suffix=".tmp"
             )
             try:
-                for chunk in self._stream_file(
-                    storage, file_info, validate_checksum=validate_checksum
-                ):
+                for chunk in self._stream_file(dataset, file, validate_checksum=validate_checksum):
                     total_bytes += len(chunk)
                     tmp_target.write(chunk)
                     progress.update(task_id, advance=len(chunk))
