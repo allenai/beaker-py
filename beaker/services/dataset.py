@@ -1,5 +1,6 @@
 import io
 import os
+import urllib.parse
 from datetime import datetime
 from pathlib import Path
 from typing import (
@@ -419,7 +420,7 @@ class DatasetClient(ServiceClient):
             # TODO (epwalsh): make a HEAD request once Beaker supports that
             # (https://github.com/allenai/beaker/issues/2961)
             response = self.request(
-                f"datasets/{dataset.id}/files/{file_name}",
+                f"datasets/{dataset.id}/files/{urllib.parse.quote(file_name, safe='')}",
                 stream=True,
                 exceptions_for_status={404: FileNotFoundError(file_name)},
             )
@@ -796,7 +797,7 @@ class DatasetClient(ServiceClient):
             elif offset > 0:
                 headers["Range"] = f"bytes={offset}-"
             response = self.request(
-                f"datasets/{dataset.id}/files/{file}",
+                f"datasets/{dataset.id}/files/{urllib.parse.quote(file, safe='')}",
                 method="GET",
                 stream=True,
                 headers=headers,
