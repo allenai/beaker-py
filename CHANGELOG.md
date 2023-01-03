@@ -9,6 +9,14 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Changed
+
+- `Beaker.dataset.ls()` now returns a list instead of a generator.
+
+### Fixed
+
+- Fixed `Beaker.dataset.ls()`, `.get_file()`, `.stream_file()`, `.fetch()`, `.size()` methods.
+
 ## [v1.13.1](https://github.com/allenai/beaker-py/releases/tag/v1.13.1) - 2022-12-21
 
 ### Added

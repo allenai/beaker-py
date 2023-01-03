@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Optional, Tuple, Union
+from urllib.parse import urlparse
 
 from pydantic import validator
 
@@ -12,9 +13,10 @@ __all__ = [
     "DatasetSize",
     "Dataset",
     "DatasetStorageInfo",
+    "DatasetInfo",
+    "DatasetInfoPage",
     "Digest",
     "FileInfo",
-    "DatasetManifest",
     "DatasetsPage",
     "DatasetSpec",
     "DatasetPatch",
@@ -24,18 +26,29 @@ __all__ = [
 
 class DatasetStorage(BaseModel):
     id: str
-    address: str
     token: str
     token_expires: datetime
+    address: Optional[str] = None
     url: Optional[str] = None
     urlv2: Optional[str] = None
 
+    @validator("address")
+    def _validate_address(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v.startswith("fh://"):
+            return v.replace("fh://", "https://", 1)
+        else:
+            return v
+
+    @property
+    def scheme(self) -> Optional[str]:
+        return "fh" if self.urlv2 is None else urlparse(self.urlv2).scheme
+
 
 class DatasetSize(BaseModel):
-    final: bool
     files: int
     bytes: int
-    bytes_human: str
+    final: Optional[bool] = None
+    bytes_human: Optional[str] = None
 
 
 class Dataset(BaseModel):
@@ -129,8 +142,9 @@ class Digest:
 
 class FileInfo(BaseModel, arbitrary_types_allowed=True):
     path: str
-    digest: Digest
     updated: datetime
+
+    digest: Optional[Digest] = None
 
     size: Optional[int] = None
     """
@@ -140,20 +154,26 @@ class FileInfo(BaseModel, arbitrary_types_allowed=True):
     IGNORE_FIELDS = {"url"}
 
     @validator("digest", pre=True)
-    def _validate_digest(cls, v: Union[str, Digest]) -> Digest:
+    def _validate_digest(cls, v: Union[str, Digest, None]) -> Optional[Digest]:
         if isinstance(v, Digest):
             return v
-        else:
+        elif isinstance(v, str):
             return Digest(v)
-
-
-class DatasetManifest(BaseModel):
-    files: Tuple[FileInfo, ...]
-    cursor: Optional[str] = None
+        else:
+            return None
 
 
 class DatasetsPage(BasePage[Dataset]):
     data: Tuple[Dataset, ...]
+
+
+class DatasetInfoPage(BasePage[FileInfo]):
+    data: Tuple[FileInfo, ...]
+
+
+class DatasetInfo(BaseModel):
+    page: DatasetInfoPage
+    size: DatasetSize
 
 
 class DatasetSpec(BaseModel):
