@@ -35,6 +35,7 @@ class DatasetStorage(BaseModel):
     @validator("address")
     def _validate_address(cls, v: Optional[str]) -> Optional[str]:
         if v is not None and v.startswith("fh://"):
+            # HACK: fix prior to https://github.com/allenai/beaker/pull/2962
             return v.replace("fh://", "https://", 1)
         else:
             return v
@@ -42,6 +43,15 @@ class DatasetStorage(BaseModel):
     @property
     def scheme(self) -> Optional[str]:
         return "fh" if self.urlv2 is None else urlparse(self.urlv2).scheme
+
+    @property
+    def base_url(self) -> str:
+        if self.address is not None:
+            return self.address
+        elif self.urlv2 is not None:
+            return f"https://{urlparse(self.urlv2).netloc}"
+        else:
+            raise ValueError("Missing field 'urlv2' or 'address'")
 
 
 class DatasetSize(BaseModel):

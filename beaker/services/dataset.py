@@ -402,7 +402,7 @@ class DatasetClient(ServiceClient):
                 f"datasets/{dataset.storage.id}/files/{file_name}",
                 method="HEAD",
                 token=dataset.storage.token,
-                base_url=dataset.storage.address,
+                base_url=dataset.storage.base_url,
                 exceptions_for_status={404: FileNotFoundError(file_name)},
             )
             size_str = response.headers.get(self.HEADER_CONTENT_LENGTH)
@@ -712,7 +712,7 @@ class DatasetClient(ServiceClient):
                         "uploads",
                         method="POST",
                         token=dataset.storage.token,
-                        base_url=dataset.storage.address,
+                        base_url=dataset.storage.base_url,
                     )
                     return response.headers[self.HEADER_UPLOAD_ID]
 
@@ -732,7 +732,7 @@ class DatasetClient(ServiceClient):
                             method="PATCH",
                             data=chunk,
                             token=dataset.storage.token,
-                            base_url=dataset.storage.address,
+                            base_url=dataset.storage.base_url,
                             headers={
                                 self.HEADER_UPLOAD_LENGTH: str(size),
                                 self.HEADER_UPLOAD_OFFSET: str(written),
@@ -759,7 +759,7 @@ class DatasetClient(ServiceClient):
                     method="PUT",
                     data=body,
                     token=dataset.storage.token,
-                    base_url=dataset.storage.address,
+                    base_url=dataset.storage.base_url,
                     headers=None if not digest else {self.HEADER_DIGEST: digest},
                     stream=body is not None,
                     exceptions_for_status={
