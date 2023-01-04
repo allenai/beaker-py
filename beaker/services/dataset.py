@@ -231,7 +231,12 @@ class DatasetClient(ServiceClient):
         if dataset.storage is None:
             raise DatasetReadError(dataset.id)
 
-        dataset_info = DatasetInfo.from_json(self.request(f"datasets/{dataset.id}/files").json())
+        dataset_info = DatasetInfo.from_json(
+            self.request(
+                f"datasets/{dataset.id}/files",
+                exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset.id))},
+            ).json()
+        )
         total_bytes_to_download: int = dataset_info.size.bytes
         total_downloaded: int = 0
 
@@ -594,11 +599,12 @@ class DatasetClient(ServiceClient):
                 progress.update(task_id, total=size)
             self._upload_file(dataset, size, source, target, progress, task_id)
 
-    def ls(self, dataset: Union[str, Dataset]) -> List[FileInfo]:
+    def ls(self, dataset: Union[str, Dataset], prefix: Optional[str] = None) -> List[FileInfo]:
         """
         List files in a dataset.
 
         :param dataset: The dataset ID, name, or object.
+        :param prefix: An optional path prefix to filter by.
 
         :raises DatasetNotFound: If the dataset can't be found.
         :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
@@ -607,7 +613,14 @@ class DatasetClient(ServiceClient):
             Beaker server.
         """
         dataset = self.resolve_dataset(dataset)
-        info = DatasetInfo.from_json(self.request(f"datasets/{dataset.id}/files").json())
+        query = {} if prefix is None else {"prefix": prefix}
+        info = DatasetInfo.from_json(
+            self.request(
+                f"datasets/{dataset.id}/files",
+                query=query,
+                exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset.id))},
+            ).json()
+        )
         return list(info.page.data)
 
     def size(self, dataset: Union[str, Dataset]) -> int:
@@ -622,7 +635,12 @@ class DatasetClient(ServiceClient):
             Beaker server.
         """
         dataset = self.resolve_dataset(dataset)
-        info = DatasetInfo.from_json(self.request(f"datasets/{dataset.id}/files").json())
+        info = DatasetInfo.from_json(
+            self.request(
+                f"datasets/{dataset.id}/files",
+                exceptions_for_status={404: DatasetNotFound(self._not_found_err_msg(dataset.id))},
+            ).json()
+        )
         return info.size.bytes
 
     def rename(self, dataset: Union[str, Dataset], name: str) -> Dataset:

@@ -12,7 +12,6 @@ __all__ = [
     "DatasetStorage",
     "DatasetSize",
     "Dataset",
-    "DatasetStorageInfo",
     "DatasetInfo",
     "DatasetInfoPage",
     "Digest",
@@ -82,19 +81,6 @@ class Dataset(BaseModel):
         return self.workspace_ref
 
     @validator("committed")
-    def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
-        if v is not None and v.year == 1:
-            return None
-        return v
-
-
-class DatasetStorageInfo(BaseModel):
-    id: str
-    created: Optional[datetime] = None
-    size: Optional[DatasetSize] = None
-    readonly: bool = True
-
-    @validator("created")
     def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
         if v is not None and v.year == 1:
             return None
