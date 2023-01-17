@@ -264,7 +264,7 @@ class DatasetClient(ServiceClient):
                     future = executor.submit(
                         self._download_file,
                         dataset,
-                        file_info.path,
+                        file_info,
                         target_path,
                         progress,
                         bytes_task,
@@ -319,6 +319,7 @@ class DatasetClient(ServiceClient):
         <BLANKLINE>
         """
         dataset = self.resolve_dataset(dataset, ensure_storage=True)
+        file_info = file if isinstance(file, FileInfo) else self.file_info(dataset, file)
 
         from ..progress import get_unsized_dataset_fetch_progress
 
@@ -326,7 +327,7 @@ class DatasetClient(ServiceClient):
             task_id = progress.add_task("Downloading", total=None)
             for bytes_chunk in self._stream_file(
                 dataset,
-                file.path if isinstance(file, FileInfo) else file,
+                file_info,
                 offset=offset,
                 length=length,
                 validate_checksum=validate_checksum,
@@ -413,9 +414,10 @@ class DatasetClient(ServiceClient):
             )
             size_str = response.headers.get(self.HEADER_CONTENT_LENGTH)
             size = int(size_str) if size_str else None
+            print(response.headers[self.HEADER_DIGEST])
             return FileInfo(
                 path=file_name,
-                digest=Digest(response.headers[self.HEADER_DIGEST]),
+                digest=Digest.from_encoded(response.headers[self.HEADER_DIGEST]),
                 updated=datetime.strptime(
                     response.headers[self.HEADER_LAST_MODIFIED], "%a, %d %b %Y %H:%M:%S %Z"
                 ),
@@ -435,7 +437,7 @@ class DatasetClient(ServiceClient):
             digest = response.headers.get(self.HEADER_DIGEST)
             return FileInfo(
                 path=file_name,
-                digest=None if digest is None else Digest(digest),
+                digest=None if digest is None else Digest.from_encoded(digest),
                 updated=datetime.strptime(
                     response.headers[self.HEADER_LAST_MODIFIED], "%a, %d %b %Y %H:%M:%S %Z"
                 ),
@@ -796,7 +798,7 @@ class DatasetClient(ServiceClient):
     def _stream_file(
         self,
         dataset: Dataset,
-        file: str,
+        file: FileInfo,
         chunk_size: int = 1024,
         offset: int = 0,
         length: int = -1,
@@ -804,36 +806,38 @@ class DatasetClient(ServiceClient):
     ) -> Generator[bytes, None, None]:
         import hashlib
 
-        digest: Optional[Digest] = None
-
         def stream_file() -> Generator[bytes, None, None]:
-            nonlocal digest
-
             headers = {}
             if offset > 0 and length > 0:
                 headers["Range"] = f"bytes={offset}-{offset + length - 1}"
             elif offset > 0:
                 headers["Range"] = f"bytes={offset}-"
             response = self.request(
-                f"datasets/{dataset.id}/files/{urllib.parse.quote(file, safe='')}",
+                f"datasets/{dataset.id}/files/{urllib.parse.quote(file.path, safe='')}",
                 method="GET",
                 stream=True,
                 headers=headers,
-                exceptions_for_status={404: FileNotFoundError(file)},
+                exceptions_for_status={404: FileNotFoundError(file.path)},
             )
-            if self.HEADER_DIGEST in response.headers:
-                digest = Digest(response.headers[self.HEADER_DIGEST])
             for chunk in response.iter_content(chunk_size=chunk_size):
                 yield chunk
 
-        sha256_hash = hashlib.sha256() if (offset == 0 and validate_checksum) else None
+        contents_hash = None
+        if offset == 0 and validate_checksum and file.digest is not None:
+            if file.digest.algorithm == "SHA256":
+                contents_hash = hashlib.sha256()
+            else:
+                raise NotImplementedError(
+                    f"Checksum validation not implemented for {file.digest.algorithm}"
+                )
+
         retries = 0
         while True:
             try:
                 for chunk in stream_file():
                     offset += len(chunk)
-                    if sha256_hash is not None:
-                        sha256_hash.update(chunk)
+                    if contents_hash is not None:
+                        contents_hash.update(chunk)
                     yield chunk
                 break
             except RequestException as err:
@@ -844,17 +848,20 @@ class DatasetClient(ServiceClient):
                     raise
 
         # Validate digest.
-        if digest is not None and sha256_hash is not None:
-            actual_digest = Digest(sha256_hash.digest())
-            if actual_digest != digest:
+        if file.digest is not None and contents_hash is not None:
+            actual_digest = Digest.from_decoded(
+                contents_hash.digest(), algorithm=file.digest.algorithm
+            )
+            if actual_digest != file.digest:
                 raise ChecksumFailedError(
-                    f"Checksum for '{file}' failed. " f"Expected '{digest}', got '{actual_digest}'."
+                    f"Checksum for '{file.path}' failed. "
+                    f"Expected '{file.digest}', got '{actual_digest}'."
                 )
 
     def _download_file(
         self,
         dataset: Dataset,
-        file: str,
+        file: FileInfo,
         target_path: Path,
         progress: "Progress",
         task_id: "TaskID",

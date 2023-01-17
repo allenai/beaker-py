@@ -93,7 +93,7 @@ def test_snake_case_vs_lower_camel_case():
 
 
 def test_digest_hashable():
-    digest = Digest("0Q/XIPetp+QFDce6EIYNVcNTCZSlPqmEfVs1eFEMK0Y=")
+    digest = Digest.from_encoded("SHA256 0Q/XIPetp+QFDce6EIYNVcNTCZSlPqmEfVs1eFEMK0Y=")
     d = {digest: 1}
     assert digest in d
 
