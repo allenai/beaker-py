@@ -414,7 +414,6 @@ class DatasetClient(ServiceClient):
             )
             size_str = response.headers.get(self.HEADER_CONTENT_LENGTH)
             size = int(size_str) if size_str else None
-            print(response.headers[self.HEADER_DIGEST])
             return FileInfo(
                 path=file_name,
                 digest=Digest.from_encoded(response.headers[self.HEADER_DIGEST]),
