@@ -87,64 +87,87 @@ class Dataset(BaseModel):
         return v
 
 
-class Digest:
-    SHA256 = "SHA256"
+class Digest(BaseModel):
+    value: str
+    """
+    The hex-encoded value of the digest.
+    """
 
-    def __init__(self, digest: Union[str, bytes]):
-        def encode(b: bytes) -> str:
-            import base64
+    algorithm: str
+    """
+    The algorithm used to create and verify the digest.
+    """
 
-            return f"{self.SHA256} {base64.standard_b64encode(b).decode()}"
+    @classmethod
+    def from_encoded(cls, encoded: str) -> "Digest":
+        """
+        Initialize a digest from a raw encoding of the form "{ALGORITHM} {ENCODED_STRING}".
+        """
+        import base64
+        import binascii
 
-        encoded: str
-        if isinstance(digest, bytes):
-            encoded = encode(digest)
-        else:
-            encoded = digest
+        algorithm, value_b64 = encoded.split(" ", 1)
+        value_bytes = base64.standard_b64decode(value_b64)
+        value = binascii.hexlify(value_bytes).decode()
+        return cls(value=value, algorithm=algorithm)
 
-        self._encoded = encoded
+    @classmethod
+    def from_decoded(cls, decoded: bytes, algorithm: str) -> "Digest":
+        """
+        Initialize a digest from raw decoded bytes.
+        """
+        import binascii
 
-    def __eq__(self, other) -> bool:
-        if isinstance(other, Digest):
-            return self.decode() == other.decode()
-        elif isinstance(other, str):
-            return self == Digest(other)
-        elif isinstance(other, bytes):
-            return self.decode() == other
-        else:
-            return False
+        value = binascii.hexlify(decoded).decode()
+        return Digest(value=value, algorithm=algorithm)
 
-    def __ne__(self, other) -> bool:
-        return not self == other
+    def encode(self) -> str:
+        """
+        Encode the digest into its string form.
 
-    def __str__(self) -> str:
-        return self._encoded
+        This is the inverse of :meth:`.from_encoded()`.
+        """
+        import base64
+        import binascii
 
-    def __repr__(self) -> str:
-        return self._encoded
+        value_bytes = binascii.unhexlify(self.value)
+        value_b64 = base64.standard_b64encode(value_bytes).decode()
+
+        return f"{self.algorithm} {value_b64}"
 
     def __hash__(self):
-        return hash(self._encoded)
+        return hash(self.encode())
 
     def decode(self) -> bytes:
         """
         Decode a digest into its raw bytes form.
-        """
-        import base64
 
-        encoded = self._encoded.split(" ", 1)[-1]
-        return base64.standard_b64decode(encoded)
+        This is the inverse of :meth:`.from_decoded()`.
+        """
+        import binascii
+
+        return binascii.unhexlify(self.value)
 
 
 class FileInfo(BaseModel, arbitrary_types_allowed=True):
     path: str
+    """
+    The path of the file within the dataset.
+    """
+
     updated: datetime
+    """
+    The time that the file was last updated.
+    """
 
     digest: Optional[Digest] = None
+    """
+    The digest of the contents of the file.
+    """
 
     size: Optional[int] = None
     """
-    The size of the file, if known.
+    The size of the file in bytes, if known.
     """
 
     IGNORE_FIELDS = {"url"}
@@ -154,9 +177,11 @@ class FileInfo(BaseModel, arbitrary_types_allowed=True):
         if isinstance(v, Digest):
             return v
         elif isinstance(v, str):
-            return Digest(v)
+            return Digest.from_encoded(v)
+        elif isinstance(v, dict):
+            return Digest(**v)
         else:
-            return None
+            raise ValueError(f"Unexpected value for 'digest': {v}")
 
 
 class DatasetsPage(BasePage[Dataset]):
