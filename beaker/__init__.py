@@ -94,7 +94,6 @@ For example, upload a local Docker image to Beaker with
 :meth:`Beaker.image.create() <services.ImageClient.create>`:
 
 >>> image = beaker.image.create(beaker_image_name, docker_image_name, quiet=True)
-<BLANKLINE>
 
 The object returned is the same :class:`~data_model.image.Image` object you get from
 :meth:`Beaker.image.get() <services.ImageClient.get>`.
@@ -145,7 +144,6 @@ Get the logs from the execution of a task in an experiment with
 ...    line.decode() for line in
 ...    beaker.experiment.logs(experiment, quiet=True)
 ... ])
-<BLANKLINE>
 
 Get the results from a task in an experiment with
 :meth:`Beaker.experiment.results <services.ExperimentClient.results>`:
@@ -166,7 +164,6 @@ only one task in the experiment):
 ...    line.decode() for line in
 ...    beaker.job.logs(job, quiet=True)
 ... ])
-<BLANKLINE>
 
 Datasets
 --------
@@ -177,12 +174,10 @@ For example, create a dataset from a local file with
 :meth:`Beaker.dataset.create() <services.DatasetClient.create>`:
 
 >>> dataset = beaker.dataset.create(dataset_name, "README.md", quiet=True)
-<BLANKLINE>
 
 Or create a dataset from a local directory:
 
 >>> dataset = beaker.dataset.create(dataset_name, "docs/source/", force=True, quiet=True)
-<BLANKLINE>
 
 .. tip::
     The ``force=True`` flag is used to overwrite any existing dataset with the same name.
@@ -190,13 +185,11 @@ Or create a dataset from a local directory:
 And download a dataset with :meth:`Beaker.dataset.fetch() <services.DatasetClient.fetch>`:
 
 >>> beaker.dataset.fetch(dataset, target=download_path, quiet=True)
-<BLANKLINE>
 
 You can also download a single file using
 :meth:`Beaker.dataset.stream_file() <services.DatasetClient.stream_file>`:
 
 >>> contents = b"".join(beaker.dataset.stream_file(dataset, "docs/source/conf.py", quiet=True))
-<BLANKLINE>
 
 Secrets
 -------

@@ -22,6 +22,44 @@ from rich.table import Table
 from rich.text import Text
 
 
+class QuietProgress:
+    """
+    A mock `Progress` class that does absolutely nothing.
+    We use this when users pass `quiet=True` since rich's `Progress` still
+    prints empty lines with `quiet=True`.
+    """
+
+    def update(self, *args, **kwargs):
+        del args, kwargs
+
+    def add_task(self, *args, **kwargs):
+        del args, kwargs
+
+    def advance(self, *args, **kwargs):
+        del args, kwargs
+
+    def stop_task(self, *args, **kwargs):
+        del args, kwargs
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):  # type: ignore
+        del args, kwargs
+
+
+class QuietLive:
+    """
+    Quiet version of rich's `Live`.
+    """
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):  # type: ignore
+        del args, kwargs
+
+
 class ImageDownloadUploadColumn(DownloadColumn):
     def render(self, task: Task) -> Text:
         if task.total is None or int(task.total) == 1:
@@ -170,102 +208,129 @@ class BufferedReaderWithProgress(io.BufferedReader):
 
 
 def get_experiments_progress(quiet: bool = False) -> Progress:
-    return Progress(
-        "[progress.description]{task.description}",
-        BarColumn(),
-        MofNCompleteColumn(),
-        "[progress.percentage]{task.percentage:>3.0f}%",
-        disable=quiet,
-    )
+    if quiet:
+        return QuietProgress()  # type: ignore
+    else:
+        return Progress(
+            "[progress.description]{task.description}",
+            BarColumn(),
+            MofNCompleteColumn(),
+            "[progress.percentage]{task.percentage:>3.0f}%",
+            #  disable=quiet,
+        )
 
 
 def get_jobs_progress(quiet: bool = False) -> Progress:
-    return Progress(
-        "[progress.description]{task.description}",
-        TaskStatusColumn(),
-        TimeElapsedColumn(),
-        disable=quiet,
-    )
+    if quiet:
+        return QuietProgress()  # type: ignore
+    else:
+        return Progress(
+            "[progress.description]{task.description}",
+            TaskStatusColumn(),
+            TimeElapsedColumn(),
+            #  disable=quiet,
+        )
 
 
 def get_logs_progress(quiet: bool = False) -> Progress:
-    return Progress(
-        "[progress.description]{task.description}",
-        SpinnerColumn(),
-        FileSizeColumn(),
-        TimeElapsedColumn(),
-        disable=quiet,
-    )
+    if quiet:
+        return QuietProgress()  # type: ignore
+    else:
+        return Progress(
+            "[progress.description]{task.description}",
+            SpinnerColumn(),
+            FileSizeColumn(),
+            TimeElapsedColumn(),
+            #  disable=quiet,
+        )
 
 
 def get_group_experiments_progress(quiet: bool = False) -> Progress:
-    return Progress(
-        "[progress.description]{task.description}",
-        SpinnerColumn(),
-        FileSizeColumn(),
-        TimeElapsedColumn(),
-        disable=quiet,
-    )
+    if quiet:
+        return QuietProgress()  # type: ignore
+    else:
+        return Progress(
+            "[progress.description]{task.description}",
+            SpinnerColumn(),
+            FileSizeColumn(),
+            TimeElapsedColumn(),
+            #  disable=quiet,
+        )
 
 
 def get_exps_and_jobs_progress(quiet: bool = False) -> Tuple[Live, Progress, Progress]:
-    experiments_progress = get_experiments_progress(quiet)
-    jobs_progress = get_jobs_progress(quiet)
-    progress_table = Table.grid()
-    progress_table.add_row(
-        Panel.fit(experiments_progress, title="Overall progress", padding=(1, 2)),
-        Panel.fit(jobs_progress, title="Task progress", padding=(1, 2)),
-    )
-    return (
-        Live(progress_table, console=None if not quiet else Console(quiet=True)),
-        experiments_progress,
-        jobs_progress,
-    )
+    if quiet:
+        return QuietLive(), QuietProgress(), QuietProgress()  # type: ignore
+    else:
+        experiments_progress = get_experiments_progress(quiet)
+        jobs_progress = get_jobs_progress(quiet)
+        progress_table = Table.grid()
+        progress_table.add_row(
+            Panel.fit(experiments_progress, title="Overall progress", padding=(1, 2)),
+            Panel.fit(jobs_progress, title="Task progress", padding=(1, 2)),
+        )
+        return (
+            Live(progress_table, console=None if not quiet else Console(quiet=True)),
+            experiments_progress,
+            jobs_progress,
+        )
 
 
 def get_dataset_sync_progress(quiet: bool = False) -> Progress:
-    return Progress(
-        "[progress.description]{task.description}",
-        BarColumn(),
-        "[progress.percentage]{task.percentage:>3.0f}%",
-        TimeElapsedColumn(),
-        TimeRemainingColumn(),
-        DownloadColumn(),
-        disable=quiet,
-    )
+    if quiet:
+        return QuietProgress()  # type: ignore
+    else:
+        return Progress(
+            "[progress.description]{task.description}",
+            BarColumn(),
+            "[progress.percentage]{task.percentage:>3.0f}%",
+            TimeElapsedColumn(),
+            TimeRemainingColumn(),
+            DownloadColumn(),
+            #  disable=quiet,
+        )
 
 
 def get_sized_dataset_fetch_progress(quiet: bool = False) -> Progress:
-    return Progress(
-        "[progress.description]{task.description}",
-        BarColumn(),
-        "[progress.percentage]{task.percentage:>3.0f}%",
-        TimeElapsedColumn(),
-        TimeRemainingColumn(),
-        DownloadColumn(),
-        disable=quiet,
-    )
+    if quiet:
+        return QuietProgress()  # type: ignore
+    else:
+        return Progress(
+            "[progress.description]{task.description}",
+            BarColumn(),
+            "[progress.percentage]{task.percentage:>3.0f}%",
+            TimeElapsedColumn(),
+            TimeRemainingColumn(),
+            DownloadColumn(),
+            #  disable=quiet,
+        )
 
 
 def get_unsized_dataset_fetch_progress(quiet: bool = False) -> Progress:
-    return Progress(
-        "[progress.description]{task.description}",
-        SpinnerColumn(),
-        TimeElapsedColumn(),
-        FileSizeColumn(),
-        disable=quiet,
-    )
+    if quiet:
+        return QuietProgress()  # type: ignore
+    else:
+        return Progress(
+            "[progress.description]{task.description}",
+            SpinnerColumn(),
+            TimeElapsedColumn(),
+            FileSizeColumn(),
+            #  disable=quiet,
+        )
 
 
 def get_image_upload_progress(quiet: bool = False) -> Progress:
-    return Progress(
-        "[progress.description]{task.description}",
-        BarColumn(),
-        "[progress.percentage]{task.percentage:>3.0f}%",
-        TimeRemainingColumn(),
-        ImageDownloadUploadColumn(),
-        disable=quiet,
-    )
+    if quiet:
+        return QuietProgress()  # type: ignore
+    else:
+        return Progress(
+            "[progress.description]{task.description}",
+            BarColumn(),
+            "[progress.percentage]{task.percentage:>3.0f}%",
+            TimeRemainingColumn(),
+            ImageDownloadUploadColumn(),
+            #  disable=quiet,
+        )
 
 
 def get_image_download_progress(quiet: bool = False) -> Progress:
