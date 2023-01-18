@@ -823,7 +823,7 @@ class DatasetClient(ServiceClient):
 
         contents_hash = None
         if offset == 0 and validate_checksum and file.digest is not None:
-            if file.digest.algorithm == "SHA256":
+            if file.digest.algorithm == Digest.SHA256:
                 contents_hash = hashlib.sha256()
             else:
                 raise NotImplementedError(

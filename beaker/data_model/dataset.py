@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Tuple, Union
+from typing import ClassVar, Optional, Tuple, Union
 from urllib.parse import urlparse
 
 from pydantic import validator
@@ -97,6 +97,8 @@ class Digest(BaseModel):
     """
     The algorithm used to create and verify the digest.
     """
+
+    SHA256: ClassVar[str] = "SHA256"
 
     @classmethod
     def from_encoded(cls, encoded: str) -> "Digest":
