@@ -316,7 +316,6 @@ class DatasetClient(ServiceClient):
         >>> with open(tmp_path / "squad-train.arrow", "wb") as f:
         ...     for chunk in beaker.dataset.stream_file(squad_dataset_name, "squad-train.arrow", quiet=True):
         ...         total_bytes += f.write(chunk)
-        <BLANKLINE>
         """
         dataset = self.resolve_dataset(dataset, ensure_storage=True)
         file_info = file if isinstance(file, FileInfo) else self.file_info(dataset, file)
@@ -370,7 +369,6 @@ class DatasetClient(ServiceClient):
         :examples:
 
         >>> contents = beaker.dataset.get_file(squad_dataset_name, "squad-train.arrow", quiet=True)
-        <BLANKLINE>
         """
 
         @retriable(recoverable_errors=(RequestException, ChecksumFailedError))
