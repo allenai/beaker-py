@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- No more blank lines printed when passing `quiet=True` to methods.
+
 ## [v1.14.0](https://github.com/allenai/beaker-py/releases/tag/v1.14.0) - 2023-01-17
 
 ### Added
