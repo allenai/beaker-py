@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import ClassVar, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 from urllib.parse import urlparse
 
 from pydantic import validator
@@ -15,6 +15,7 @@ __all__ = [
     "DatasetInfo",
     "DatasetInfoPage",
     "Digest",
+    "DigestHashAlgorithm",
     "FileInfo",
     "DatasetsPage",
     "DatasetSpec",
@@ -87,23 +88,85 @@ class Dataset(BaseModel):
         return v
 
 
+class DigestHashAlgorithm(StrEnum):
+    """
+    Supported hash algorithms for file :class:`Digest`.
+    """
+
+    SHA256 = "SHA256"
+
+    SHA512 = "SHA512"
+
+    MD5 = "MD5"
+
+    def hasher(self):
+        """
+        Get a :mod:`hasher <hashlib>` object for the given algorithm.
+
+        .. seealso::
+            :meth:`Digest.new_hasher()`.
+        """
+        import hashlib
+
+        if self == DigestHashAlgorithm.SHA256:
+            return hashlib.sha256()
+        elif self == DigestHashAlgorithm.SHA512:
+            return hashlib.sha512()
+        elif self == DigestHashAlgorithm.MD5:
+            return hashlib.md5()
+        else:
+            raise NotImplementedError(f"hasher() not yet implemented for {str(self)}")
+
+
 class Digest(BaseModel):
+    """
+    A digest is a checksum / hash of a files contents. These are used to verify
+    the integrity of files downloaded from Beaker datasets.
+    """
+
     value: str
     """
     The hex-encoded value of the digest.
     """
 
-    algorithm: str
+    algorithm: DigestHashAlgorithm
     """
     The algorithm used to create and verify the digest.
     """
 
-    SHA256: ClassVar[str] = "SHA256"
+    def __init__(self, *args, **kwargs):
+        if len(args) == 1 and "value" not in kwargs:
+            value = args[0]
+            if isinstance(value, str) and "algorithm" not in kwargs:
+                # Assume 'value' is the string-encoded form of a digest.
+                digest = Digest.from_encoded(value)
+                kwargs = digest.dict()
+            elif isinstance(value, str):
+                # Assume 'value' is the hex-encoded hash.
+                kwargs["value"] = value
+            elif isinstance(value, bytes):
+                # Assume 'value' is raw bytes of the hash.
+                digest = Digest.from_decoded(value, **kwargs)
+                kwargs = digest.dict()
+        super().__init__(**kwargs)
+
+    @validator("algorithm")
+    def _validate_algorithm(cls, v: Union[str, DigestHashAlgorithm]) -> DigestHashAlgorithm:
+        return DigestHashAlgorithm(v)
+
+    def __str__(self) -> str:
+        return self.encode()
+
+    def __hash__(self):
+        return hash(self.encode())
 
     @classmethod
     def from_encoded(cls, encoded: str) -> "Digest":
         """
-        Initialize a digest from a raw encoding of the form "{ALGORITHM} {ENCODED_STRING}".
+        Initialize a digest from a string encoding of the form ``{ALGORITHM} {ENCODED_STRING}``,
+        e.g. ``SHA256 iA02Sx8UNLYvMi49fDwdGjyy5ssU+ttuN1L4L3/JvZA=``.
+
+        :param encoded: The string encoding of the digest.
         """
         import base64
         import binascii
@@ -111,17 +174,21 @@ class Digest(BaseModel):
         algorithm, value_b64 = encoded.split(" ", 1)
         value_bytes = base64.standard_b64decode(value_b64)
         value = binascii.hexlify(value_bytes).decode()
-        return cls(value=value, algorithm=algorithm)
+        return cls(value=value, algorithm=DigestHashAlgorithm(algorithm))
 
     @classmethod
-    def from_decoded(cls, decoded: bytes, algorithm: str) -> "Digest":
+    def from_decoded(cls, decoded: bytes, algorithm: Union[str, DigestHashAlgorithm]) -> "Digest":
         """
-        Initialize a digest from raw decoded bytes.
+        Initialize a digest from raw bytes.
+
+        :param decoded: The raw bytes of the digest.
+        :param algorithm: The algorithm used to produce the bytes of the digest
+            from the contents of the corresponding file.
         """
         import binascii
 
         value = binascii.hexlify(decoded).decode()
-        return Digest(value=value, algorithm=algorithm)
+        return Digest(value=value, algorithm=DigestHashAlgorithm(algorithm))
 
     def encode(self) -> str:
         """
@@ -135,10 +202,7 @@ class Digest(BaseModel):
         value_bytes = binascii.unhexlify(self.value)
         value_b64 = base64.standard_b64encode(value_bytes).decode()
 
-        return f"{self.algorithm} {value_b64}"
-
-    def __hash__(self):
-        return hash(self.encode())
+        return f"{str(self.algorithm)} {value_b64}"
 
     def decode(self) -> bytes:
         """
@@ -149,6 +213,15 @@ class Digest(BaseModel):
         import binascii
 
         return binascii.unhexlify(self.value)
+
+    def new_hasher(self):
+        """
+        Get a fresh :mod:`hasher <hashlib>` object for the given algorithm.
+
+        .. seealso::
+            :meth:`DigestHashAlgorithm.hasher()`.
+        """
+        return DigestHashAlgorithm(self.algorithm).hasher()
 
 
 class FileInfo(BaseModel, arbitrary_types_allowed=True):

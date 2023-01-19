@@ -92,6 +92,24 @@ def test_snake_case_vs_lower_camel_case():
         assert x.to_json() == {"hostPath": "/tmp/bar"}
 
 
+def test_digest_init():
+    # All of these are equivalent:
+    for digest in (
+        # String form.
+        Digest("SHA256 iA02Sx8UNLYvMi49fDwdGjyy5ssU+ttuN1L4L3/JvZA="),
+        # Hex-encoded string.
+        Digest(
+            "880d364b1f1434b62f322e3d7c3c1d1a3cb2e6cb14fadb6e3752f82f7fc9bd90", algorithm="SHA256"
+        ),
+        # Raw bytes.
+        Digest(
+            b"\x88\r6K\x1f\x144\xb6/2.=|<\x1d\x1a<\xb2\xe6\xcb\x14\xfa\xdbn7R\xf8/\x7f\xc9\xbd\x90",
+            algorithm="SHA256",
+        ),
+    ):
+        assert digest.value == "880d364b1f1434b62f322e3d7c3c1d1a3cb2e6cb14fadb6e3752f82f7fc9bd90"
+
+
 def test_digest_hashable():
     digest = Digest.from_encoded("SHA256 0Q/XIPetp+QFDce6EIYNVcNTCZSlPqmEfVs1eFEMK0Y=")
     d = {digest: 1}
