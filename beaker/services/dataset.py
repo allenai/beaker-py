@@ -801,8 +801,6 @@ class DatasetClient(ServiceClient):
         length: int = -1,
         validate_checksum: bool = True,
     ) -> Generator[bytes, None, None]:
-        import hashlib
-
         def stream_file() -> Generator[bytes, None, None]:
             headers = {}
             if offset > 0 and length > 0:
@@ -821,12 +819,7 @@ class DatasetClient(ServiceClient):
 
         contents_hash = None
         if offset == 0 and validate_checksum and file.digest is not None:
-            if file.digest.algorithm == Digest.SHA256:
-                contents_hash = hashlib.sha256()
-            else:
-                raise NotImplementedError(
-                    f"Checksum validation not implemented for {file.digest.algorithm}"
-                )
+            contents_hash = file.digest.new_hasher()
 
         retries = 0
         while True:

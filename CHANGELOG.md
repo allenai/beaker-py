@@ -9,6 +9,17 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `DigestHashAlgorithm` enum to represent `Digest.algorithm`.
+- Added `Digest.new_hasher()` method.
+- Added fields `Job.host_networking`, `Job.port_mappings`, and `Session.ports_v2`.
+
+### Fixed
+
+- For backwards compatibility, `Digest` can now be instantiated again from a string, e.g. `Digest("SHA256 iA02Sx8UNLYvMi49fDwdGjyy5ssU+ttuN1L4L3/JvZA=")`.
+
+
 ## [v1.14.1](https://github.com/allenai/beaker-py/releases/tag/v1.14.1) - 2023-01-18
 
 ### Fixed
