@@ -78,11 +78,11 @@ jobs:
 
           - name: Doc tests
             run: |
-              pytest -v --color=yes --durations=10 --doctest-modules beaker/__init__.py
+              pytest -v --color=yes --durations=10 --doctest-modules -k 'beaker/__init__.py or beaker.client' beaker/
 
           - name: Doc tests (B)
             run: |
-              pytest -v --color=yes --durations=10 --doctest-modules --ignore=beaker/__init__.py beaker/
+              pytest -v --color=yes --durations=10 --doctest-modules -k 'not beaker/__init__.py and not beaker.client' beaker/
 
           - name: Images
             run: |
