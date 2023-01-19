@@ -141,7 +141,7 @@ class Session(BaseModel):
     image: Optional[ImageSource] = None
     save_image: bool = False
     ports: Optional[Tuple[int, ...]] = None
-    ports_v2: Optional[Tuple[int, ...]] = None
+    ports_v2: Optional[Tuple[Tuple[int, int], ...]] = None
     priority: Optional[Priority] = None
     work_dir: Optional[str] = None
     identity: Optional[str] = None
