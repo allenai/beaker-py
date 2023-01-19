@@ -78,7 +78,7 @@ jobs:
 
           - name: Doc tests
             run: |
-              pytest -v --color=yes --doctest-modules beaker/
+              pytest -v --color=yes --durations=10 --doctest-modules beaker/
 
           - name: Images
             run: |

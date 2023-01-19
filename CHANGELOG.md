@@ -13,6 +13,7 @@ use patch releases for compatibility fixes instead.
 
 - Added `DigestHashAlgorithm` enum to represent `Digest.algorithm`.
 - Added `Digest.new_hasher()` method.
+- Added fields `Job.host_networking`, `Job.port_mappings`, and `Session.ports_v2`.
 
 ### Fixed
 

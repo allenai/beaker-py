@@ -141,6 +141,7 @@ class Session(BaseModel):
     image: Optional[ImageSource] = None
     save_image: bool = False
     ports: Optional[Tuple[int, ...]] = None
+    ports_v2: Optional[Tuple[int, ...]] = None
     priority: Optional[Priority] = None
     work_dir: Optional[str] = None
     identity: Optional[str] = None
@@ -167,6 +168,8 @@ class Job(BaseModel):
     requests: Optional[JobRequests] = None
     limits: Optional[JobLimits] = None
     session: Optional[Session] = None
+    host_networking: bool = False
+    port_mappings: Optional[Dict[str, int]] = None
 
     @property
     def display_name(self) -> str:
