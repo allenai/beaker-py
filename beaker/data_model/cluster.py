@@ -40,6 +40,7 @@ class Cluster(BaseModel):
     """
     node_cost: Optional[str] = None
     validated: Optional[datetime] = None
+    user_restrictions: Optional[Tuple[str, ...]] = None
 
     @validator("validated")
     def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:

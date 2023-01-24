@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added missing `user_restrictions` field to `Cluster` data model.
+
 ## [v1.15.0](https://github.com/allenai/beaker-py/releases/tag/v1.15.0) - 2023-01-19
 
 ### Added
