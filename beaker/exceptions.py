@@ -7,11 +7,19 @@ Exceptions that can be raised by the :class:`~beaker.Beaker` client.
     and :exc:`ValidationError`, which is re-exported from `pydantic <https://pydantic-docs.helpmanual.io/>`_.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional
+
 from pydantic import ValidationError  # noqa: F401, re-imported here for convenience
 from requests.exceptions import (  # noqa: F401, re-imported here for convenience
     HTTPError,
     RequestException,
 )
+
+if TYPE_CHECKING:
+    from .data_model.experiment import Task
+    from .data_model.job import Job
 
 ValidationError.__doc__ = """
 Raised when data passed into a :mod:`DataModel <beaker.data_model>` is invalid.
@@ -222,11 +230,15 @@ class ChecksumFailedError(BeakerError):
 
 
 class TaskStoppedError(BeakerError):
-    pass
+    def __init__(self, msg: Optional[str] = None, task: Optional[Task] = None):
+        super().__init__(msg)
+        self.task = task
 
 
 class JobFailedError(BeakerError):
-    pass
+    def __init__(self, msg: Optional[str] = None, job: Optional[Job] = None):
+        super().__init__(msg)
+        self.job = job
 
 
 class JobTimeoutError(BeakerError, TimeoutError):

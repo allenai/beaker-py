@@ -13,6 +13,7 @@ isort==5.11.4
 
 # Running tests
 pytest
+flaky
 
 # Allows generation of coverage reports with pytest.
 pytest-cov

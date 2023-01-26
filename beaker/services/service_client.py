@@ -1,5 +1,6 @@
 import io
 import json
+import logging
 import urllib.parse
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
@@ -27,6 +28,10 @@ class ServiceClient:
     @property
     def docker(self) -> docker.DockerClient:
         return self.beaker.docker
+
+    @property
+    def logger(self) -> logging.Logger:
+        return self.beaker.logger
 
     def request(
         self,
@@ -69,6 +74,16 @@ class ServiceClient:
                     f"Unexpected type for 'data'. Expected 'dict' or 'BaseModel', got {type(data)}"
                 )
 
+            # Log request at DEBUG.
+            if isinstance(request_data, str):
+                self.logger.debug("SEND %s %s - %s", method, url, request_data)
+            elif isinstance(request_data, bytes):
+                self.logger.debug("SEND %s %s - %d bytes", method, url, len(request_data))
+            elif request_data is not None:
+                self.logger.debug("SEND %s %s - ? bytes", method, url)
+            else:
+                self.logger.debug("SEND %s %s", method, url)
+
             # Make request.
             response = getattr(session, method.lower())(
                 url,
@@ -77,6 +92,12 @@ class ServiceClient:
                 stream=stream,
                 timeout=timeout or self.beaker._timeout,
             )
+
+            # Log response at DEBUG.
+            if response.text:
+                self.logger.debug("RECV %s %s %s - %s", method, url, response, response.text)
+            else:
+                self.logger.debug("RECV %s %s %s", method, url, response)
 
             if exceptions_for_status is not None and response.status_code in exceptions_for_status:
                 raise exceptions_for_status[response.status_code]

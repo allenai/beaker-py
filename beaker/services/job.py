@@ -230,6 +230,33 @@ class JobClient(ServiceClient):
             ).json()
         )
 
+    def preempt(self, job: Union[str, Job]) -> Job:
+        """
+        Preempt a job.
+
+        :param job: The Beaker job ID or object.
+
+        :raises JobNotFound: If the job can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
+        job_id = job.id if isinstance(job, Job) else job
+        return Job.from_json(
+            self.request(
+                f"jobs/{job_id}",
+                method="PATCH",
+                exceptions_for_status={404: JobNotFound(job_id)},
+                data=JobPatch(
+                    status=JobStatusUpdate(
+                        canceled=True,
+                        canceled_code=CanceledCode.user_preemption,
+                        canceled_for=f"Preempted by user '{self.beaker.account.name}'",
+                    )
+                ),
+            ).json()
+        )
+
     def stop(self, job: Union[str, Job]) -> Job:
         """
         Stop a job.
@@ -247,7 +274,11 @@ class JobClient(ServiceClient):
                 f"jobs/{job_id}",
                 method="PATCH",
                 exceptions_for_status={404: JobNotFound(job_id)},
-                data=JobPatch(status=JobStatusUpdate(canceled=True)),
+                data=JobPatch(
+                    status=JobStatusUpdate(
+                        canceled=True, canceled_for=f"Stopped by user '{self.beaker.account.name}'"
+                    )
+                ),
             ).json()
         )
 
@@ -470,7 +501,7 @@ class JobClient(ServiceClient):
                 yield line
 
             # Check status of job, finish if job is no-longer running.
-            if updated_job.is_done:
+            if updated_job.is_finalized:
                 break
 
             # Check timeout if we're still waiting for job to complete.
@@ -549,7 +580,7 @@ class JobClient(ServiceClient):
                 for job_id in list(job_id_to_progress_task):
                     task_id = job_id_to_progress_task[job_id]
                     job = self.get(job_id)
-                    if not job.is_done:
+                    if not job.is_finalized:
                         progress.update(task_id, total=polls + 1, advance=1)
                     else:
                         # Ensure job was successful if `strict==True`.

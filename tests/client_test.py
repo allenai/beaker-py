@@ -1,8 +1,10 @@
 import pytest
+from flaky import flaky
 
 from beaker import Beaker
 
 
+@flaky  # this can fail if the request to GitHub fails
 def test_warn_for_newer_version(monkeypatch):
     import beaker.client
     import beaker.version
