@@ -230,6 +230,33 @@ class JobClient(ServiceClient):
             ).json()
         )
 
+    def preempt(self, job: Union[str, Job]) -> Job:
+        """
+        Preempt a job.
+
+        :param job: The Beaker job ID or object.
+
+        :raises JobNotFound: If the job can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
+        job_id = job.id if isinstance(job, Job) else job
+        return Job.from_json(
+            self.request(
+                f"jobs/{job_id}",
+                method="PATCH",
+                exceptions_for_status={404: JobNotFound(job_id)},
+                data=JobPatch(
+                    status=JobStatusUpdate(
+                        canceled=True,
+                        canceled_code=CanceledCode.user_preemption,
+                        canceled_for=f"Preempted by user '{self.beaker.account.name}'",
+                    )
+                ),
+            ).json()
+        )
+
     def stop(self, job: Union[str, Job]) -> Job:
         """
         Stop a job.
@@ -247,7 +274,11 @@ class JobClient(ServiceClient):
                 f"jobs/{job_id}",
                 method="PATCH",
                 exceptions_for_status={404: JobNotFound(job_id)},
-                data=JobPatch(status=JobStatusUpdate(canceled=True)),
+                data=JobPatch(
+                    status=JobStatusUpdate(
+                        canceled=True, canceled_for=f"Stopped by user '{self.beaker.account.name}'"
+                    )
+                ),
             ).json()
         )
 

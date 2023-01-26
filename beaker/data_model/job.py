@@ -223,7 +223,8 @@ class JobStatusUpdate(BaseModel):
     failed: Optional[bool] = None
     finalized: Optional[bool] = None
     canceled: Optional[bool] = None
-    canceled_for: Optional[CanceledCode] = None
+    canceled_for: Optional[str] = None
+    canceled_code: Optional[CanceledCode] = None
     idle: Optional[bool] = None
     message: Optional[str] = None
 
