@@ -470,7 +470,7 @@ class JobClient(ServiceClient):
                 yield line
 
             # Check status of job, finish if job is no-longer running.
-            if updated_job.is_done:
+            if updated_job.is_finalized:
                 break
 
             # Check timeout if we're still waiting for job to complete.
@@ -549,7 +549,7 @@ class JobClient(ServiceClient):
                 for job_id in list(job_id_to_progress_task):
                     task_id = job_id_to_progress_task[job_id]
                     job = self.get(job_id)
-                    if not job.is_done:
+                    if not job.is_finalized:
                         progress.update(task_id, total=polls + 1, advance=1)
                     else:
                         # Ensure job was successful if `strict==True`.
