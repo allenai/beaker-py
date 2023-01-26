@@ -186,6 +186,13 @@ class Job(BaseModel):
         """
         return self.status.current == CurrentJobStatus.finalized
 
+    @property
+    def was_preempted(self) -> bool:
+        return self.status.canceled_code in {
+            CanceledCode.system_preemption,
+            CanceledCode.user_preemption,
+        }
+
     def check(self):
         """
         :raises JobFailedError: If the job failed or was canceled.
@@ -194,12 +201,13 @@ class Job(BaseModel):
 
         if self.status.exit_code is not None and self.status.exit_code > 0:
             raise JobFailedError(
-                f"Job '{self.id}' exited with non-zero exit code ({self.status.exit_code})"
+                f"Job '{self.id}' exited with non-zero exit code ({self.status.exit_code})",
+                job=self,
             )
         elif self.status.canceled is not None:
-            raise JobFailedError(f"Job '{self.id}' was canceled")
+            raise JobFailedError(f"Job '{self.id}' was canceled", job=self)
         elif self.status.failed is not None:
-            raise JobFailedError(f"Job '{self.id}' failed")
+            raise JobFailedError(f"Job '{self.id}' failed", job=self)
 
 
 class Jobs(BaseModel):

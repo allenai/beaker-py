@@ -573,10 +573,7 @@ class ExperimentClient(ServiceClient):
                         exp_id = job.execution.experiment
                         task_id = job.execution.task
 
-                        if job.status.canceled_code in {
-                            CanceledCode.system_preemption,
-                            CanceledCode.user_preemption,
-                        }:
+                        if job.was_preempted:
                             # Job was preempted. Another job will start soon so we just stop
                             # tracking this one.
                             exp_to_task_to_job[exp_id][task_id] = None
@@ -612,11 +609,10 @@ class ExperimentClient(ServiceClient):
                         if task_to_job[task.id] is not None:
                             continue
 
-                        if not task.jobs:
-                            if not task.schedulable:
-                                # Task was stopped before a job was created.
-                                stopped_tasks.add(task.id)
-                        else:
+                        if not task.jobs and not task.schedulable:
+                            # Task was stopped before a job was created.
+                            stopped_tasks.add(task.id)
+                        elif task.jobs:
                             latest_job = self._latest_job(task.jobs)
                             assert latest_job is not None
                             task_to_job[task.id] = latest_job.id
@@ -693,7 +689,9 @@ class ExperimentClient(ServiceClient):
                 job = self.latest_job(experiment, task=actual_task)
             elif not actual_task.schedulable:
                 if strict:
-                    raise TaskStoppedError(task)
+                    raise TaskStoppedError(
+                        task.id if isinstance(task, Task) else task, task=actual_task
+                    )
                 else:
                     return self.get(
                         experiment.id if isinstance(experiment, Experiment) else experiment

@@ -12,6 +12,15 @@ use patch releases for compatibility fixes instead.
 ### Added
 
 - Added missing `user_restrictions` field to `Cluster` data model.
+- Added `Job.was_preempted` property.
+- Added `job` attribute to `JobFailedError` and `task` attribute to `TaskStoppedError`.
+- Added DEBUG logging statements for every request and response to/from the Beaker server. To see these, just enable logging at the DEBUG level (though you may want to disable DEBUG logging from the "urllib3" logger, as that will create a lot of noise). For example:
+    ```python
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger("urllib3").setLevel(logging.INFO)
+    ```
 
 ## [v1.15.0](https://github.com/allenai/beaker-py/releases/tag/v1.15.0) - 2023-01-19
 
