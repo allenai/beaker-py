@@ -1,11 +1,10 @@
 from datetime import datetime
-from enum import Enum
 from typing import Dict, List, Optional, Tuple
 
 from pydantic import Field, validator
 
 from .account import Account
-from .base import BaseModel, StrEnum
+from .base import BaseModel, IntEnum, StrEnum
 from .experiment_spec import DataMount, EnvVar, ImageSource, Priority, TaskSpec
 
 __all__ = [
@@ -41,7 +40,7 @@ class CurrentJobStatus(StrEnum):
     preempted = "preempted"
 
 
-class CanceledCode(Enum):
+class CanceledCode(IntEnum):
     not_set = 0
     system_preemption = 1
     user_preemption = 2
@@ -188,7 +187,7 @@ class Job(BaseModel):
 
     @property
     def was_preempted(self) -> bool:
-        return self.status.canceled_code in {
+        return self.status.canceled is not None and self.status.canceled_code in {
             CanceledCode.system_preemption,
             CanceledCode.user_preemption,
         }

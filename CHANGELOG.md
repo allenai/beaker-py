@@ -23,6 +23,10 @@ use patch releases for compatibility fixes instead.
     logging.getLogger("urllib3").setLevel(logging.INFO)
     ```
 
+### Fixed
+
+- Fixed bug where `Beaker.experiment.wait_for()` would fail if a job was preempted.
+
 ## [v1.15.0](https://github.com/allenai/beaker-py/releases/tag/v1.15.0) - 2023-01-19
 
 ### Added
