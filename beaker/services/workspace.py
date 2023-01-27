@@ -872,6 +872,7 @@ class WorkspaceClient(ServiceClient):
             Beaker server.
         """
         import concurrent.futures
+        from itertools import chain
 
         def should_delete(created: Optional[datetime]) -> bool:
             if older_than is None or created is None:
@@ -909,7 +910,11 @@ class WorkspaceClient(ServiceClient):
 
             if datasets:
                 for dataset in filter(
-                    lambda x: should_delete(x.created), self.iter_datasets(workspace)
+                    lambda x: should_delete(x.created),
+                    chain(
+                        self.iter_datasets(workspace),
+                        self.iter_datasets(workspace, uncommitted=True),
+                    ),
                 ):
                     future = executor.submit(self.beaker.dataset.delete, dataset)
                     deletion_futures.append(future)
