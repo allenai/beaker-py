@@ -8,7 +8,7 @@ types-cachetools
 types-PyYAML
 
 # Automatic code formatting
-black==22.12.0
+black==23.1.0
 isort==5.11.4
 
 # Running tests
