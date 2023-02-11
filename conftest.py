@@ -130,12 +130,12 @@ def download_path(dataset_name, tmp_path) -> Path:
 
 @pytest.fixture()
 def hello_world_experiment_name() -> str:
-    return "hello-world"
+    return "hello-world-1"
 
 
 @pytest.fixture()
 def hello_world_experiment_id() -> str:
-    return "01FPB5WGRTM33P5AE6A28MT8QF"
+    return "01GRYY998GG0VP97MKRE574GKA"
 
 
 @pytest.fixture()
@@ -145,7 +145,7 @@ def hello_world_image_name() -> str:
 
 @pytest.fixture()
 def hello_world_job_id() -> str:
-    return "01FPB5WYPJAZ8FT08CZ2BVM316"
+    return "01GRYY9P9G5ZJ0F66NV3AHN9AN"
 
 
 @pytest.fixture()
