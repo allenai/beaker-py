@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Field, root_validator, validator
 
@@ -364,7 +364,7 @@ class TaskSpec(BaseModel, frozen=False):
         beaker_image: Optional[str] = None,
         docker_image: Optional[str] = None,
         result_path: str = "/unused",
-        priority: Optional[str] = None,
+        priority: Optional[Union[str, Priority]] = None,
         **kwargs,
     ) -> "TaskSpec":
         """
