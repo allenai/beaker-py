@@ -168,11 +168,11 @@ def test_create_experiment_cluster_not_found(
 def test_experiment_url(client: Beaker, hello_world_experiment_id: str):
     assert (
         client.experiment.url(hello_world_experiment_id)
-        == "https://beaker.org/ex/01FPB5WGRTM33P5AE6A28MT8QF"
+        == f"https://beaker.org/ex/{hello_world_experiment_id}"
     )
     assert (
         client.experiment.url(hello_world_experiment_id, "main")
-        == "https://beaker.org/ex/01FPB5WGRTM33P5AE6A28MT8QF/tasks/01FPB5WGTFQH7K1NM2M1KMZA78"
+        == f"https://beaker.org/ex/{hello_world_experiment_id}/tasks/01GRYY999VAT2QY75G89A826YS"
     )
     with pytest.raises(TaskNotFound, match="No task"):
         client.experiment.url(hello_world_experiment_id, "foo")
