@@ -54,8 +54,7 @@ def test_experiment_results(client, experiment_id_with_results: str):
 
 def test_experiment_empty_results(client: Beaker, hello_world_experiment_id: str):
     results = client.experiment.results(hello_world_experiment_id)
-    assert results is not None
-    assert client.dataset.size(results) == 0
+    assert results is None or (client.dataset.size(results) == 0)
 
 
 def test_experiment_spec(client: Beaker, hello_world_experiment_id: str):

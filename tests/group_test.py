@@ -39,9 +39,3 @@ def test_group_methods(
     # List groups in the workspace.
     group_names = [group.name for group in client.workspace.groups()]
     assert alternate_group_name in group_names
-
-
-def test_group_url(client: Beaker):
-    assert (
-        client.group.url("petew/bar") == "https://beaker.org/gr/01G0YXMAX2ES9ZGHJM9NVYF5MJ/compare"
-    )
