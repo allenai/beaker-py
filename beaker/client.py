@@ -209,6 +209,7 @@ class Beaker:
 
             If you haven't configured the command-line client, then you can alternately just
             set the environment variable ``BEAKER_TOKEN`` to your Beaker `user token <https://beaker.org/user>`_.
+
         """
         return cls(
             Config.from_env(**overrides),
