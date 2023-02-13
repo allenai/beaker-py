@@ -1,3 +1,11 @@
+"""
+This script will upload an image to Beaker and then submit a bunch
+of experiments with different inputs. It will wait for all experiments to finish
+and then collect the results.
+
+See the output of 'python run.py --help' for usage.
+"""
+
 import argparse
 import uuid
 
@@ -8,10 +16,11 @@ from beaker import *
 
 
 def unique_name() -> str:
+    """Helper function to generate a unique name for the image, group, and each experiment."""
     return petname.generate() + "-" + str(uuid.uuid4())[:8]  # type: ignore
 
 
-def main(image: str, workspace: str, cluster: str):
+def main(image: str, workspace: str):
     beaker = Beaker.from_env(default_workspace=workspace)
     sweep_name = unique_name()
     print(f"Starting sweep '{sweep_name}'...\n")
@@ -26,16 +35,16 @@ def main(image: str, workspace: str, cluster: str):
         print(
             f"Image uploaded as '{beaker_image.full_name}', view at {beaker.image.url(beaker_image)}\n"
         )
-        base_spec = ExperimentSpec()
-        base_task = TaskSpec.new(
-            "main", cluster, beaker_image=beaker_image.full_name, result_path="/output"
-        )
 
         # Launch experiments.
         experiments = []
         for x in progress.track(range(5), description="Launching experiments..."):
-            spec = base_spec.with_description(f"Run {x+1} of sweep {sweep_name}").with_task(
-                base_task.with_arguments([str(x)])
+            spec = ExperimentSpec.new(
+                description=f"Run {x+1} of sweep {sweep_name}",
+                beaker_image=beaker_image.full_name,
+                result_path="/output",
+                priority=Priority.preemptible,
+                arguments=[str(x)],
             )
             experiment = beaker.experiment.create(f"{sweep_name}-{x+1}", spec)
             experiments.append(experiment)
@@ -75,7 +84,6 @@ if __name__ == "__main__":
         "image", type=str, help="""The tag of the local Docker image built from the Dockerfile."""
     )
     parser.add_argument("workspace", type=str, help="""The Beaker workspace to use.""")
-    parser.add_argument("cluster", type=str, help="""The cluster to use.""")
     opts = parser.parse_args()
 
-    main(image=opts.image, workspace=opts.workspace, cluster=opts.cluster)
+    main(image=opts.image, workspace=opts.workspace)

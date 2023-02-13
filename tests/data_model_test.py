@@ -127,3 +127,28 @@ def test_mapped_sequence():
     assert set(ms.keys()) == {"a", "b", "c"}
     assert ms.get("a") == 1
     assert "z" not in ms
+
+
+@pytest.mark.parametrize(
+    "cluster", [["ai2/general-cirrascale", "ai2/allennlp-cirrascale"], "ai2/general-cirrascale"]
+)
+def test_experiment_spec_new_with_cluster(cluster):
+    spec = ExperimentSpec.new(cluster=cluster)
+    assert spec.tasks[0].context.cluster is None
+    assert spec.tasks[0].constraints is not None
+    assert isinstance(spec.tasks[0].constraints.cluster, list)
+
+
+def test_task_spec_with_constraint():
+    task_spec = TaskSpec.new("main", constraints=Constraints(cluster=["ai2/general-cirrascale"]))
+    new_task_spec = task_spec.with_constraint(cluster=["ai2/allennlp-cirrascale"])
+    assert new_task_spec.constraints is not None
+    assert new_task_spec.constraints.cluster == ["ai2/allennlp-cirrascale"]
+    # Shouldn't modify the original.
+    assert task_spec.constraints is not None
+    assert task_spec.constraints.cluster == ["ai2/general-cirrascale"]
+
+    task_spec = TaskSpec.new("main")
+    new_task_spec = task_spec.with_constraint(cluster=["ai2/allennlp-cirrascale"])
+    assert new_task_spec.constraints is not None
+    assert new_task_spec.constraints.cluster == ["ai2/allennlp-cirrascale"]

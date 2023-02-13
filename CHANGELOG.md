@@ -9,6 +9,16 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `ExperimentSpec.new()` constructor.
+
+### Changed
+
+- The `cluster` argument to `TaskSpec.new()` and `ExperimentSpec.new()` can now
+  be given as a list of clusters which is equivalent to adding a "cluster" list
+  in the `constraints` field.
+
 ### Fixed
 
 - `Beaker.workspace.clear()` will remove uncommitted datasets too.

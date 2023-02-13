@@ -88,125 +88,241 @@ Group
 Data Models
 -----------
 
-.. automodule:: beaker.data_model
-
-.. autoclass:: beaker.data_model.base.BaseModel
+.. autoclass:: beaker.BaseModel
 
 Account
 ~~~~~~~
 
-.. automodule:: beaker.data_model.account
+.. autoclass:: beaker.Account
    :members:
-   :undoc-members:
 
 Organization
 ~~~~~~~~~~~~
 
-.. automodule:: beaker.data_model.organization
+.. autoclass:: beaker.Organization
    :members:
-   :undoc-members:
+
+.. autoclass:: beaker.OrganizationRole
+   :members:
+
+.. autoclass:: beaker.OrganizationMember
+   :members:
 
 Workspace
 ~~~~~~~~~
 
-.. autoclass:: beaker.data_model.workspace.Workspace
+.. autoclass:: beaker.Workspace
    :members:
-   :undoc-members:
 
-.. automodule:: beaker.data_model.workspace
-   :members: WorkspaceSize, WorkspaceRef, Permission, WorkspacePermissions
-   :undoc-members:
+.. autoclass:: beaker.WorkspaceSize
+   :members:
+
+.. autoclass:: beaker.WorkspaceRef
+   :members:
+
+.. autoclass:: beaker.Permission
+   :members:
+
+.. autoclass:: beaker.WorkspacePermissions
+   :members:
 
 Cluster
 ~~~~~~~
 
-.. autoclass:: beaker.data_model.cluster.Cluster
+.. autoclass:: beaker.Cluster
    :members:
-   :undoc-members:
 
-.. automodule:: beaker.data_model.cluster
+.. autoclass:: beaker.ClusterStatus
    :members:
-   :undoc-members:
-   :exclude-members: Cluster
+
+.. autoclass:: beaker.ClusterUtilization
+   :members:
+
+.. autoclass:: beaker.ClusterSpec
+   :members:
+
+.. autoclass:: beaker.ClusterPatch
+   :members:
 
 Node
 ~~~~
 
-.. autoclass:: beaker.data_model.node.Node
+.. autoclass:: beaker.Node
    :members:
-   :undoc-members:
 
-.. automodule:: beaker.data_model.node
+.. autoclass:: beaker.NodeResources
    :members:
-   :undoc-members:
-   :exclude-members: Node
+
+.. autoclass:: beaker.NodeUtilization
+   :members:
 
 Dataset
 ~~~~~~~
 
-.. autoclass:: beaker.data_model.dataset.Dataset
+.. autoclass:: beaker.Dataset
    :members:
-   :undoc-members:
 
-.. automodule:: beaker.data_model.dataset
-   :members: DatasetStorage, FileInfo, Digest, DigestHashAlgorithm
-   :undoc-members:
+.. autoclass:: beaker.DatasetStorage
+   :members:
+
+.. autoclass:: beaker.FileInfo
+   :members:
+
+.. autoclass:: beaker.Digest
+   :members:
+
+.. autoclass:: beaker.DigestHashAlgorithm
+   :members:
 
 Image
 ~~~~~
 
-.. automodule:: beaker.data_model.image
-   :members: Image
-   :undoc-members:
+.. autoclass:: beaker.Image
+   :members:
 
 Job
 ~~~
 
-.. autoclass:: beaker.data_model.job.Job
+.. autoclass:: beaker.Job
    :members:
-   :undoc-members:
 
-.. automodule:: beaker.data_model.job
+.. autoclass:: beaker.JobKind
    :members:
-   :undoc-members:
-   :exclude-members: Job, Jobs
+
+.. autoclass:: beaker.CurrentJobStatus
+   :members:
+
+.. autoclass:: beaker.CanceledCode
+   :members:
+
+.. autoclass:: beaker.JobStatus
+   :members:
+
+.. autoclass:: beaker.ExecutionResult
+   :members:
+
+.. autoclass:: beaker.JobRequests
+   :members:
+
+.. autoclass:: beaker.JobExecution
+   :members:
+
+.. autoclass:: beaker.JobLimits
+   :members:
+
+.. autoclass:: beaker.Session
+   :members:
 
 Experiment
 ~~~~~~~~~~
 
-.. automodule:: beaker.data_model.experiment
-   :members: Experiment, Task, Tasks
-   :undoc-members:
+.. autoclass:: beaker.Experiment
+   :members:
+   
+.. autoclass:: beaker.Task
+   :members:
+
+.. autoclass:: beaker.Tasks
+   :members:
 
 Secret
 ~~~~~~
 
-.. automodule:: beaker.data_model.secret
+.. autoclass:: beaker.Secret
    :members:
-   :undoc-members:
 
 Group
 ~~~~~
 
-.. automodule:: beaker.data_model.group
+.. autoclass:: beaker.Group
    :members:
-   :undoc-members:
 
 Experiment Spec
 ---------------
 
-.. autoclass:: beaker.data_model.experiment_spec.ExperimentSpec
+ExperimentSpec
+~~~~~~~~~~~~~~
+
+.. autoclass:: beaker.ExperimentSpec
    :members:
    :undoc-members:
 
-.. autoclass:: beaker.data_model.experiment_spec.TaskSpec
+TaskSpec
+~~~~~~~~
+
+.. autoclass:: beaker.TaskSpec
    :members:
    :undoc-members:
 
-.. automodule:: beaker.data_model.experiment_spec
+ImageSource
+~~~~~~~~~~~
+
+.. autoclass:: beaker.ImageSource
    :members:
    :undoc-members:
-   :exclude-members: ExperimentSpec,TaskSpec
+
+EnvVar
+~~~~~~
+
+.. autoclass:: beaker.EnvVar
+   :members:
+   :undoc-members:
+
+DataMount
+~~~~~~~~~
+
+.. autoclass:: beaker.DataMount
+   :members:
+   :undoc-members:
+
+DataSource
+~~~~~~~~~~
+
+.. autoclass:: beaker.DataSource
+   :members:
+   :undoc-members:
+
+TaskResources
+~~~~~~~~~~~~~
+
+.. autoclass:: beaker.TaskResources
+   :members:
+   :undoc-members:
+
+TaskContext
+~~~~~~~~~~~
+
+.. autoclass:: beaker.TaskContext
+   :members:
+   :undoc-members:
+
+Constraints
+~~~~~~~~~~~
+
+.. autoclass:: beaker.Constraints
+   :members:
+   :undoc-members:
+
+ResultSpec
+~~~~~~~~~~
+
+.. autoclass:: beaker.ResultSpec
+   :members:
+   :undoc-members:
+
+Priority
+~~~~~~~~
+
+.. autoclass:: beaker.Priority
+   :members:
+   :undoc-members:
+
+SpecVersion
+~~~~~~~~~~~
+
+.. autoclass:: beaker.SpecVersion
+   :members:
+   :undoc-members:
 
 Config
 ------

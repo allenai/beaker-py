@@ -18,6 +18,7 @@ __all__ = [
     "TaskSpec",
     "SpecVersion",
     "ExperimentSpec",
+    "Constraints",
 ]
 
 
@@ -47,7 +48,7 @@ class ImageSource(BaseModel, frozen=False):
 
 class EnvVar(BaseModel, frozen=False):
     """
-    An EnvVar defines an environment variable within a task's container.
+    An :class:`EnvVar` defines an environment variable within a task's container.
 
     .. tip::
         If neither 'source' nor 'secret' are set, the value of the environment variable
@@ -238,6 +239,10 @@ class TaskResources(BaseModel, frozen=False):
 
 
 class Priority(StrEnum):
+    """
+    Defines the urgency with which a task will run.
+    """
+
     urgent = "urgent"
     high = "high"
     normal = "normal"
@@ -254,19 +259,18 @@ class TaskContext(BaseModel, frozen=False):
         if a task is re-run at a future date.
     """
 
-    cluster: Optional[str]
+    cluster: Optional[str] = None
     """
     The full name or ID of a Beaker cluster on which the task should run.
+
+    .. attention::
+        This field is deprecated. See :data:`TaskSpec.constraints` instead.
     """
 
     priority: Optional[Priority] = None
     """
     Set priority to change the urgency with which a task will run.
-
-    Values may be 'low', 'normal', or 'high'.
     Tasks with higher priority are placed ahead of tasks with lower priority in the queue.
-
-    Priority may also be elevated to 'urgent' through UI.
     """
 
     @validator("priority")
@@ -276,6 +280,19 @@ class TaskContext(BaseModel, frozen=False):
                 f"Invalided 'priority'. Value must be one of {[p.value for p in Priority]} (got '{v}')."
             )
         return v
+
+
+class Constraints(BaseModel, frozen=False):
+    """
+    Constraints are specified via the :data:`~TaskSpec.constraints` field in :class:`TaskSpec`.
+    """
+
+    cluster: Optional[List[str]] = None
+    """
+    A list of cluster names or IDs on which the task is allowed to be executed.
+    You are allowed to omit this field for tasks that have preemptible priority,
+    in which case the task will run on any cluster where you have permissions.
+    """
 
 
 class TaskSpec(BaseModel, frozen=False):
@@ -304,7 +321,7 @@ class TaskSpec(BaseModel, frozen=False):
     Context describes how and where this task should run.
     """
 
-    constraints: Optional[Dict[str, List[str]]] = None
+    constraints: Optional[Constraints] = None
     """
     Each task can have many constraints. And each constraint can have many values.
     Constraints are rules that change where a task is executed,
@@ -360,7 +377,7 @@ class TaskSpec(BaseModel, frozen=False):
     def new(
         cls,
         name: str,
-        cluster: Optional[str] = None,
+        cluster: Optional[Union[str, List[str]]] = None,
         beaker_image: Optional[str] = None,
         docker_image: Optional[str] = None,
         result_path: str = "/unused",
@@ -371,7 +388,12 @@ class TaskSpec(BaseModel, frozen=False):
         A convenience method for quickly creating a new :class:`TaskSpec`.
 
         :param name: The :data:`name` of the task.
-        :param cluster: The :data:`cluster <TaskContext.cluster>` name in the :data:`context`.
+        :param cluster: The cluster or clusters where the experiment can run.
+
+            .. tip::
+                Omitting the cluster will allow your experiment to run on *any* on-premise
+                cluster, but you can only do this with preemptible jobs.
+
         :param beaker_image: The :data:`beaker <ImageSource.beaker>` image name in the
             :data:`image` source.
 
@@ -391,17 +413,25 @@ class TaskSpec(BaseModel, frozen=False):
 
         >>> task_spec = TaskSpec.new(
         ...     "hello-world",
-        ...     "ai2/cpu-cluster",
+        ...     cluster="ai2/cpu-cluster",
         ...     docker_image="hello-world",
         ... )
         """
+        constraints = kwargs.pop("constraints", None) or {}
+        if cluster is not None:
+            if "cluster" in constraints:
+                raise ValueError("'cluster' can only be specified one way")
+            if isinstance(cluster, list):
+                constraints["cluster"] = cluster
+            elif isinstance(cluster, str):
+                constraints["cluster"] = [cluster]
+
         return TaskSpec(
             name=name,
             image=ImageSource(beaker=beaker_image, docker=docker_image),
             result=ResultSpec(path=result_path),
-            context=TaskContext(
-                cluster=cluster, priority=None if priority is None else Priority(priority)
-            ),
+            context=TaskContext(priority=None if priority is None else Priority(priority)),
+            constraints=constraints or None,
             **kwargs,
         )
 
@@ -415,7 +445,6 @@ class TaskSpec(BaseModel, frozen=False):
 
         >>> task_spec = TaskSpec.new(
         ...     "hello-world",
-        ...     "ai2/gpu-cluster",
         ...     docker_image="hello-world",
         ... ).with_image(beaker="hello-world")
         >>> assert task_spec.image.beaker == "hello-world"
@@ -432,7 +461,6 @@ class TaskSpec(BaseModel, frozen=False):
 
         >>> task_spec = TaskSpec.new(
         ...     "hello-world",
-        ...     "ai2/gpu-cluster",
         ...     docker_image="hello-world",
         ... ).with_result(path="/output")
         >>> assert task_spec.result.path == "/output"
@@ -465,7 +493,6 @@ class TaskSpec(BaseModel, frozen=False):
 
         >>> task_spec = TaskSpec.new(
         ...     "hello-world",
-        ...     "ai2/gpu-cluster",
         ...     docker_image="hello-world",
         ... ).with_name("Hi there!")
         >>> assert task_spec.name == "Hi there!"
@@ -482,7 +509,6 @@ class TaskSpec(BaseModel, frozen=False):
 
         >>> task_spec = TaskSpec.new(
         ...     "hello-world",
-        ...     "ai2/gpu-cluster",
         ...     docker_image="hello-world",
         ... ).with_command(["echo"])
         >>> assert task_spec.command == ["echo"]
@@ -499,7 +525,6 @@ class TaskSpec(BaseModel, frozen=False):
 
         >>> task_spec = TaskSpec.new(
         ...     "hello-world",
-        ...     "ai2/gpu-cluster",
         ...     docker_image="hello-world",
         ... ).with_arguments(["Hello", "World!"])
         >>> assert task_spec.arguments == ["Hello", "World!"]
@@ -516,7 +541,6 @@ class TaskSpec(BaseModel, frozen=False):
 
         >>> task_spec = TaskSpec.new(
         ...     "hello-world",
-        ...     "ai2/gpu-cluster",
         ...     docker_image="hello-world",
         ... ).with_resources(gpu_count=2)
         >>> assert task_spec.resources.gpu_count == 2
@@ -534,7 +558,6 @@ class TaskSpec(BaseModel, frozen=False):
 
         >>> task_spec = TaskSpec.new(
         ...     "hello-world",
-        ...     "ai2/cpu-cluster",
         ...     docker_image="hello-world",
         ... ).with_dataset("/data/foo", beaker="foo")
         >>> assert task_spec.datasets
@@ -561,7 +584,6 @@ class TaskSpec(BaseModel, frozen=False):
 
         >>> task_spec = TaskSpec.new(
         ...     "hello-world",
-        ...     "ai2/cpu-cluster",
         ...     docker_image="hello-world",
         ...     env_vars=[EnvVar(name="bar", value="secret!")],
         ... ).with_env_var("baz", value="top, top secret")
@@ -577,7 +599,7 @@ class TaskSpec(BaseModel, frozen=False):
 
     def with_constraint(self, **kwargs: List[str]) -> "TaskSpec":
         """
-        Return a new :class:`TaskSpec` with the given :data:`constraint`.
+        Return a new :class:`TaskSpec` with the given :data:`constraints`.
 
         :param kwargs: Constraint name, constraint values.
 
@@ -589,10 +611,15 @@ class TaskSpec(BaseModel, frozen=False):
         ... ).with_constraint(cluster=['ai2/cpu-cluster'])
         >>> assert task_spec.constraints['cluster'] == ['ai2/cpu-cluster']
         """
+        constraints = (
+            Constraints(**kwargs)
+            if self.constraints is None
+            else self.constraints.copy(deep=True, update=kwargs)
+        )
         return self.copy(
             deep=True,
             update={
-                "constraints": {**(self.constraints or {}), **kwargs},
+                "constraints": constraints,
             },
         )
 
@@ -662,6 +689,68 @@ class ExperimentSpec(BaseModel, frozen=False):
             raw_spec = yaml.load(spec_file, Loader=yaml.SafeLoader)
             return cls.from_json(raw_spec)
 
+    @classmethod
+    def new(
+        cls,
+        task_name: str = "main",
+        description: Optional[str] = None,
+        cluster: Optional[Union[str, List[str]]] = None,
+        beaker_image: Optional[str] = None,
+        docker_image: Optional[str] = None,
+        result_path: str = "/unused",
+        priority: Optional[Union[str, Priority]] = None,
+        **kwargs,
+    ) -> "ExperimentSpec":
+        """
+        A convenience method for creating a new :class:`ExperimentSpec` with a single task.
+
+        :param task_name: The name of the task.
+        :param description: A description of the experiment.
+        :param cluster: The cluster or clusters where the experiment can run.
+
+            .. tip::
+                Omitting the cluster will allow your experiment to run on *any* on-premise
+                cluster, but you can only do this with preemptible jobs.
+
+        :param beaker_image: The :data:`beaker <ImageSource.beaker>` image name in the
+            :data:`image` source.
+
+            .. important::
+                Mutually exclusive with ``docker_image``.
+
+        :param docker_image: The :data:`docker <ImageSource.docker>` image name in the
+            :data:`image` source.
+
+            .. important::
+                Mutually exclusive with ``beaker_image``.
+
+        :param priority: The :data:`priority <TaskContext.priority>` of the :data:`context`.
+        :param kwargs: Additional kwargs are passed as-is to :class:`TaskSpec`.
+
+        :examples:
+
+        Create a preemptible experiment that can run an any on-premise cluster:
+
+        >>> spec = ExperimentSpec.new(
+        ...     docker_image="hello-world",
+        ...     priority=Priority.preemptible,
+        ... )
+        """
+        return cls(
+            description=description,
+            tasks=[
+                TaskSpec.new(
+                    task_name,
+                    cluster=cluster,
+                    beaker_image=beaker_image,
+                    docker_image=docker_image,
+                    result_path=result_path,
+                    priority=priority,
+                    **kwargs,
+                )
+            ],
+        )
+
     def to_file(self, path: PathOrStr) -> None:
         """
         Write the experiment spec to a YAML file.
@@ -683,7 +772,6 @@ class ExperimentSpec(BaseModel, frozen=False):
         >>> spec = ExperimentSpec().with_task(
         ...     TaskSpec.new(
         ...         "hello-world",
-        ...         "ai2/cpu-cluster",
         ...         docker_image="hello-world",
         ...     )
         ... )

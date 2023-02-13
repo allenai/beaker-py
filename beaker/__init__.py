@@ -1,4 +1,9 @@
 """
+Initialize a :class:`Beaker client <beaker.Beaker>` with :meth:`Beaker.from_env()`:
+
+>>> from beaker import *
+>>> beaker = Beaker.from_env(default_workspace=workspace_name)
+
 Accounts
 --------
 
