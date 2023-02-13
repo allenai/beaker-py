@@ -22,6 +22,7 @@ use patch releases for compatibility fixes instead.
 ### Fixed
 
 - `Beaker.workspace.clear()` will remove uncommitted datasets too.
+- Fixed the progress bar total in `Beaker.dataset.fetch()` and improved handling of `KeyboardInterrupt`.
 
 ## [v1.16.0](https://github.com/allenai/beaker-py/releases/tag/v1.16.0) - 2023-01-26
 

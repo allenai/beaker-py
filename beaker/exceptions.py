@@ -64,6 +64,7 @@ __all__ = [
     "JobFailedError",
     "JobTimeoutError",
     "ExperimentSpecError",
+    "ThreadCanceledError",
 ]
 
 
@@ -246,4 +247,8 @@ class JobTimeoutError(BeakerError, TimeoutError):
 
 
 class ExperimentSpecError(BeakerError):
+    pass
+
+
+class ThreadCanceledError(BeakerError):
     pass
