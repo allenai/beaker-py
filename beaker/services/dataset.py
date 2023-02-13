@@ -292,6 +292,7 @@ class DatasetClient(ServiceClient):
                     for future in concurrent.futures.as_completed(download_futures):
                         total_downloaded += future.result()
                 except KeyboardInterrupt:
+                    self.logger.warning("Received KeyboardInterrupt, canceling download threads...")
                     is_canceled.set()
                     for future in download_futures:
                         future.cancel()
