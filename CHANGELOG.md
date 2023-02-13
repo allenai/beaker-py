@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `ExperimentSpec.new()` constructor.
+
 ### Fixed
 
 - `Beaker.workspace.clear()` will remove uncommitted datasets too.

@@ -112,7 +112,7 @@ jobs:
               # NOTE: anytime you change something here, make sure the run instructions
               # in 'examples/sweep/README.md' are still up-to-date.
               docker build -t sweep .
-              python run.py "sweep" "ai2/beaker-py-sweep-example" "ai2/petew-cpu"
+              python run.py "sweep" "ai2/beaker-py-sweep-example"
 
           - name: Build
             run: |

@@ -662,6 +662,61 @@ class ExperimentSpec(BaseModel, frozen=False):
             raw_spec = yaml.load(spec_file, Loader=yaml.SafeLoader)
             return cls.from_json(raw_spec)
 
+    @classmethod
+    def new(
+        cls,
+        task_name: str = "main",
+        description: Optional[str] = None,
+        cluster: Optional[str] = None,
+        beaker_image: Optional[str] = None,
+        docker_image: Optional[str] = None,
+        result_path: str = "/unused",
+        priority: Optional[Union[str, Priority]] = None,
+        **kwargs,
+    ) -> "ExperimentSpec":
+        """
+        A convenience method for creating a new :class:`ExperimentSpec` with a single task.
+
+        :param task_name: The name of the task.
+        :param description: A description of the experiment.
+        :param cluster: The :data:`cluster <TaskContext.cluster>` name in the :data:`context`.
+        :param beaker_image: The :data:`beaker <ImageSource.beaker>` image name in the
+            :data:`image` source.
+
+            .. important::
+                Mutually exclusive with ``docker_image``.
+
+        :param docker_image: The :data:`docker <ImageSource.docker>` image name in the
+            :data:`image` source.
+
+            .. important::
+                Mutually exclusive with ``beaker_image``.
+
+        :param priority: The :data:`priority <TaskContext.priority>` of the :data:`context`.
+        :param kwargs: Additional kwargs are passed as-is to :class:`TaskSpec`.
+
+        :examples:
+
+        >>> spec = ExperimentSpec.new(
+        ...     "hello-world",
+        ...     docker_image="hello-world",
+        ... )
+        """
+        return cls(
+            description=description,
+            tasks=[
+                TaskSpec.new(
+                    task_name,
+                    cluster=cluster,
+                    beaker_image=beaker_image,
+                    docker_image=docker_image,
+                    result_path=result_path,
+                    priority=priority,
+                    **kwargs,
+                )
+            ],
+        )
+
     def to_file(self, path: PathOrStr) -> None:
         """
         Write the experiment spec to a YAML file.
