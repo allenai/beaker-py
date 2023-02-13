@@ -16,7 +16,7 @@ from rich.progress import (
     Task,
     TaskID,
     TimeElapsedColumn,
-    TimeRemainingColumn,
+    TransferSpeedColumn,
 )
 from rich.table import Table
 from rich.text import Text
@@ -285,7 +285,7 @@ def get_dataset_sync_progress(quiet: bool = False) -> Progress:
             BarColumn(),
             "[progress.percentage]{task.percentage:>3.0f}%",
             TimeElapsedColumn(),
-            TimeRemainingColumn(),
+            TransferSpeedColumn(),
             DownloadColumn(),
             #  disable=quiet,
         )
@@ -300,7 +300,7 @@ def get_sized_dataset_fetch_progress(quiet: bool = False) -> Progress:
             BarColumn(),
             "[progress.percentage]{task.percentage:>3.0f}%",
             TimeElapsedColumn(),
-            TimeRemainingColumn(),
+            TransferSpeedColumn(),
             DownloadColumn(),
             #  disable=quiet,
         )
@@ -314,6 +314,7 @@ def get_unsized_dataset_fetch_progress(quiet: bool = False) -> Progress:
             "[progress.description]{task.description}",
             SpinnerColumn(),
             TimeElapsedColumn(),
+            TransferSpeedColumn(),
             FileSizeColumn(),
             #  disable=quiet,
         )
@@ -327,7 +328,6 @@ def get_image_upload_progress(quiet: bool = False) -> Progress:
             "[progress.description]{task.description}",
             BarColumn(),
             "[progress.percentage]{task.percentage:>3.0f}%",
-            TimeRemainingColumn(),
             ImageDownloadUploadColumn(),
             #  disable=quiet,
         )
