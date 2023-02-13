@@ -293,7 +293,9 @@ class DatasetClient(ServiceClient):
                         total_downloaded += future.result()
                 except KeyboardInterrupt:
                     is_canceled.set()
-                    executor.shutdown(wait=True, cancel_futures=True)
+                    for future in download_futures:
+                        future.cancel()
+                    executor.shutdown(wait=True)
                     raise
 
             progress.update(bytes_task, total=total_downloaded, completed=total_downloaded)
