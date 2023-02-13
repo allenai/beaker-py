@@ -1,5 +1,5 @@
 """
-This is script that will run on Beaker as the Docker image's "entrypoint".
+This is the script that will run on Beaker as the Docker image's "entrypoint".
 
 All it does is write out a simple JSON file with a random number in it to
 the experiment's result directory. This is just meant to simulate the results

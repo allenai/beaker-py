@@ -360,7 +360,7 @@ class TaskSpec(BaseModel, frozen=False):
     def new(
         cls,
         name: str,
-        cluster: Optional[str] = None,
+        cluster: Optional[Union[str, List[str]]] = None,
         beaker_image: Optional[str] = None,
         docker_image: Optional[str] = None,
         result_path: str = "/unused",
@@ -371,7 +371,16 @@ class TaskSpec(BaseModel, frozen=False):
         A convenience method for quickly creating a new :class:`TaskSpec`.
 
         :param name: The :data:`name` of the task.
-        :param cluster: The :data:`cluster <TaskContext.cluster>` name in the :data:`context`.
+        :param cluster: The cluster or clusters where the experiment can run.
+            Specifying a single cluster as a string is equivalent to setting
+            the :data:`cluster <TaskContext.cluster>` name in the :data:`context` field.
+            Specifying a list of clusters is equivalent to adding a "cluster" field in
+            :data:`constraints`.
+
+            .. tip::
+                Omitting the cluster will allow your experiment to run on *any* on-premise
+                cluster. In general you should only do this with preemptible jobs.
+
         :param beaker_image: The :data:`beaker <ImageSource.beaker>` image name in the
             :data:`image` source.
 
@@ -391,10 +400,17 @@ class TaskSpec(BaseModel, frozen=False):
 
         >>> task_spec = TaskSpec.new(
         ...     "hello-world",
-        ...     "ai2/cpu-cluster",
+        ...     cluster="ai2/cpu-cluster",
         ...     docker_image="hello-world",
         ... )
         """
+        constraints = kwargs.pop("constraints", None) or {}
+        if isinstance(cluster, list):
+            if "cluster" in constraints:
+                raise ValueError("'cluster' can only be specified one way")
+            else:
+                constraints["cluster"] = cluster
+                cluster = None
         return TaskSpec(
             name=name,
             image=ImageSource(beaker=beaker_image, docker=docker_image),
@@ -402,6 +418,7 @@ class TaskSpec(BaseModel, frozen=False):
             context=TaskContext(
                 cluster=cluster, priority=None if priority is None else Priority(priority)
             ),
+            constraints=constraints or None,
             **kwargs,
         )
 
@@ -667,7 +684,7 @@ class ExperimentSpec(BaseModel, frozen=False):
         cls,
         task_name: str = "main",
         description: Optional[str] = None,
-        cluster: Optional[str] = None,
+        cluster: Optional[Union[str, List[str]]] = None,
         beaker_image: Optional[str] = None,
         docker_image: Optional[str] = None,
         result_path: str = "/unused",
@@ -679,7 +696,16 @@ class ExperimentSpec(BaseModel, frozen=False):
 
         :param task_name: The name of the task.
         :param description: A description of the experiment.
-        :param cluster: The :data:`cluster <TaskContext.cluster>` name in the :data:`context`.
+        :param cluster: The cluster or clusters where the experiment can run.
+            Specifying a single cluster as a string is equivalent to setting
+            the :data:`cluster <TaskContext.cluster>` name in the :data:`context` field.
+            Specifying a list of clusters is equivalent to adding a "cluster" field in
+            :data:`constraints`.
+
+            .. tip::
+                Omitting the cluster will allow your experiment to run on *any* on-premise
+                cluster. In general you should only do this with preemptible jobs.
+
         :param beaker_image: The :data:`beaker <ImageSource.beaker>` image name in the
             :data:`image` source.
 
@@ -697,9 +723,11 @@ class ExperimentSpec(BaseModel, frozen=False):
 
         :examples:
 
+        Create a preemptible experiment that can run an any on-premise cluster:
+
         >>> spec = ExperimentSpec.new(
-        ...     "hello-world",
         ...     docker_image="hello-world",
+        ...     priority=Priority.preemptible,
         ... )
         """
         return cls(
@@ -738,7 +766,6 @@ class ExperimentSpec(BaseModel, frozen=False):
         >>> spec = ExperimentSpec().with_task(
         ...     TaskSpec.new(
         ...         "hello-world",
-        ...         "ai2/cpu-cluster",
         ...         docker_image="hello-world",
         ...     )
         ... )

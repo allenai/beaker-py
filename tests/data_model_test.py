@@ -127,3 +127,16 @@ def test_mapped_sequence():
     assert set(ms.keys()) == {"a", "b", "c"}
     assert ms.get("a") == 1
     assert "z" not in ms
+
+
+def test_experiment_spec_new_with_cluster():
+    # Test with multiple clusters.
+    spec = ExperimentSpec.new(cluster=["ai2/general-cirrascale", "ai2/allennlp-cirrascale"])
+    assert spec.tasks[0].constraints is not None
+    assert "cluster" in spec.tasks[0].constraints
+    assert spec.tasks[0].context.cluster is None
+
+    # Test with single cluster.
+    spec = ExperimentSpec.new(cluster="ai2/general-cirrascale")
+    assert spec.tasks[0].constraints is None
+    assert spec.tasks[0].context.cluster is not None
