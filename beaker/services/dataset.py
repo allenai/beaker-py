@@ -1,6 +1,5 @@
 import io
 import os
-import threading
 import urllib.parse
 from datetime import datetime
 from pathlib import Path
@@ -26,6 +25,9 @@ if TYPE_CHECKING:
     from rich.progress import Progress, TaskID
 
 
+is_canceled = None
+
+
 class DatasetClient(ServiceClient):
     """
     Accessed via :data:`Beaker.dataset <beaker.Beaker.dataset>`.
@@ -40,7 +42,7 @@ class DatasetClient(ServiceClient):
 
     REQUEST_SIZE_LIMIT: ClassVar[int] = 32 * 1024 * 1024
 
-    DOWNLOAD_CHUNK_SIZE: ClassVar[int] = 256
+    DOWNLOAD_CHUNK_SIZE: ClassVar[int] = 10 * 1024
     """
     The default buffer size for downloads.
     """
@@ -210,15 +212,19 @@ class DatasetClient(ServiceClient):
         quiet: bool = False,
         validate_checksum: bool = True,
         chunk_size: Optional[int] = None,
+        multiprocessing: bool = False,
     ):
         """
         Download a dataset.
 
         .. note::
-            This method uses a :class:`~concurrent.futures.ThreadPoolExecutor` to download files concurrently.
-            However, you may find that this is still pretty slow compared to the Beaker
-            CLI when the dataset has many files. Unfortunately this is an inherent
-            limitation of Python's GIL.
+            This method uses a :class:`~concurrent.futures.ThreadPoolExecutor` by default to
+            download files concurrently. This is much faster than downloading files sequentially,
+            however you may find that it's still pretty slow compared to the Beaker CLI when
+            the dataset has many files. Unfortunately this is an inherent limitation of Python's GIL.
+
+            To get around this you could try setting `multiprocessing=True`, which will
+            force using a :class:`~concurrent.futures.ProcessPoolExecutor` instead.
 
         :param dataset: The dataset ID, name, or object.
         :param target: The target path to fetched data. Defaults to ``Path(.)``.
@@ -228,6 +234,7 @@ class DatasetClient(ServiceClient):
         :param validate_checksum: If ``True``, the checksum of every file downloaded will be verified.
         :param chunk_size: The size of the buffer (in bytes) to use while downloading each file.
             Defaults to :data:`DOWNLOAD_CHUNK_SIZE`.
+        :param multiprocessing: Use multiprocessing instead of threading.
 
         :raises DatasetNotFound: If the dataset can't be found.
         :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
@@ -267,9 +274,17 @@ class DatasetClient(ServiceClient):
             progress.update(bytes_task, total=total_bytes_to_download)
 
             import concurrent.futures
+            import multiprocessing as mp
+            import threading
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-                is_canceled = threading.Event()
+            pool_type = (
+                concurrent.futures.ProcessPoolExecutor
+                if multiprocessing
+                else concurrent.futures.ThreadPoolExecutor
+            )
+            with pool_type(max_workers=max_workers) as executor:
+                global is_canceled
+                is_canceled = mp.Event() if multiprocessing else threading.Event()
                 download_futures = []
                 try:
                     for file_info in dataset_info.page.data:
@@ -281,19 +296,19 @@ class DatasetClient(ServiceClient):
                             dataset,
                             file_info,
                             target_path,
-                            progress=progress,
-                            task_id=bytes_task,
+                            progress=progress if not multiprocessing else None,
+                            task_id=bytes_task if not multiprocessing else None,
                             validate_checksum=validate_checksum,
                             chunk_size=chunk_size,
-                            is_canceled=is_canceled,
                         )
                         download_futures.append(future)
 
                     for future in concurrent.futures.as_completed(download_futures):
                         total_downloaded += future.result()
+                        progress.update(bytes_task, completed=total_downloaded)
                 except KeyboardInterrupt:
-                    self.logger.warning("Received KeyboardInterrupt, canceling download threads...")
-                    is_canceled.set()
+                    self.logger.warning("Received KeyboardInterrupt, canceling download workers...")
+                    is_canceled.set()  # type: ignore
                     for future in download_futures:
                         future.cancel()
                     executor.shutdown(wait=True)
@@ -582,7 +597,7 @@ class DatasetClient(ServiceClient):
                         target_path,
                         progress,
                         bytes_task,
-                        True,
+                        ignore_errors=True,
                     )
                     future_to_path[future] = path
 
@@ -832,7 +847,6 @@ class DatasetClient(ServiceClient):
         offset: int = 0,
         length: int = -1,
         validate_checksum: bool = True,
-        is_canceled: Optional[threading.Event] = None,
     ) -> Generator[bytes, None, None]:
         def stream_file() -> Generator[bytes, None, None]:
             headers = {}
@@ -850,7 +864,7 @@ class DatasetClient(ServiceClient):
             for chunk in response.iter_content(chunk_size=chunk_size or self.DOWNLOAD_CHUNK_SIZE):
                 yield chunk
 
-        if is_canceled is not None and is_canceled.is_set():
+        if is_canceled is not None and is_canceled.is_set():  # type: ignore
             raise ThreadCanceledError
 
         contents_hash = None
@@ -861,7 +875,7 @@ class DatasetClient(ServiceClient):
         while True:
             try:
                 for chunk in stream_file():
-                    if is_canceled is not None and is_canceled.is_set():
+                    if is_canceled is not None and is_canceled.is_set():  # type: ignore
                         raise ThreadCanceledError
                     offset += len(chunk)
                     if contents_hash is not None:
@@ -891,11 +905,10 @@ class DatasetClient(ServiceClient):
         dataset: Dataset,
         file: FileInfo,
         target_path: Path,
-        progress: "Progress",
-        task_id: "TaskID",
+        progress: Optional["Progress"] = None,
+        task_id: Optional["TaskID"] = None,
         validate_checksum: bool = True,
         chunk_size: Optional[int] = None,
-        is_canceled: Optional[threading.Event] = None,
     ) -> int:
         import tempfile
 
@@ -903,8 +916,12 @@ class DatasetClient(ServiceClient):
         target_dir = target_path.parent
         target_dir.mkdir(exist_ok=True, parents=True)
 
+        def on_failure():
+            if progress is not None and task_id is not None:
+                progress.advance(task_id, -total_bytes)
+
         @retriable(
-            on_failure=lambda: progress.advance(task_id, -total_bytes),
+            on_failure=on_failure,
             recoverable_errors=(RequestException, ChecksumFailedError),
         )
         def download() -> int:
@@ -919,11 +936,11 @@ class DatasetClient(ServiceClient):
                     file,
                     validate_checksum=validate_checksum,
                     chunk_size=chunk_size,
-                    is_canceled=is_canceled,
                 ):
                     total_bytes += len(chunk)
                     tmp_target.write(chunk)
-                    progress.update(task_id, advance=len(chunk))
+                    if progress is not None and task_id is not None:
+                        progress.update(task_id, advance=len(chunk))
                 os.replace(tmp_target.name, target_path)
             finally:
                 tmp_target.close()

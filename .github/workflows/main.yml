@@ -70,7 +70,7 @@ jobs:
 
           - name: Type check
             run: |
-              mypy .
+              mypy --check-untyped-defs .
 
           - name: Unit tests
             run: |
