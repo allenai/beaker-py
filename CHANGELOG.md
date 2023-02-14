@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `multiprocessing` option to `Beaker.dataset.fetch()`. This can speed things up substantially for datasets with a lot of files.
+
 ## [v1.17.0](https://github.com/allenai/beaker-py/releases/tag/v1.17.0) - 2023-02-13
 
 ### Added
