@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Catch case where user token is empty, raise `ConfigurationError`.
+
 ## [v1.17.1](https://github.com/allenai/beaker-py/releases/tag/v1.17.1) - 2023-02-14
 
 ### Added

@@ -100,6 +100,9 @@ class Config:
             else:
                 raise ConfigurationError(f"Beaker config has no attribute '{name}'")
 
+        if not config.user_token:
+            raise ConfigurationError("Invalid Beaker user token, token is empty")
+
         return config
 
     @classmethod
