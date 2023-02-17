@@ -9,6 +9,12 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.17.4](https://github.com/allenai/beaker-py/releases/tag/v1.17.4) - 2023-02-17
+
+### Fixed
+
+- Fixed latest tag (was "LATEST", should have been "latest")
+
 ## [v1.17.3](https://github.com/allenai/beaker-py/releases/tag/v1.17.3) - 2023-02-17
 
 ### Added

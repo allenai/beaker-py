@@ -200,7 +200,7 @@ jobs:
           TAG_MAJOR_MINOR_PATCH=${GITHUB_REF#refs/tags/}
           TAG_MAJOR_MINOR=${TAG_MAJOR_MINOR_PATCH%.*}
           TAG_MAJOR=${TAG_MAJOR_MINOR_PATCH%.*.*}
-          TAG_LATEST="LATEST"
+          TAG_LATEST="latest"
 
           for TAG in $TAG_MAJOR_MINOR_PATCH $TAG_MAJOR_MINOR $TAG_MAJOR $TAG_LATEST
           do
