@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added a `latest` tagged Docker image.
+
 ## [v1.17.2](https://github.com/allenai/beaker-py/releases/tag/v1.17.2) - 2023-02-15
 
 ### Fixed

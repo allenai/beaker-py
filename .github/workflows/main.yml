@@ -200,8 +200,9 @@ jobs:
           TAG_MAJOR_MINOR_PATCH=${GITHUB_REF#refs/tags/}
           TAG_MAJOR_MINOR=${TAG_MAJOR_MINOR_PATCH%.*}
           TAG_MAJOR=${TAG_MAJOR_MINOR_PATCH%.*.*}
+          TAG_LATEST="LATEST"
 
-          for TAG in $TAG_MAJOR_MINOR_PATCH $TAG_MAJOR_MINOR $TAG_MAJOR
+          for TAG in $TAG_MAJOR_MINOR_PATCH $TAG_MAJOR_MINOR $TAG_MAJOR $TAG_LATEST
           do
               echo "Pushing ${image}:${TAG}"
               docker tag "${image}" "${image}:${TAG}"
