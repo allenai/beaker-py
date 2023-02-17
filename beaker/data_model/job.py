@@ -169,6 +169,7 @@ class Job(BaseModel):
     session: Optional[Session] = None
     host_networking: bool = False
     port_mappings: Optional[Dict[str, int]] = None
+    result: Optional[ExecutionResult] = None
 
     @property
     def display_name(self) -> str:
