@@ -349,7 +349,7 @@ class ExperimentClient(ServiceClient):
         """
         exp = self.resolve_experiment(experiment)
         job = self.latest_job(exp, task=task, ensure_finalized=True)
-        if job is None or job.result is None:
+        if job is None or job.result is None or job.result.beaker is None:
             return None
         else:
             try:

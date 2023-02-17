@@ -100,7 +100,7 @@ class JobStatus(BaseModel):
 
 
 class ExecutionResult(BaseModel):
-    beaker: str
+    beaker: Optional[str] = None
 
 
 class JobRequests(BaseModel):
