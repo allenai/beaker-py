@@ -203,11 +203,14 @@ class JobClient(ServiceClient):
         :raises RequestException: Any other exception that can occur when contacting the
             Beaker server.
         """
-        job = self.get(job.id if isinstance(job, Job) else job)
-        if job.execution is None:
+        job = job if isinstance(job, Job) else self.get(job)
+        if job.result is None or job.result.beaker is None:
             return None
         else:
-            return self.beaker.dataset.get(job.execution.result.beaker)
+            try:
+                return self.beaker.dataset.get(job.result.beaker)
+            except DatasetNotFound:
+                return None
 
     def finalize(self, job: Union[str, Job]) -> Job:
         """

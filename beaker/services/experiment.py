@@ -349,13 +349,10 @@ class ExperimentClient(ServiceClient):
         """
         exp = self.resolve_experiment(experiment)
         job = self.latest_job(exp, task=task, ensure_finalized=True)
-        if job is None or job.result is None or job.result.beaker is None:
+        if job is None:
             return None
         else:
-            try:
-                return self.beaker.dataset.get(job.result.beaker)
-            except DatasetNotFound:
-                return None
+            return self.beaker.job.results(job)
 
     def wait_for(
         self,
