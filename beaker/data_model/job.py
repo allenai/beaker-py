@@ -5,7 +5,14 @@ from pydantic import Field, validator
 
 from .account import Account
 from .base import BaseModel, IntEnum, StrEnum
-from .experiment_spec import DataMount, EnvVar, ImageSource, Priority, TaskSpec
+from .experiment_spec import (
+    DataMount,
+    EnvVar,
+    ImageSource,
+    Priority,
+    ResultSpec,
+    TaskSpec,
+)
 
 __all__ = [
     "CurrentJobStatus",
@@ -100,7 +107,7 @@ class JobStatus(BaseModel):
 
 
 class ExecutionResult(BaseModel):
-    beaker: str
+    beaker: Optional[str] = None
 
 
 class JobRequests(BaseModel):
@@ -145,6 +152,7 @@ class Session(BaseModel):
     work_dir: Optional[str] = None
     identity: Optional[str] = None
     constraints: Optional[Dict[str, List[str]]] = None
+    result: Optional[ResultSpec] = None
 
 
 class Job(BaseModel):
@@ -169,6 +177,7 @@ class Job(BaseModel):
     session: Optional[Session] = None
     host_networking: bool = False
     port_mappings: Optional[Dict[str, int]] = None
+    result: Optional[ExecutionResult] = None
 
     @property
     def display_name(self) -> str:

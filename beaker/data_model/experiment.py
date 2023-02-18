@@ -39,6 +39,7 @@ class Task(BaseModel):
     schedulable: bool = False
     jobs: Tuple[Job, ...] = Field(default_factory=tuple)
     owner: Optional[Account] = None
+    replica_rank: Optional[int] = None
 
     @property
     def display_name(self) -> str:
