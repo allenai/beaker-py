@@ -29,7 +29,7 @@ wheel
 packaging
 
 # Building docs
-Sphinx==5.0.1
+Sphinx==6.1.3
 
 # Sphinx theme: https://sphinx-themes.org/sample-sites/furo/
 furo==2022.12.7
