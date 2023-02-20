@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.17.7](https://github.com/allenai/beaker-py/releases/tag/v1.17.7) - 2023-02-20
+
 ### Fixed
 
 - Fixed bug with dataset download progress bar jumping around.
