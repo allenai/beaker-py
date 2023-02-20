@@ -305,7 +305,8 @@ class DatasetClient(ServiceClient):
 
                     for future in concurrent.futures.as_completed(download_futures):
                         total_downloaded += future.result()
-                        progress.update(bytes_task, completed=total_downloaded)
+                        if multiprocessing:
+                            progress.update(bytes_task, completed=total_downloaded)
                 except KeyboardInterrupt:
                     self.logger.warning("Received KeyboardInterrupt, canceling download workers...")
                     is_canceled.set()  # type: ignore
