@@ -94,7 +94,7 @@ class ServiceClient:
             )
 
             # Log response at DEBUG.
-            if response.text:
+            if (not stream) and len(response.content) < 10000 and response.text:
                 self.logger.debug("RECV %s %s %s - %s", method, url, response, response.text)
             else:
                 self.logger.debug("RECV %s %s %s", method, url, response)
