@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.17.6](https://github.com/allenai/beaker-py/releases/tag/v1.17.6) - 2023-02-20
+
 ### Fixed
 
 - Fixed bug causing slow dataset downloads.
