@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Removed
+
+- Removed the `multiprocessing` argument to `Beaker.dataset.fetch()`. After the bug that was fixed in v1.17.6 it's no-longer worth using a `ProcessPoolExecutor` (in fact it's much slower than the `ThreadPoolExecutor`).
+
 ## [v1.17.7](https://github.com/allenai/beaker-py/releases/tag/v1.17.7) - 2023-02-20
 
 ### Fixed

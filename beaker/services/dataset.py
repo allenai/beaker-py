@@ -212,19 +212,9 @@ class DatasetClient(ServiceClient):
         quiet: bool = False,
         validate_checksum: bool = True,
         chunk_size: Optional[int] = None,
-        multiprocessing: bool = False,
     ):
         """
         Download a dataset.
-
-        .. note::
-            This method uses a :class:`~concurrent.futures.ThreadPoolExecutor` by default to
-            download files concurrently. This is much faster than downloading files sequentially,
-            however you may find that it's still pretty slow compared to the Beaker CLI when
-            the dataset has many files. Unfortunately this is an inherent limitation of Python's GIL.
-
-            To get around this you could try setting `multiprocessing=True`, which will
-            force using a :class:`~concurrent.futures.ProcessPoolExecutor` instead.
 
         :param dataset: The dataset ID, name, or object.
         :param target: The target path to fetched data. Defaults to ``Path(.)``.
@@ -234,7 +224,6 @@ class DatasetClient(ServiceClient):
         :param validate_checksum: If ``True``, the checksum of every file downloaded will be verified.
         :param chunk_size: The size of the buffer (in bytes) to use while downloading each file.
             Defaults to :data:`DOWNLOAD_CHUNK_SIZE`.
-        :param multiprocessing: Use multiprocessing instead of threading.
 
         :raises DatasetNotFound: If the dataset can't be found.
         :raises DatasetReadError: If the :data:`~beaker.data_model.dataset.Dataset.storage` hasn't been set.
@@ -274,17 +263,11 @@ class DatasetClient(ServiceClient):
             progress.update(bytes_task, total=total_bytes_to_download)
 
             import concurrent.futures
-            import multiprocessing as mp
             import threading
 
-            pool_type = (
-                concurrent.futures.ProcessPoolExecutor
-                if multiprocessing
-                else concurrent.futures.ThreadPoolExecutor
-            )
-            with pool_type(max_workers=max_workers) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                 global is_canceled
-                is_canceled = mp.Event() if multiprocessing else threading.Event()
+                is_canceled = threading.Event()
                 download_futures = []
                 try:
                     for file_info in dataset_info.page.data:
@@ -296,8 +279,8 @@ class DatasetClient(ServiceClient):
                             dataset,
                             file_info,
                             target_path,
-                            progress=progress if not multiprocessing else None,
-                            task_id=bytes_task if not multiprocessing else None,
+                            progress=progress,
+                            task_id=bytes_task,
                             validate_checksum=validate_checksum,
                             chunk_size=chunk_size,
                         )
@@ -305,8 +288,6 @@ class DatasetClient(ServiceClient):
 
                     for future in concurrent.futures.as_completed(download_futures):
                         total_downloaded += future.result()
-                        if multiprocessing:
-                            progress.update(bytes_task, completed=total_downloaded)
                 except KeyboardInterrupt:
                     self.logger.warning("Received KeyboardInterrupt, canceling download workers...")
                     is_canceled.set()  # type: ignore
