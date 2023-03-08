@@ -373,6 +373,21 @@ class TaskSpec(BaseModel, frozen=False):
     External hardware requirements, such as memory or GPU devices.
     """
 
+    host_networking: bool = False
+    """
+    Enables the task to use the host's network.
+    """
+
+    replicas: Optional[int] = None
+    """
+    The number of replica tasks to create based on this template.
+    """
+
+    leader_selection: bool = False
+    """
+    Enables leader selection for the replicas and passes the leader's hostname to the replicas.
+    """
+
     @classmethod
     def new(
         cls,

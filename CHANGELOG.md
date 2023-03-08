@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added missing `host_networking`, `replicas`, and `leader_selection` fields to `TaskSpec`.
+
 ### Removed
 
 - Removed the `multiprocessing` argument to `Beaker.dataset.fetch()`. After the bug that was fixed in v1.17.6 it's no-longer worth using a `ProcessPoolExecutor` (in fact it's much slower than the `ThreadPoolExecutor`).
