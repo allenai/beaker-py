@@ -29,6 +29,8 @@ def test_experiment_spec_from_and_to_json_and_file(beaker_cloud_cluster_name: st
                 "context": {"cluster": beaker_cloud_cluster_name},
                 "result": {"path": "/unused"},
                 "resources": {"memory": "512m", "sharedMemory": "512m"},
+                "hostNetworking": False,
+                "leaderSelection": False,
             },
         ],
     }
