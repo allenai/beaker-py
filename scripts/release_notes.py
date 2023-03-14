@@ -43,7 +43,7 @@ def get_change_log_notes() -> str:
 
 def get_commit_history() -> str:
     stream = os.popen(
-        f"git log $(git describe --always --tags --abbrev=0 {TAG}^^)..{TAG}^ --oneline"
+        f"git log $(git describe --always --tags --abbrev=0 {TAG}^^)..{TAG} --oneline --pretty='%h %s'"
     )
     return "## Commits\n\n" + stream.read()
 
