@@ -25,11 +25,12 @@ __all__ = [
 
 class Image(BaseModel):
     id: str
-    original_tag: str
     owner: Account
     author: Account
     created: datetime
     workspace_ref: WorkspaceRef
+    original_tag: Optional[str] = None
+    docker_tag: Optional[str] = None
     name: Optional[str] = None
     full_name: Optional[str] = None
     description: Optional[str] = None
