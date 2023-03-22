@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Fixed `TaskSpec.constraints` to behave like a dictionary for backwards compatibility.
+
 ## [v1.18.1](https://github.com/allenai/beaker-py/releases/tag/v1.18.1) - 2023-03-14
 
 ### Added
