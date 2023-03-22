@@ -58,7 +58,11 @@ class BaseModel(_BaseModel):
         """
         as_snake_case = {to_snake_case(k): v for k, v in values.items()}
         for key, value in as_snake_case.items():
-            if key not in cls.__fields__ and key not in cls.IGNORE_FIELDS:
+            if (
+                cls.__config__.extra != "allow"
+                and key not in cls.__fields__
+                and key not in cls.IGNORE_FIELDS
+            ):
                 warn_about = (cls.__name__, key)
                 if warn_about not in _VALIDATION_WARNINGS_ISSUED:
                     _VALIDATION_WARNINGS_ISSUED.add(warn_about)

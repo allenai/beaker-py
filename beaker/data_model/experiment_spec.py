@@ -282,9 +282,11 @@ class TaskContext(BaseModel, frozen=False):
         return v
 
 
-class Constraints(BaseModel, frozen=False):
+class Constraints(BaseModel, frozen=False, extra="allow"):
     """
     Constraints are specified via the :data:`~TaskSpec.constraints` field in :class:`TaskSpec`.
+
+    This type also allows other fields that are not listed here.
     """
 
     cluster: Optional[List[str]] = None
@@ -293,6 +295,9 @@ class Constraints(BaseModel, frozen=False):
     You are allowed to omit this field for tasks that have preemptible priority,
     in which case the task will run on any cluster where you have permissions.
     """
+
+    def __setitem__(self, key: str, val: List[Any]) -> None:
+        setattr(self, key, val)
 
 
 class TaskSpec(BaseModel, frozen=False):
@@ -432,21 +437,30 @@ class TaskSpec(BaseModel, frozen=False):
         ...     docker_image="hello-world",
         ... )
         """
-        constraints = kwargs.pop("constraints", None) or {}
+        constraints = kwargs.pop("constraints", None)
+        if constraints is not None and not isinstance(constraints, Constraints):
+            constraints = Constraints(**constraints)
+
         if cluster is not None:
-            if "cluster" in constraints:
+            if constraints is not None and constraints.cluster:
                 raise ValueError("'cluster' can only be specified one way")
             if isinstance(cluster, list):
-                constraints["cluster"] = cluster
+                if constraints is not None:
+                    constraints.cluster = cluster
+                else:
+                    constraints = Constraints(cluster=cluster)
             elif isinstance(cluster, str):
-                constraints["cluster"] = [cluster]
+                if constraints is not None:
+                    constraints.cluster = [cluster]
+                else:
+                    constraints = Constraints(cluster=[cluster])
 
         return TaskSpec(
             name=name,
             image=ImageSource(beaker=beaker_image, docker=docker_image),
             result=ResultSpec(path=result_path),
             context=TaskContext(priority=None if priority is None else Priority(priority)),
-            constraints=constraints or None,
+            constraints=constraints,
             **kwargs,
         )
 

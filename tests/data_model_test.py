@@ -150,7 +150,17 @@ def test_task_spec_with_constraint():
     assert task_spec.constraints is not None
     assert task_spec.constraints.cluster == ["ai2/general-cirrascale"]
 
-    task_spec = TaskSpec.new("main")
-    new_task_spec = task_spec.with_constraint(cluster=["ai2/allennlp-cirrascale"])
-    assert new_task_spec.constraints is not None
-    assert new_task_spec.constraints.cluster == ["ai2/allennlp-cirrascale"]
+    # These methods should all be equivalent.
+    for task_spec in (
+        TaskSpec.new("main", constraints={"cluster": ["ai2/general-cirrascale"]}),
+        TaskSpec.new("main", cluster="ai2/general-cirrascale"),
+        TaskSpec.new("main", cluster=["ai2/general-cirrascale"]),
+    ):
+        assert task_spec.constraints is not None
+        assert task_spec.constraints.cluster == ["ai2/general-cirrascale"]
+
+
+def test_constraints_behave_like_dictionaries():
+    c = Constraints()
+    c["cluster"] = ["ai2/general-cirrascale"]
+    assert c.cluster == ["ai2/general-cirrascale"]
