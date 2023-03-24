@@ -32,7 +32,7 @@ packaging
 Sphinx==5.0.1
 
 # Sphinx theme: https://sphinx-themes.org/sample-sites/furo/
-furo==2022.12.7
+furo==2023.3.23
 
 # Lets Sphinx parse markdown files in addition to rst.
 myst-parser==0.18.1
