@@ -56,8 +56,10 @@ dev = [
 ]
 
 [project.urls]
-homepage = "https://github.com/allenai/beaker-py"
-repository = "https://github.com/allenai/beaker-py"
+Homepage = "https://github.com/allenai/beaker-py"
+Repository = "https://github.com/allenai/beaker-py"
+Changelog = "https://github.com/allenai/beaker-py/blob/main/CHANGELOG.md"
+Documentation = "https://beaker-py.readthedocs.io/"
 
 [tool.setuptools]
 include-package-data = true
