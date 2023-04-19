@@ -31,6 +31,8 @@ class DatasetStorage(BaseModel):
     address: Optional[str] = None
     url: Optional[str] = None
     urlv2: Optional[str] = None
+    total_size: Optional[int] = None
+    num_files: Optional[int] = None
 
     @validator("address")
     def _validate_address(cls, v: Optional[str]) -> Optional[str]:
