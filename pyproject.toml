@@ -39,6 +39,7 @@ dev = [
     "isort>=5.12,<5.13",
     "pytest",
     "pytest-sphinx",
+    "flaky",
     "twine>=1.11.0",
     "build",
     "setuptools",
