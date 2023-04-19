@@ -1,8 +1,85 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "beaker-py"
+dynamic = ["version"]
+readme = "README.md"
+description = "A Python Beaker client"
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+authors = [
+    { name = "Allen Institute for Artificial Intelligence", email = "contact@allenai.org" },
+    { name = "Pete Walsh", email = "petew@allenai.org" },
+]
+license = {file = "LICENSE"}
+requires-python = ">3.7"
+dependencies = [
+    "requests",
+    "packaging",
+    "pydantic>=1.8.2,<2.0",
+    "rich>=12.3,<14.0",
+    "PyYAML",
+    "docker>=5.0,<7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "mypy>=1.0,<1.1",
+    "types-requests",
+    "types-cachetools",
+    "types-PyYAML",
+    "black>=23.0,<24.0",
+    "isort>=5.12,<5.13",
+    "pytest",
+    "pytest-sphinx",
+    "flaky",
+    "twine>=1.11.0",
+    "build",
+    "setuptools",
+    "wheel",
+    "Sphinx==5.0.1",
+    "furo==2022.12.7",
+    "myst-parser==0.18.1",
+    "sphinx-copybutton==0.5.0",
+    "sphinx-autobuild==2021.3.14",
+    "sphinx-autodoc-typehints==1.19.1",
+    "sphinx-inline-tabs",
+    "packaging",
+    "petname==2.6",
+]
+
+[project.urls]
+homepage = "https://github.com/allenai/beaker-py"
+repository = "https://github.com/allenai/beaker-py"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = [
+    "tests*",
+    "docs*",
+    "scripts*",
+    "examples*",
+    "integration_tests*",
+]
+
+[tool.setuptools.package-data]
+beaker = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = {attr = "beaker.version.VERSION"}
+
 [tool.black]
 line-length = 100
-
 include = '\.pyi?$'
-
 exclude = '''
 (
       __pycache__
@@ -20,6 +97,33 @@ exclude = '''
 profile = "black"
 multi_line_output = 3
 
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+[tool.ruff]
+line-length = 115
+ignore = ["F403", "F405"]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.mypy]
+ignore_missing_imports = true
+no_site_packages = false
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+strict_optional = false
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests/",
+    "integration_tests/",
+]
+python_classes = [
+    "Test*",
+    "*Test",
+]
+log_format = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+log_level = "DEBUG"
+filterwarnings = [
+    'ignore:.*distutils Version classes are deprecated.*:DeprecationWarning:docker\.utils\.utils',
+]
