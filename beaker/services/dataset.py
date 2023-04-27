@@ -123,8 +123,8 @@ class DatasetClient(ServiceClient):
 
         :raises ValueError: If the name is invalid.
         :raises DatasetConflict: If a dataset by that name already exists and ``force=False``.
-        :raises UnexpectedEOFError: If a source file is an empty file, or if a source is a directory and
-            the contents of one of the directory's files changes while creating the dataset.
+        :raises UnexpectedEOFError: If a source is a directory and the contents of one of the directory's files
+            changes while creating the dataset.
         :raises FileNotFoundError: If a source doesn't exist.
         :raises WorkspaceNotSet: If neither ``workspace`` nor
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
@@ -518,8 +518,8 @@ class DatasetClient(ServiceClient):
         :raises DatasetNotFound: If the dataset can't be found.
         :raises DatasetWriteError: If the dataset was already committed.
         :raises FileNotFoundError: If a source doesn't exist.
-        :raises UnexpectedEOFError: If a source is an empty file, or if a source is a directory and
-            the contents of one of the directory's files changes while creating the dataset.
+        :raises UnexpectedEOFError: If a source is a directory and the contents of one of the directory's files
+            changes while creating the dataset.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises RequestException: Any other exception that can occur when contacting the
             Beaker server.
@@ -543,8 +543,6 @@ class DatasetClient(ServiceClient):
                     if target is not None:
                         target_path = Path(str(target)) / target_path
                     size = source.lstat().st_size
-                    if size == 0:
-                        raise UnexpectedEOFError(f"'{source}', empty files are not allowed")
                     path_info[source] = (target_path, size)
                     total_bytes += size
                 elif source.is_dir():
@@ -804,11 +802,11 @@ class DatasetClient(ServiceClient):
                 self.request(
                     f"datasets/{dataset.storage.id}/files/{str(target)}",
                     method="PUT",
-                    data=body,
+                    data=body if size > 0 else b"",
                     token=dataset.storage.token,
                     base_url=dataset.storage.base_url,
                     headers=None if not digest else {self.HEADER_DIGEST: digest},
-                    stream=body is not None,
+                    stream=body is not None and size > 0,
                     exceptions_for_status={
                         403: DatasetWriteError(dataset.id),
                         404: DatasetNotFound(self._not_found_err_msg(dataset.id)),
