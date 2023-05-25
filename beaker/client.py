@@ -332,8 +332,8 @@ class Beaker:
 
         :examples:
 
-        >>> beaker.cluster.get(beaker_cloud_cluster_name).autoscale
-        True
+        >>> beaker.cluster.get(beaker_cluster_name).name
+        'ai2/canary'
 
         .. tip::
             See the `Clusters Overview <overview.html#clusters>`_ for a walk-through of the

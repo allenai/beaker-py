@@ -89,12 +89,7 @@ def alternate_beaker_image_name(client: Beaker) -> Generator[str, None, None]:
 
 @pytest.fixture()
 def beaker_cluster_name() -> str:
-    return "ai2/tiny-cpu-testing"
-
-
-@pytest.fixture()
-def beaker_cloud_cluster_name() -> str:
-    return "ai2/tiny-cpu-testing"
+    return "ai2/canary"
 
 
 @pytest.fixture()

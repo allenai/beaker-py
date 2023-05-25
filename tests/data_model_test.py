@@ -19,14 +19,14 @@ def test_data_source_validation():
     assert DataSource(host_path="bar").host_path == "bar"
 
 
-def test_experiment_spec_from_and_to_json_and_file(beaker_cloud_cluster_name: str, tmp_path: Path):
+def test_experiment_spec_from_and_to_json_and_file(beaker_cluster_name: str, tmp_path: Path):
     json_spec = {
         "version": "v2",
         "tasks": [
             {
                 "name": "main",
                 "image": {"docker": "hello-world"},
-                "context": {"cluster": beaker_cloud_cluster_name},
+                "context": {"cluster": beaker_cluster_name},
                 "result": {"path": "/unused"},
                 "resources": {"memory": "512m", "sharedMemory": "512m"},
                 "hostNetworking": False,
