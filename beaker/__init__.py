@@ -70,7 +70,7 @@ For example, you can get information about a cluster with
 :meth:`Beaker.cluster.get() <services.ClusterClient.get>`:
 
 >>> beaker.cluster.get(beaker_cluster_name).name
-ai2/canary
+'ai2/canary'
 
 Or you could check how many GPUs are free on an on-premise cluster with
 :meth:`Beaker.cluster.utilization() <services.ClusterClient.utilization>`:
