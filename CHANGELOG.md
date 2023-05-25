@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added missing field `Cluster.allow_preemptible_restriction_exceptions`.
+
 ## [v1.18.4](https://github.com/allenai/beaker-py/releases/tag/v1.18.4) - 2023-04-27
 
 ### Fixed
