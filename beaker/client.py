@@ -333,7 +333,7 @@ class Beaker:
         :examples:
 
         >>> beaker.cluster.get(beaker_cluster_name).name
-        ai2/canary
+        'ai2/canary'
 
         .. tip::
             See the `Clusters Overview <overview.html#clusters>`_ for a walk-through of the
