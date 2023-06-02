@@ -114,7 +114,7 @@ class DataSource(BaseModel, frozen=False):
     Name of a secret within the experiment's workspace which will be mounted as a plain-text file.
     """
 
-    @root_validator(pre=True)
+    @root_validator
     def _check_exactly_one_field_set(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if len([v for v in values.values() if v is not None]) != 1:
             raise ValueError("Exactly one data source field must be set.")
