@@ -240,18 +240,17 @@ class Beaker:
 
         This can improve performance when calling a series of a client methods in a row.
 
-        :param session: The session to use.
-            If not provided a default will be used.
-
-            .. warning::
-                Only set the ``session`` argument if you really know what you're doing! Otherwise
-                just leave this as ``None``.
-
         :examples:
 
         >>> with beaker.session():
         ...     n_images = len(beaker.workspace.images())
         ...     n_datasets = len(beaker.workspace.datasets())
+
+        :param session: The session to use. If not provided a default will be used.
+
+            .. warning::
+                Only set the ``session`` argument if you really know what you're doing! Otherwise
+                just leave this as ``None``.
 
         """
         current = self._session
