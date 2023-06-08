@@ -26,8 +26,17 @@ Contents
    quickstart
    overview
    examples
-   api
    faq
+
+.. toctree::
+   :hidden:
+   :caption: API Reference
+
+   api/client
+   api/data_models
+   api/experiment_spec
+   api/config
+   api/exceptions
 
 .. toctree::
    :hidden:
