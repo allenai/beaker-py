@@ -296,6 +296,11 @@ class Constraints(BaseModel, frozen=False, extra="allow"):
     in which case the task will run on any cluster where you have permissions.
     """
 
+    hostname: Optional[List[str]] = None
+    """
+    Hostname constraints.
+    """
+
     def __setitem__(self, key: str, val: List[Any]) -> None:
         setattr(self, key, val)
 
