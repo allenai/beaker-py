@@ -22,7 +22,7 @@ requires-python = ">3.7"
 dependencies = [
     "requests",
     "packaging",
-    "pydantic>=1.8.2,<2.0",
+    "pydantic>=1.8.2,<3.0",
     "rich>=12.3,<14.0",
     "PyYAML",
     "docker>=5.0,<7.0",
