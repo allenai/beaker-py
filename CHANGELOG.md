@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Made `WorkspacePermissions.authorizations` field optional (users without the right permissions level won't see this field).
+
 ## [v1.18.7](https://github.com/allenai/beaker-py/releases/tag/v1.18.7) - 2023-06-19
 
 ### Added

@@ -76,7 +76,7 @@ class Permission(StrEnum):
 class WorkspacePermissions(BaseModel):
     requester_auth: str
     public: bool
-    authorizations: Dict[str, Permission]
+    authorizations: Optional[Dict[str, Permission]] = None
     """
     A dictionary of account IDs to authorizations.
     """
