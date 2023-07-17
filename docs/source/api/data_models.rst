@@ -1,7 +1,8 @@
 Data Models
 -----------
 
-.. autoclass:: beaker.BaseModel
+.. autoclass:: beaker.data_model.base.BaseModel
+   :members:
 
 Account
 ~~~~~~~

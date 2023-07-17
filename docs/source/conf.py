@@ -117,7 +117,22 @@ class ShutupSphinxAutodocTypehintsFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         if "Cannot resolve forward reference" in record.msg:
             return False
+        if "Failed guarded type import" in record.msg:
+            return False
         return True
 
 
 logging.getLogger("sphinx.sphinx_autodoc_typehints").addFilter(ShutupSphinxAutodocTypehintsFilter())
+
+
+def autodoc_skip_member(app, what, name, obj, skip, options):
+    """
+    Skip documenting these Pydantic-specific attributes.
+    """
+    del app, what, obj, skip, options
+    exclude = name in {"model_config", "model_fields"}
+    return True if exclude else None
+
+
+def setup(app):
+    app.connect("autodoc-skip-member", autodoc_skip_member)
