@@ -8,4 +8,5 @@ ARG COMMIT_SHA
 
 # Now do some other some other random stuff so that we have more layers to upload.
 RUN echo ${COMMIT_SHA} > /out.log
+RUN pip install --upgrade pip wheel build
 RUN pip install requests PyYAML pydantic
