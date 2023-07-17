@@ -41,7 +41,6 @@ runs:
       run: |
         # Set up virtual environment without cache hit.
         test -d .venv || virtualenv -p $(which python) --copies --reset-app-data .venv
-        pip install '${{ inputs.packages }}' -e .[dev]
 
     - if: steps.virtualenv-cache.outputs.cache-hit != 'true' && inputs.packages == ''
       shell: bash
