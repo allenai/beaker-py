@@ -23,8 +23,8 @@ try:
 
     from ._base_v2 import BaseModelV2 as _BaseModel
 except ImportError:
-    from ._base_v1 import BaseModelV1 as _BaseModel
-    from ._base_v1 import field_validator, model_validator
+    from ._base_v1 import BaseModelV1 as _BaseModel  # type: ignore
+    from ._base_v1 import field_validator, model_validator  # type: ignore
 
 T = TypeVar("T")
 
