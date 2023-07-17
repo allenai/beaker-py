@@ -52,6 +52,33 @@ jobs:
           . .venv/bin/activate
           pip uninstall -y beaker-py
 
+  pydantic_v1:
+    name: Pydantic V1
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-venv
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          cache-prefix: pydantic-v1-${{ env.CACHE_PREFIX }}
+          packages: pydantic<2.0
+
+      - name: Check Pydantic V1 compatibility
+        shell: bash
+        run: |
+          . .venv/bin/activate
+          pytest -v tests/data_model_test.py
+
+      - name: Clean up
+        if: always()
+        shell: bash
+        run: |
+          . .venv/bin/activate
+          pip uninstall -y beaker-py
+
   checks:
     name: ${{ matrix.os }} - python ${{ matrix.python }} - ${{ matrix.task.name }}
     runs-on: ${{ matrix.os }}

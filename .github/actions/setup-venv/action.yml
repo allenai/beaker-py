@@ -8,6 +8,10 @@ inputs:
     description: Update this to invalidate the cache
     required: true
     default: v0
+  packages:
+    description: Extra packages to install or pin
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -38,7 +42,7 @@ runs:
         # Set up virtual environment without cache hit.
         test -d .venv || virtualenv -p $(which python) --copies --reset-app-data .venv
         . .venv/bin/activate
-        pip install -e .[dev]
+        pip install ${{ inputs.packages }} -e .[dev]
 
     - if: steps.virtualenv-cache.outputs.cache-hit == 'true'
       shell: bash
