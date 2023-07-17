@@ -164,12 +164,12 @@ class Job(BaseModel):
     """
 
     id: str
-    name: Optional[str] = None
     kind: JobKind
     author: Account
     workspace: str
-    cluster: Optional[str]
     status: JobStatus
+    name: Optional[str] = None
+    cluster: Optional[str] = None
     execution: Optional[JobExecution] = None
     node: Optional[str] = None
     requests: Optional[JobRequests] = None
