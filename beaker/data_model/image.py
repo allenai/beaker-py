@@ -1,10 +1,8 @@
 from datetime import datetime
 from typing import Optional, Tuple
 
-from pydantic import validator
-
 from .account import Account
-from .base import BaseModel, BasePage, StrEnum
+from .base import BaseModel, BasePage, StrEnum, field_validator
 from .workspace import WorkspaceRef
 
 __all__ = [
@@ -45,7 +43,7 @@ class Image(BaseModel):
     def workspace(self) -> WorkspaceRef:
         return self.workspace_ref
 
-    @validator("committed")
+    @field_validator("committed")
     def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
         if v is not None and v.year == 1:
             return None
@@ -96,7 +94,7 @@ class DockerLayerUploadState(BaseModel):
     progress_detail: DockerLayerProgress
     progress: Optional[str] = None
 
-    @validator("status", pre=True)
+    @field_validator("status", mode="before")
     def _validate_status(cls, v: str) -> str:
         return v.lower()
 
@@ -107,7 +105,7 @@ class DockerLayerDownloadState(BaseModel):
     progress_detail: DockerLayerProgress
     progress: Optional[str] = None
 
-    @validator("status", pre=True)
+    @field_validator("status", mode="before")
     def _validate_status(cls, v: str) -> str:
         return v.lower()
 

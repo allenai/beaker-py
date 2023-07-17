@@ -1,10 +1,10 @@
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import Field, root_validator, validator
+from pydantic import Field
 
 from ..aliases import PathOrStr
 from ..exceptions import *
-from .base import BaseModel, StrEnum
+from .base import BaseModel, StrEnum, field_validator, model_validator
 
 __all__ = [
     "ImageSource",
@@ -114,7 +114,7 @@ class DataSource(BaseModel, frozen=False):
     Name of a secret within the experiment's workspace which will be mounted as a plain-text file.
     """
 
-    @root_validator
+    @model_validator(mode="before")
     def _check_exactly_one_field_set(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if len([v for v in values.values() if v is not None]) != 1:
             raise ValueError("Exactly one data source field must be set.")
@@ -273,7 +273,7 @@ class TaskContext(BaseModel, frozen=False):
     Tasks with higher priority are placed ahead of tasks with lower priority in the queue.
     """
 
-    @validator("priority")
+    @field_validator("priority")
     def _validate_priority(cls, v: str) -> str:
         if v is not None and v not in set(Priority):
             raise ValueError(
@@ -483,7 +483,7 @@ class TaskSpec(BaseModel, frozen=False):
         ... ).with_image(beaker="hello-world")
         >>> assert task_spec.image.beaker == "hello-world"
         """
-        return self.copy(deep=True, update={"image": ImageSource(**kwargs)})
+        return self.model_copy(deep=True, update={"image": ImageSource(**kwargs)})
 
     def with_result(self, **kwargs) -> "TaskSpec":
         """
@@ -499,7 +499,7 @@ class TaskSpec(BaseModel, frozen=False):
         ... ).with_result(path="/output")
         >>> assert task_spec.result.path == "/output"
         """
-        return self.copy(deep=True, update={"result": ResultSpec(**kwargs)})
+        return self.model_copy(deep=True, update={"result": ResultSpec(**kwargs)})
 
     def with_context(self, **kwargs) -> "TaskSpec":
         """
@@ -515,7 +515,7 @@ class TaskSpec(BaseModel, frozen=False):
         ... ).with_context(cluster="ai2/general-cirrascale")
         >>> assert task_spec.context.cluster == "ai2/general-cirrascale"
         """
-        return self.copy(deep=True, update={"context": TaskContext(**kwargs)})
+        return self.model_copy(deep=True, update={"context": TaskContext(**kwargs)})
 
     def with_name(self, name: str) -> "TaskSpec":
         """
@@ -531,7 +531,7 @@ class TaskSpec(BaseModel, frozen=False):
         ... ).with_name("Hi there!")
         >>> assert task_spec.name == "Hi there!"
         """
-        return self.copy(deep=True, update={"name": name})
+        return self.model_copy(deep=True, update={"name": name})
 
     def with_command(self, command: List[str]) -> "TaskSpec":
         """
@@ -547,7 +547,7 @@ class TaskSpec(BaseModel, frozen=False):
         ... ).with_command(["echo"])
         >>> assert task_spec.command == ["echo"]
         """
-        return self.copy(deep=True, update={"command": command})
+        return self.model_copy(deep=True, update={"command": command})
 
     def with_arguments(self, arguments: List[str]) -> "TaskSpec":
         """
@@ -563,7 +563,7 @@ class TaskSpec(BaseModel, frozen=False):
         ... ).with_arguments(["Hello", "World!"])
         >>> assert task_spec.arguments == ["Hello", "World!"]
         """
-        return self.copy(deep=True, update={"arguments": arguments})
+        return self.model_copy(deep=True, update={"arguments": arguments})
 
     def with_resources(self, **kwargs) -> "TaskSpec":
         """
@@ -579,7 +579,7 @@ class TaskSpec(BaseModel, frozen=False):
         ... ).with_resources(gpu_count=2)
         >>> assert task_spec.resources.gpu_count == 2
         """
-        return self.copy(deep=True, update={"resources": TaskResources(**kwargs)})
+        return self.model_copy(deep=True, update={"resources": TaskResources(**kwargs)})
 
     def with_dataset(self, mount_path: str, **kwargs) -> "TaskSpec":
         """
@@ -596,10 +596,10 @@ class TaskSpec(BaseModel, frozen=False):
         ... ).with_dataset("/data/foo", beaker="foo")
         >>> assert task_spec.datasets
         """
-        return self.copy(
+        return self.model_copy(
             deep=True,
             update={
-                "datasets": [d.copy(deep=True) for d in self.datasets or []]
+                "datasets": [d.model_copy(deep=True) for d in self.datasets or []]
                 + [DataMount.new(mount_path, **kwargs)]
             },
         )
@@ -623,10 +623,10 @@ class TaskSpec(BaseModel, frozen=False):
         ... ).with_env_var("baz", value="top, top secret")
         >>> assert len(task_spec.env_vars) == 2
         """
-        return self.copy(
+        return self.model_copy(
             deep=True,
             update={
-                "env_vars": [d.copy(deep=True) for d in self.env_vars or []]
+                "env_vars": [d.model_copy(deep=True) for d in self.env_vars or []]
                 + [EnvVar(name=name, value=value, secret=secret)]
             },
         )
@@ -648,9 +648,9 @@ class TaskSpec(BaseModel, frozen=False):
         constraints = (
             Constraints(**kwargs)
             if self.constraints is None
-            else self.constraints.copy(deep=True, update=kwargs)
+            else self.constraints.model_copy(deep=True, update=kwargs)
         )
-        return self.copy(
+        return self.model_copy(
             deep=True,
             update={
                 "constraints": constraints,
@@ -700,7 +700,7 @@ class ExperimentSpec(BaseModel, frozen=False):
     Long-form explanation for an experiment.
     """
 
-    @validator("tasks")
+    @field_validator("tasks")
     def _validate_tasks(cls, v: List[TaskSpec]) -> List[TaskSpec]:
         task_names = set()
         for task in v:
@@ -814,8 +814,9 @@ class ExperimentSpec(BaseModel, frozen=False):
             for other_task in self.tasks:
                 if task.name == other_task.name:
                     raise ValueError(f"A task with the name '{task.name}' already exists")
-        return self.copy(
-            deep=True, update={"tasks": [d.copy(deep=True) for d in self.tasks or []] + [task]}
+        return self.model_copy(
+            deep=True,
+            update={"tasks": [d.model_copy(deep=True) for d in self.tasks or []] + [task]},
         )
 
     def with_description(self, description: str) -> "ExperimentSpec":
@@ -831,7 +832,7 @@ class ExperimentSpec(BaseModel, frozen=False):
         ... ).description
         'Hello, Mars!'
         """
-        return self.copy(deep=True, update={"description": description})
+        return self.model_copy(deep=True, update={"description": description})
 
     def validate(self):
         for task in self.tasks:

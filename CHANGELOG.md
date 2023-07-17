@@ -9,6 +9,11 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added support for [Pydantic V2](https://docs.pydantic.dev/2.0/migration/).
+- Added missing field `compute_source` on `Cluster` data model.
+
 ## [v1.18.8](https://github.com/allenai/beaker-py/releases/tag/v1.18.8) - 2023-07-12
 
 ### Fixed

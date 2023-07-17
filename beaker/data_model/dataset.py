@@ -2,10 +2,8 @@ from datetime import datetime
 from typing import Optional, Tuple, Union
 from urllib.parse import urlparse
 
-from pydantic import validator
-
 from .account import Account
-from .base import BaseModel, BasePage, StrEnum
+from .base import BaseModel, BasePage, StrEnum, field_validator
 from .workspace import WorkspaceRef
 
 __all__ = [
@@ -34,7 +32,7 @@ class DatasetStorage(BaseModel):
     total_size: Optional[int] = None
     num_files: Optional[int] = None
 
-    @validator("address")
+    @field_validator("address")
     def _validate_address(cls, v: Optional[str]) -> Optional[str]:
         if v is not None and v.startswith("fh://"):
             # HACK: fix prior to https://github.com/allenai/beaker/pull/2962
@@ -83,7 +81,7 @@ class Dataset(BaseModel):
     def workspace(self) -> WorkspaceRef:
         return self.workspace_ref
 
-    @validator("committed")
+    @field_validator("committed")
     def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
         if v is not None and v.year == 1:
             return None
@@ -142,17 +140,17 @@ class Digest(BaseModel):
             if isinstance(value, str) and "algorithm" not in kwargs:
                 # Assume 'value' is the string-encoded form of a digest.
                 digest = Digest.from_encoded(value)
-                kwargs = digest.dict()
+                kwargs = digest.model_dump()
             elif isinstance(value, str):
                 # Assume 'value' is the hex-encoded hash.
                 kwargs["value"] = value
             elif isinstance(value, bytes):
                 # Assume 'value' is raw bytes of the hash.
                 digest = Digest.from_decoded(value, **kwargs)
-                kwargs = digest.dict()
+                kwargs = digest.model_dump()
         super().__init__(**kwargs)
 
-    @validator("algorithm")
+    @field_validator("algorithm")
     def _validate_algorithm(cls, v: Union[str, DigestHashAlgorithm]) -> DigestHashAlgorithm:
         return DigestHashAlgorithm(v)
 
@@ -249,7 +247,7 @@ class FileInfo(BaseModel, arbitrary_types_allowed=True):
 
     IGNORE_FIELDS = {"url"}
 
-    @validator("digest", pre=True)
+    @field_validator("digest", mode="before")
     def _validate_digest(cls, v: Union[str, Digest, None]) -> Optional[Digest]:
         if isinstance(v, Digest):
             return v

@@ -1,14 +1,34 @@
 import base64
 import re
 import time
+import warnings
 from collections import OrderedDict
 from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Optional, Set, Tuple, Type, TypeVar, Union
 
 from .aliases import PathOrStr
 from .exceptions import RequestException
+
+BUG_REPORT_URL = (
+    "https://github.com/allenai/beaker-py/issues/new?assignees=&labels=bug&template=bug_report.yml"
+)
+
+_VALIDATION_WARNINGS_ISSUED: Set[Tuple[str, str]] = set()
+
+
+def issue_data_model_warning(cls: Type, key: str, value: Any):
+    warn_about = (cls.__name__, key)
+    if warn_about not in _VALIDATION_WARNINGS_ISSUED:
+        _VALIDATION_WARNINGS_ISSUED.add(warn_about)
+        warnings.warn(
+            f"Found unknown field '{key}: {value}' for data model '{cls.__name__}'. "
+            "This may be a newly added field that hasn't been defined in beaker-py yet. "
+            "Please submit an issue report about this here:\n"
+            f"{BUG_REPORT_URL}",
+            RuntimeWarning,
+        )
 
 
 def to_lower_camel(s: str) -> str:
@@ -23,6 +43,8 @@ def to_snake_case(s: str) -> str:
     """
     Convert a lower camel case strings into snake case.
     """
+    if s.islower():
+        return s
     parts = []
     for c in s:
         if c.isupper():
