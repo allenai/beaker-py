@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
-from pydantic import Field, validator
+from pydantic import Field
 
 from .account import Account
-from .base import BaseModel, IntEnum, StrEnum
+from .base import BaseModel, IntEnum, StrEnum, field_validator
 from .experiment_spec import (
     DataMount,
     EnvVar,
@@ -68,7 +68,7 @@ class JobStatus(BaseModel):
     exit_code: Optional[int] = None
     message: Optional[str] = None
 
-    @validator(
+    @field_validator(
         "created", "scheduled", "started", "exited", "failed", "finalized", "canceled", "idle_since"
     )
     def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:

@@ -9,6 +9,7 @@ import requests
 
 from ..config import Config
 from ..data_model import *
+from ..data_model.base import BaseModel
 from ..exceptions import *
 from ..util import retriable
 

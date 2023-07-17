@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from beaker.data_model import *
+from beaker.data_model.base import MappedSequence
 from beaker.exceptions import ValidationError
 
 
@@ -164,3 +165,8 @@ def test_constraints_behave_like_dictionaries():
     c = Constraints()
     c["cluster"] = ["ai2/general-cirrascale"]
     assert c.cluster == ["ai2/general-cirrascale"]
+
+
+def test_constraints_extra_fields():
+    c = Constraints(cluster=["ai2/general-cirrascale"], gpus=["A100"])  # type: ignore
+    assert hasattr(c, "gpus")

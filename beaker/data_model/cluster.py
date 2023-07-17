@@ -1,9 +1,7 @@
 from datetime import datetime
 from typing import Optional, Tuple
 
-from pydantic import validator
-
-from .base import BaseModel, StrEnum
+from .base import BaseModel, StrEnum, field_validator
 from .node import NodeResources, NodeUtilization
 
 __all__ = ["ClusterStatus", "Cluster", "ClusterUtilization", "ClusterSpec", "ClusterPatch"]
@@ -43,13 +41,13 @@ class Cluster(BaseModel):
     user_restrictions: Optional[Tuple[str, ...]] = None
     allow_preemptible_restriction_exceptions: Optional[bool] = None
 
-    @validator("validated")
+    @field_validator("validated")
     def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:
         if v is not None and v.year == 1:
             return None
         return v
 
-    @validator("node_spec")
+    @field_validator("node_spec")
     def _validate_node_spec(cls, v: Optional[NodeResources]) -> Optional[NodeResources]:
         if v is not None and not v.to_json():
             return None

@@ -1,95 +1,63 @@
 import logging
-import warnings
 from enum import Enum
 from typing import (
     Any,
-    ClassVar,
     Dict,
     Generic,
     Iterator,
     Mapping,
     Optional,
     Sequence,
-    Set,
     Tuple,
     Type,
     TypeVar,
     Union,
 )
 
-from pydantic import BaseModel as _BaseModel
-from pydantic import ValidationError, root_validator
+from pydantic import ValidationError
 
 from ..util import to_lower_camel, to_snake_case
+
+try:
+    from pydantic import field_validator, model_validator
+
+    from ._base_v2 import BaseModelV2 as _BaseModel
+except ImportError:
+    from ._base_v1 import BaseModelV1 as _BaseModel
+    from ._base_v1 import field_validator, model_validator
 
 T = TypeVar("T")
 
 logger = logging.getLogger("beaker")
 
 
-__all__ = ["BaseModel", "MappedSequence", "StrEnum", "IntEnum", "BasePage"]
+__all__ = [
+    "BaseModel",
+    "MappedSequence",
+    "StrEnum",
+    "IntEnum",
+    "BasePage",
+    "field_validator",
+    "model_validator",
+]
 
 
-BUG_REPORT_URL = (
-    "https://github.com/allenai/beaker-py/issues/new?assignees=&labels=bug&template=bug_report.yml"
-)
-
-_VALIDATION_WARNINGS_ISSUED: Set[Tuple[str, str]] = set()
-
-
-class BaseModel(_BaseModel):
+class BaseModel(_BaseModel):  # type: ignore
     """
     The base class for all Beaker data models.
     """
-
-    class Config:
-        validate_assignment = True
-        use_enum_values = True
-        frozen = True
-
-    IGNORE_FIELDS: ClassVar[Set[str]] = set()
-
-    @root_validator(pre=True)
-    def _validate_and_rename_to_snake_case(  # type: ignore
-        cls: Type["BaseModel"], values: Dict[str, Any]  # type: ignore
-    ) -> Dict[str, Any]:
-        """
-        Raw data from the Beaker server will use lower camel case.
-        """
-        as_snake_case = {to_snake_case(k): v for k, v in values.items()}
-        for key, value in as_snake_case.items():
-            if (
-                cls.__config__.extra != "allow"
-                and key not in cls.__fields__
-                and key not in cls.IGNORE_FIELDS
-            ):
-                warn_about = (cls.__name__, key)
-                if warn_about not in _VALIDATION_WARNINGS_ISSUED:
-                    _VALIDATION_WARNINGS_ISSUED.add(warn_about)
-                    warnings.warn(
-                        f"Found unknown field '{key}: {value}' for data model '{cls.__name__}'. "
-                        "This may be a newly added field that hasn't been defined in beaker-py yet. "
-                        "Please submit an issue report about this here:\n"
-                        f"{BUG_REPORT_URL}",
-                        RuntimeWarning,
-                    )
-        return as_snake_case
 
     def __str__(self) -> str:
         return self.__repr__()
 
     def __getitem__(self, key):
         try:
-            return self.dict()[key]
+            return self.model_dump()[key]  # type: ignore
         except KeyError:
             if not key.islower():
-                snake_case_key = ""
-                for c in key:
-                    if c.isupper():
-                        snake_case_key += "_"
-                    snake_case_key += c.lower()
+                snake_case_key = to_snake_case(key)
                 try:
-                    return self.dict()[snake_case_key]
+                    return self.model_dump()[snake_case_key]  # type: ignore
                 except KeyError:
                     pass
             raise
@@ -109,7 +77,7 @@ class BaseModel(_BaseModel):
     def jsonify(cls, x: Any) -> Any:
         if isinstance(x, BaseModel):
             return {
-                to_lower_camel(key): cls.jsonify(value) for key, value in x if value is not None
+                to_lower_camel(key): cls.jsonify(value) for key, value in x if value is not None  # type: ignore
             }
         elif isinstance(x, Enum):
             return cls.jsonify(x.value)

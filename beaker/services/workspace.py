@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union
 
 from ..data_model import *
+from ..data_model.base import BasePage
 from ..exceptions import *
 from ..util import format_cursor
 from .service_client import ServiceClient
