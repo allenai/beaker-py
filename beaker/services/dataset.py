@@ -207,6 +207,7 @@ class DatasetClient(ServiceClient):
         self,
         dataset: Union[str, Dataset],
         target: Optional[PathOrStr] = None,
+        prefix: Optional[str] = None,
         force: bool = False,
         max_workers: Optional[int] = None,
         quiet: bool = False,
@@ -217,7 +218,8 @@ class DatasetClient(ServiceClient):
         Download a dataset.
 
         :param dataset: The dataset ID, name, or object.
-        :param target: The target path to fetched data. Defaults to ``Path(.)``.
+        :param target: The target path to download fetched data to. Defaults to ``Path(.)``.
+        :param prefix: Only download files that start with the given prefix.
         :param max_workers: The maximum number of thread pool workers to use to download files concurrently.
         :param force: If ``True``, existing local files will be overwritten.
         :param quiet: If ``True``, progress won't be displayed.
@@ -271,6 +273,8 @@ class DatasetClient(ServiceClient):
                 download_futures = []
                 try:
                     for file_info in dataset_info.page.data:
+                        if prefix is not None and not file_info.path.startswith(prefix):
+                            continue
                         target_path = target / Path(file_info.path)
                         if not force and target_path.exists():
                             raise FileExistsError(file_info.path)
