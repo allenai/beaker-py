@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.20.0](https://github.com/allenai/beaker-py/releases/tag/v1.20.0) - 2023-07-28
+
 ### Added
 
 - Added `prefix` parameter to `Beaker.dataset.fetch()`.
