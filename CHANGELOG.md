@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Added new missing cancellation code (4 = manual cancellation) to enumeration.
+
 ## [v1.20.0](https://github.com/allenai/beaker-py/releases/tag/v1.20.0) - 2023-07-28
 
 ### Added
