@@ -52,6 +52,7 @@ class CanceledCode(IntEnum):
     system_preemption = 1
     user_preemption = 2
     idle = 3
+    manual_cancellation = 4
 
 
 class JobStatus(BaseModel):
