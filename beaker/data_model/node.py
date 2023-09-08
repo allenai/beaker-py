@@ -31,6 +31,7 @@ class NodeUtilization(BaseModel):
     hostname: str
     limits: NodeResources
     running_jobs: int
+    running_preemptible_jobs: int
     used: NodeResources
     free: NodeResources
     cordoned: bool = False

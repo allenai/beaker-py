@@ -202,6 +202,18 @@ class Job(BaseModel):
             CanceledCode.user_preemption,
         }
 
+    @property
+    def priority(self) -> Optional[Priority]:
+        """
+        Get the priority of the job.
+        """
+        if self.session is not None:
+            return self.session.priority
+        elif self.execution is not None:
+            return self.execution.spec.context.priority
+        else:
+            return None
+
     def check(self):
         """
         :raises JobFailedError: If the job failed or was canceled.

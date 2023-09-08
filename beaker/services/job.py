@@ -605,3 +605,7 @@ class JobClient(ServiceClient):
         finally:
             if owned_progress:
                 progress.stop()
+
+    def url(self, job: Union[str, Job]) -> str:
+        job_id = job.id if isinstance(job, Job) else job
+        return f"{self.config.agent_address}/job/{self.url_quote(job_id)}"

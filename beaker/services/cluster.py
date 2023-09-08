@@ -199,13 +199,24 @@ class ClusterClient(ServiceClient):
 
         running_jobs = 0
         queued_jobs = 0
+        running_preemptible_jobs = 0
         node_to_util: Dict[str, Dict[str, Union[int, float]]] = {
-            node.id: {"running_jobs": 0, "gpus_used": 0, "cpus_used": 0.0} for node in nodes
+            node.id: {
+                "running_jobs": 0,
+                "running_preemptible_jobs": 0,
+                "gpus_used": 0,
+                "cpus_used": 0.0,
+            }
+            for node in nodes
         }
 
         for job in self.beaker.job.list(cluster=cluster, finalized=False):
-            if job.status.current == CurrentJobStatus.running:
+            if job.status.current in (CurrentJobStatus.running, CurrentJobStatus.idle):
+                if job.node not in node_to_util:
+                    continue
                 running_jobs += 1
+                if job.priority == Priority.preemptible:
+                    running_preemptible_jobs += 1
             elif job.status.current == CurrentJobStatus.created:
                 queued_jobs += 1
 
@@ -215,6 +226,8 @@ class ClusterClient(ServiceClient):
 
                 node_util = node_to_util[job.node]
                 node_util["running_jobs"] += 1
+                if job.priority == Priority.preemptible:
+                    node_util["running_preemptible_jobs"] += 1
                 if job.requests is not None:
                     if job.requests.gpu_count is not None:
                         node_util["gpus_used"] += job.requests.gpu_count
@@ -225,6 +238,7 @@ class ClusterClient(ServiceClient):
             cluster=cluster,
             running_jobs=running_jobs,
             queued_jobs=queued_jobs,
+            running_preemptible_jobs=running_preemptible_jobs,
             nodes=tuple(
                 [
                     NodeUtilization(
@@ -232,6 +246,9 @@ class ClusterClient(ServiceClient):
                         hostname=node.hostname,
                         limits=node.limits,
                         running_jobs=int(node_to_util[node.id]["running_jobs"]),
+                        running_preemptible_jobs=int(
+                            node_to_util[node.id]["running_preemptible_jobs"]
+                        ),
                         used=NodeResources(
                             gpu_count=None
                             if node.limits.gpu_count is None
