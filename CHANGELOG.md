@@ -9,6 +9,15 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `.priority` convenience property to `Job` data model class.
+- Added `Beaker.job.url()` method to get the URL for a job.
+
+### Fixed
+
+- Fixed a bug with `Beaker.cluster.utilization()` that resulted in inflated numbers for the amount of running jobs.
+
 ## [v1.20.1](https://github.com/allenai/beaker-py/releases/tag/v1.20.1) - 2023-09-01
 
 ### Fixed

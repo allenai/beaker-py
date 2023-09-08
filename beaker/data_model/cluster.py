@@ -73,6 +73,7 @@ class ClusterUtilization(BaseModel):
     cluster: Cluster
     running_jobs: int
     queued_jobs: int
+    running_preemptible_jobs: int
     nodes: Tuple[NodeUtilization, ...]
 
     @property
