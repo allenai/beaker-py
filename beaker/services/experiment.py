@@ -113,10 +113,10 @@ class ExperimentClient(ServiceClient):
             :class:`~beaker.data_model.experiment_spec.ExperimentSpec` instance or the path to a YAML spec file.
         :type spec: :class:`~beaker.data_model.experiment_spec.ExperimentSpec` | :class:`~pathlib.Path` | :class:`str`
         :param name: An optional name to assign the experiment. Must be unique.
-        :type name: :class:`str`
-        :param workspace: The workspace to create the experiment under. If not specified,
+        :type name: :class:`str`, optional
+        :param workspace: An optional workspace to create the experiment under. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
-        :type workspace: :class:`~beaker.data_model.workspace.Workspace` | :class:`str`
+        :type workspace: :class:`~beaker.data_model.workspace.Workspace` | :class:`str`, optional
 
         :raises ValueError: If the name is invalid.
         :raises ExperimentConflict: If an experiment with the given name already exists.
