@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.22.0](https://github.com/allenai/beaker-py/releases/tag/v1.22.0) - 2023-09-25
+
 ### Changed
 
 - Allow experiment name to be `None` when creating new experiments via `Beaker.experiment.create()`.
