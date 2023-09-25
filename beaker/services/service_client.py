@@ -127,7 +127,7 @@ class ServiceClient:
                     # Raise a BeakerError if we're misusing the API (4xx error code).
                     raise BeakerError(msg)
                 elif msg is not None:
-                    raise HTTPError(msg, response=response)
+                    raise HTTPError(msg, response=response)  # type: ignore
                 else:
                     raise
 
