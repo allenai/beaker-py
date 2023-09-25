@@ -101,7 +101,7 @@ multi_line_output = 3
 
 [tool.ruff]
 line-length = 115
-ignore = ["F403", "F405"]
+ignore = ["E501", "F403", "F405"]
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401"]

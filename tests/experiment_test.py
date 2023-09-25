@@ -18,6 +18,28 @@ from beaker import (
 )
 
 
+def test_parse_create_args(client: Beaker):
+    spec, name, workspace = client.experiment._parse_create_args(
+        "my-experiment", ExperimentSpec.new(docker_image="hello-world")
+    )
+    assert workspace is None
+    assert name == "my-experiment"
+
+    spec, name, workspace = client.experiment._parse_create_args(
+        ExperimentSpec.new(docker_image="hello-world")
+    )
+    assert workspace is None
+    assert name is None
+    assert spec is not None
+
+    spec, name, workspace = client.experiment._parse_create_args(
+        ExperimentSpec.new(docker_image="hello-world"), name="my-experiment", workspace="ai2/petew"
+    )
+    assert workspace == "ai2/petew"
+    assert name == "my-experiment"
+    assert spec is not None
+
+
 def test_experiment_get(client: Beaker, hello_world_experiment_id: str):
     exp = client.experiment.get(hello_world_experiment_id)
     assert exp.id == hello_world_experiment_id

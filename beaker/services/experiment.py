@@ -1,5 +1,6 @@
 import time
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -9,6 +10,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
 )
 
@@ -64,20 +66,57 @@ class ExperimentClient(ServiceClient):
                         return matches[0]
             raise
 
+    def _parse_create_args(
+        self, *args, **kwargs
+    ) -> Tuple[Union[ExperimentSpec, PathOrStr], Optional[str], Optional[Union[Workspace, str]]]:
+        spec: Optional[Union[ExperimentSpec, PathOrStr]] = kwargs.pop("spec", None)
+        name: Optional[str] = kwargs.pop("name", None)
+        workspace: Optional[Union[Workspace, str]] = kwargs.pop("workspace", None)
+        if len(args) == 2:
+            if name is not None or spec is not None:
+                raise TypeError(
+                    "ExperimentClient.create() got an unexpected number of positional arguments"
+                )
+            if isinstance(args[0], str) and isinstance(args[1], (ExperimentSpec, Path, str)):
+                name, spec = args
+            elif isinstance(args[0], (ExperimentSpec, Path, str)) and isinstance(args[1], str):
+                spec, name = args
+            else:
+                raise TypeError("ExperimentClient.create() got an unexpected positional argument")
+        elif len(args) == 1:
+            if spec is None:
+                spec = args[0]
+            elif name is None:
+                name = args[0]
+            else:
+                raise TypeError("ExperimentClient.create() got an unexpected positional argument")
+        else:
+            raise TypeError(
+                "ExperimentClient.create() got an unexpected number of positional arguments"
+            )
+        if kwargs:
+            raise TypeError(
+                f"ExperimentClient.create() got unexpected keyword arguments {tuple(kwargs.keys())}"
+            )
+        assert spec is not None
+        return spec, name, workspace
+
     def create(
         self,
-        name: str,
-        spec: Union[ExperimentSpec, PathOrStr],
-        workspace: Optional[Union[Workspace, str]] = None,
+        *args,
+        **kwargs,
     ) -> Experiment:
         """
         Create a new Beaker experiment with the given ``spec``.
 
-        :param name: The name to assign the experiment.
         :param spec: The spec for the Beaker experiment. This can either be an
             :class:`~beaker.data_model.experiment_spec.ExperimentSpec` instance or the path to a YAML spec file.
-        :param workspace: The workspace to create the experiment under. If not specified,
+        :type spec: :class:`~beaker.data_model.experiment_spec.ExperimentSpec` | :class:`~pathlib.Path` | :class:`str`
+        :param name: An optional name to assign the experiment. Must be unique.
+        :type name: :class:`str`, optional
+        :param workspace: An optional workspace to create the experiment under. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
+        :type workspace: :class:`~beaker.data_model.workspace.Workspace` | :class:`str`, optional
 
         :raises ValueError: If the name is invalid.
         :raises ExperimentConflict: If an experiment with the given name already exists.
@@ -88,7 +127,11 @@ class ExperimentClient(ServiceClient):
             Beaker server.
 
         """
-        self.validate_beaker_name(name)
+        spec, name, workspace = self._parse_create_args(*args, **kwargs)
+        # For backwards compatibility we parse out the arguments like this to allow for `create(name, spec)`
+        # or just `create(spec)`.
+        if name is not None:
+            self.validate_beaker_name(name)
         if not isinstance(spec, ExperimentSpec):
             spec = ExperimentSpec.from_file(spec)
         spec.validate()
@@ -98,9 +141,9 @@ class ExperimentClient(ServiceClient):
         experiment_data = self.request(
             f"workspaces/{workspace.id}/experiments",
             method="POST",
-            query={"name": name},
+            query=None if name is None else {"name": name},
             data=json_spec,
-            exceptions_for_status={409: ExperimentConflict(name)},
+            exceptions_for_status=None if name is None else {409: ExperimentConflict(name)},
         ).json()
         return self.get(experiment_data["id"])
 
