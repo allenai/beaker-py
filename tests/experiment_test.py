@@ -39,6 +39,24 @@ def test_parse_create_args(client: Beaker):
     assert name == "my-experiment"
     assert spec is not None
 
+    spec, name, workspace = client.experiment._parse_create_args(
+        name="my-experiment",
+        spec=ExperimentSpec.new(docker_image="hello-world"),
+        workspace="ai2/petew",
+    )
+    assert workspace == "ai2/petew"
+    assert name == "my-experiment"
+    assert spec is not None
+
+    spec, name, workspace = client.experiment._parse_create_args(
+        "my-experiment",
+        ExperimentSpec.new(docker_image="hello-world"),
+        "ai2/petew",
+    )
+    assert workspace == "ai2/petew"
+    assert name == "my-experiment"
+    assert spec is not None
+
 
 def test_experiment_get(client: Beaker, hello_world_experiment_id: str):
     exp = client.experiment.get(hello_world_experiment_id)

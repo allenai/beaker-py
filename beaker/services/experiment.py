@@ -72,7 +72,38 @@ class ExperimentClient(ServiceClient):
         spec: Optional[Union[ExperimentSpec, PathOrStr]] = kwargs.pop("spec", None)
         name: Optional[str] = kwargs.pop("name", None)
         workspace: Optional[Union[Workspace, str]] = kwargs.pop("workspace", None)
-        if len(args) == 2:
+        if len(args) == 3:
+            if name is not None or spec is not None or workspace is not None:
+                raise TypeError(
+                    "ExperimentClient.create() got an unexpected number of positional arguments"
+                )
+            if (
+                isinstance(args[0], str)
+                and isinstance(args[1], (ExperimentSpec, Path, str))
+                and isinstance(
+                    args[2],
+                    (
+                        str,
+                        Workspace,
+                    ),
+                )
+            ):
+                name, spec, workspace = args
+            elif (
+                isinstance(args[0], (ExperimentSpec, Path, str))
+                and isinstance(args[1], str)
+                and isinstance(
+                    args[2],
+                    (
+                        str,
+                        Workspace,
+                    ),
+                )
+            ):
+                spec, name, workspace = args
+            else:
+                raise TypeError("ExperimentClient.create() got an unexpected positional argument")
+        elif len(args) == 2:
             if name is not None or spec is not None:
                 raise TypeError(
                     "ExperimentClient.create() got an unexpected number of positional arguments"
@@ -90,14 +121,18 @@ class ExperimentClient(ServiceClient):
                 name = args[0]
             else:
                 raise TypeError("ExperimentClient.create() got an unexpected positional argument")
-        else:
+        elif len(args) != 0:
             raise TypeError(
                 "ExperimentClient.create() got an unexpected number of positional arguments"
             )
+        elif spec is None:
+            raise TypeError("ExperimentClient.create() is missing 1 required argument: 'spec'")
+
         if kwargs:
             raise TypeError(
                 f"ExperimentClient.create() got unexpected keyword arguments {tuple(kwargs.keys())}"
             )
+
         assert spec is not None
         return spec, name, workspace
 
