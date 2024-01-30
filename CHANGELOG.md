@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.24.0](https://github.com/allenai/beaker-py/releases/tag/v1.24.0) - 2024-01-30
+
 ### Added
 
 - Added `budget` field to experiment spec.
