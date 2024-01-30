@@ -700,6 +700,12 @@ class ExperimentSpec(BaseModel, frozen=False):
     Long-form explanation for an experiment.
     """
 
+    budget: Optional[str] = None
+    """
+    The name of the budget account for your team.
+    See https://beaker-docs.apps.allenai.org/concept/budgets.html for more details.
+    """
+
     @field_validator("tasks")
     def _validate_tasks(cls, v: List[TaskSpec]) -> List[TaskSpec]:
         task_names = set()
