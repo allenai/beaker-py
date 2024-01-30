@@ -110,15 +110,18 @@ def test_workspace_get_permissions(client: Beaker):
     client.workspace.get_permissions()
 
 
+@pytest.mark.skip("Requires admin credentials")
 def test_workspace_grant_and_revoke_permissions(client: Beaker, alternate_user: Account):
     client.workspace.grant_permissions(Permission.read, alternate_user)
     client.workspace.revoke_permissions(alternate_user)
 
 
+@pytest.mark.skip("Requires admin credentials")
 def test_workspace_set_visibility(client: Beaker):
     client.workspace.set_visibility(public=False)
 
 
+@pytest.mark.skip("Requires admin credentials")
 def test_workspace_set_visibility_archived(client: Beaker, archived_workspace_name: str):
     client.workspace.set_visibility(public=False, workspace=archived_workspace_name)
 
