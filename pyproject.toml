@@ -37,7 +37,7 @@ dev = [
     "types-PyYAML",
     "black>=23.0,<24.0",
     "isort>=5.12,<5.13",
-    "pytest",
+    "pytest<8.0",
     "pytest-sphinx",
     "flaky",
     "twine>=1.11.0",
