@@ -40,6 +40,7 @@ def main(image: str, workspace: str):
         experiments = []
         for x in progress.track(range(5), description="Launching experiments..."):
             spec = ExperimentSpec.new(
+                "ai2/allennlp",
                 description=f"Run {x+1} of sweep {sweep_name}",
                 beaker_image=beaker_image.full_name,
                 result_path="/output",

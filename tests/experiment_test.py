@@ -20,20 +20,22 @@ from beaker import (
 
 def test_parse_create_args(client: Beaker):
     spec, name, workspace = client.experiment._parse_create_args(
-        "my-experiment", ExperimentSpec.new(docker_image="hello-world")
+        "my-experiment", ExperimentSpec.new(budget="ai2/allennlp", docker_image="hello-world")
     )
     assert workspace is None
     assert name == "my-experiment"
 
     spec, name, workspace = client.experiment._parse_create_args(
-        ExperimentSpec.new(docker_image="hello-world")
+        ExperimentSpec.new(budget="ai2/allennlp", docker_image="hello-world")
     )
     assert workspace is None
     assert name is None
     assert spec is not None
 
     spec, name, workspace = client.experiment._parse_create_args(
-        ExperimentSpec.new(docker_image="hello-world"), name="my-experiment", workspace="ai2/petew"
+        ExperimentSpec.new(budget="ai2/allennlp", docker_image="hello-world"),
+        name="my-experiment",
+        workspace="ai2/petew",
     )
     assert workspace == "ai2/petew"
     assert name == "my-experiment"
@@ -41,7 +43,7 @@ def test_parse_create_args(client: Beaker):
 
     spec, name, workspace = client.experiment._parse_create_args(
         name="my-experiment",
-        spec=ExperimentSpec.new(docker_image="hello-world"),
+        spec=ExperimentSpec.new(budget="ai2/allennlp", docker_image="hello-world"),
         workspace="ai2/petew",
     )
     assert workspace == "ai2/petew"
@@ -50,7 +52,7 @@ def test_parse_create_args(client: Beaker):
 
     spec, name, workspace = client.experiment._parse_create_args(
         "my-experiment",
-        ExperimentSpec.new(docker_image="hello-world"),
+        ExperimentSpec.new(budget="ai2/allennlp", docker_image="hello-world"),
         "ai2/petew",
     )
     assert workspace == "ai2/petew"
@@ -108,6 +110,7 @@ def test_create_experiment_image_not_found(
     beaker_cluster_name: str,
 ):
     spec = ExperimentSpec(
+        budget="ai2/allennlp",
         tasks=[
             TaskSpec(
                 name="main",
@@ -127,6 +130,7 @@ def test_create_experiment_dataset_not_found(
     beaker_cluster_name: str,
 ):
     spec = ExperimentSpec(
+        budget="ai2/allennlp",
         tasks=[
             TaskSpec(
                 name="main",
@@ -149,6 +153,7 @@ def test_create_experiment_secret_not_found(
     beaker_cluster_name: str,
 ):
     spec = ExperimentSpec(
+        budget="ai2/allennlp",
         tasks=[
             TaskSpec(
                 name="main",
@@ -171,6 +176,7 @@ def test_create_experiment_result_not_found(
     beaker_cluster_name: str,
 ):
     spec = ExperimentSpec(
+        budget="ai2/allennlp",
         tasks=[
             TaskSpec(
                 name="main",
@@ -192,6 +198,7 @@ def test_create_experiment_cluster_not_found(
     experiment_name: str,
 ):
     spec = ExperimentSpec(
+        budget="ai2/allennlp",
         tasks=[
             TaskSpec(
                 name="main",

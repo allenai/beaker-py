@@ -20,6 +20,7 @@ def test_experiment_workflow(
     hello_world_experiment_name: str,
 ):
     spec = ExperimentSpec(
+        budget="ai2/allennlp",
         tasks=[
             TaskSpec(
                 name="main",

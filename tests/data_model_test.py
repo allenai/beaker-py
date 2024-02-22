@@ -23,6 +23,7 @@ def test_data_source_validation():
 def test_experiment_spec_from_and_to_json_and_file(beaker_cluster_name: str, tmp_path: Path):
     json_spec = {
         "version": "v2",
+        "budget": "ai2/allennlp",
         "tasks": [
             {
                 "name": "main",
@@ -48,6 +49,7 @@ def test_experiment_spec_validation():
     with pytest.raises(ValidationError, match="Duplicate task name"):
         ExperimentSpec.from_json(
             {
+                "budget": "ai2/allennlp",
                 "tasks": [
                     {
                         "name": "main",
@@ -61,11 +63,12 @@ def test_experiment_spec_validation():
                         "context": {"cluster": "bar"},
                         "result": {"path": "/unused"},
                     },
-                ]
+                ],
             }
         )
     with pytest.raises(ValidationError, match="Duplicate task name"):
         ExperimentSpec(
+            budget="ai2/allennlp",
             tasks=[
                 TaskSpec(
                     name="main",
@@ -79,9 +82,11 @@ def test_experiment_spec_validation():
                     context={"cluster": "bar"},  # type: ignore
                     result={"path": "/unused"},  # type: ignore
                 ),
-            ]
+            ],
         )
-    spec = ExperimentSpec().with_task(TaskSpec.new("main", "foo", docker_image="hello-world"))
+    spec = ExperimentSpec(budget="ai2/allennlp").with_task(
+        TaskSpec.new("main", "foo", docker_image="hello-world")
+    )
     with pytest.raises(ValueError, match="A task with the name"):
         spec.with_task(TaskSpec.new("main", "bar", docker_image="hello-world"))
 
@@ -136,7 +141,7 @@ def test_mapped_sequence():
     "cluster", [["ai2/general-cirrascale", "ai2/allennlp-cirrascale"], "ai2/general-cirrascale"]
 )
 def test_experiment_spec_new_with_cluster(cluster):
-    spec = ExperimentSpec.new(cluster=cluster)
+    spec = ExperimentSpec.new("ai2/allennlp", cluster=cluster)
     assert spec.tasks[0].context.cluster is None
     assert spec.tasks[0].constraints is not None
     assert isinstance(spec.tasks[0].constraints.cluster, list)
