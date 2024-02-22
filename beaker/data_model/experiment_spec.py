@@ -672,6 +672,7 @@ class ExperimentSpec(BaseModel, frozen=False):
     :examples:
 
     >>> spec = ExperimentSpec(
+    ...     budget="ai2/allennlp",
     ...     tasks=[
     ...         TaskSpec(
     ...             name="hello",
@@ -683,6 +684,12 @@ class ExperimentSpec(BaseModel, frozen=False):
     ...         ),
     ...     ],
     ... )
+    """
+
+    budget: str
+    """
+    The name of the budget account for your team.
+    See https://beaker-docs.apps.allenai.org/concept/budgets.html for more details.
     """
 
     tasks: List[TaskSpec] = Field(default_factory=tuple)
@@ -698,12 +705,6 @@ class ExperimentSpec(BaseModel, frozen=False):
     description: Optional[str] = None
     """
     Long-form explanation for an experiment.
-    """
-
-    budget: Optional[str] = None
-    """
-    The name of the budget account for your team.
-    See https://beaker-docs.apps.allenai.org/concept/budgets.html for more details.
     """
 
     @field_validator("tasks")
@@ -732,6 +733,7 @@ class ExperimentSpec(BaseModel, frozen=False):
     @classmethod
     def new(
         cls,
+        budget: str,
         task_name: str = "main",
         description: Optional[str] = None,
         cluster: Optional[Union[str, List[str]]] = None,
@@ -772,11 +774,13 @@ class ExperimentSpec(BaseModel, frozen=False):
         Create a preemptible experiment that can run an any on-premise cluster:
 
         >>> spec = ExperimentSpec.new(
+        ...     "ai2/allennlp",
         ...     docker_image="hello-world",
         ...     priority=Priority.preemptible,
         ... )
         """
         return cls(
+            budget=budget,
             description=description,
             tasks=[
                 TaskSpec.new(
@@ -809,7 +813,7 @@ class ExperimentSpec(BaseModel, frozen=False):
 
         :examples:
 
-        >>> spec = ExperimentSpec().with_task(
+        >>> spec = ExperimentSpec(budget="ai2/allennlp").with_task(
         ...     TaskSpec.new(
         ...         "hello-world",
         ...         docker_image="hello-world",
@@ -833,7 +837,7 @@ class ExperimentSpec(BaseModel, frozen=False):
 
         :examples:
 
-        >>> ExperimentSpec(description="Hello, World!").with_description(
+        >>> ExperimentSpec(budget="ai2/allennlp", description="Hello, World!").with_description(
         ...     "Hello, Mars!"
         ... ).description
         'Hello, Mars!'

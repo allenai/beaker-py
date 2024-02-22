@@ -116,6 +116,7 @@ Manage Beaker experiments with :data:`Beaker.experiment`.
 For example, create an experiment with :meth:`Beaker.experiment.create() <services.ExperimentClient.create>`:
 
 >>> spec = ExperimentSpec(
+...     budget="ai2/allennlp",
 ...     tasks=[
 ...         TaskSpec(
 ...             name="main",

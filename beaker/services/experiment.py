@@ -194,13 +194,14 @@ class ExperimentClient(ServiceClient):
             Beaker server.
         """
         experiment_id = self.resolve_experiment(experiment).id
-        return ExperimentSpec.from_json(
-            self.request(
-                f"experiments/{self.url_quote(experiment_id)}/spec",
-                query={"version": SpecVersion.v2.value},
-                headers={"Accept": "application/json"},
-            ).json()
-        )
+        spec_json = self.request(
+            f"experiments/{self.url_quote(experiment_id)}/spec",
+            query={"version": SpecVersion.v2.value},
+            headers={"Accept": "application/json"},
+        ).json()
+        if "budget" not in spec_json:
+            spec_json["budget"] = ""
+        return ExperimentSpec.from_json(spec_json)
 
     def stop(self, experiment: Union[str, Experiment]):
         """

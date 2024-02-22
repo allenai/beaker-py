@@ -5,7 +5,7 @@ from beaker import Beaker, ExperimentSpec, TaskSpec
 
 def test_job_stop_and_finalize(client: Beaker, experiment_name: str, beaker_cluster_name: str):
     start = time.time()
-    spec = ExperimentSpec().with_task(
+    spec = ExperimentSpec(budget="ai2/allennlp").with_task(
         TaskSpec.new(
             "main",
             beaker_cluster_name,
