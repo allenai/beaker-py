@@ -672,6 +672,7 @@ class ExperimentSpec(BaseModel, frozen=False):
     :examples:
 
     >>> spec = ExperimentSpec(
+    ...     budget="ai2/allennlp",
     ...     tasks=[
     ...         TaskSpec(
     ...             name="hello",
@@ -773,7 +774,7 @@ class ExperimentSpec(BaseModel, frozen=False):
         Create a preemptible experiment that can run an any on-premise cluster:
 
         >>> spec = ExperimentSpec.new(
-        ...     "ai2/allennlp
+        ...     "ai2/allennlp",
         ...     docker_image="hello-world",
         ...     priority=Priority.preemptible,
         ... )
