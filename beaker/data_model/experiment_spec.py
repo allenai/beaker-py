@@ -685,6 +685,12 @@ class ExperimentSpec(BaseModel, frozen=False):
     ... )
     """
 
+    budget: str
+    """
+    The name of the budget account for your team.
+    See https://beaker-docs.apps.allenai.org/concept/budgets.html for more details.
+    """
+
     tasks: List[TaskSpec] = Field(default_factory=tuple)
     """
     Specifications for each process to run.
@@ -698,12 +704,6 @@ class ExperimentSpec(BaseModel, frozen=False):
     description: Optional[str] = None
     """
     Long-form explanation for an experiment.
-    """
-
-    budget: Optional[str] = None
-    """
-    The name of the budget account for your team.
-    See https://beaker-docs.apps.allenai.org/concept/budgets.html for more details.
     """
 
     @field_validator("tasks")
