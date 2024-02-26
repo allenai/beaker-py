@@ -41,6 +41,7 @@ class Cluster(BaseModel):
     user_restrictions: Optional[Tuple[str, ...]] = None
     allow_preemptible_restriction_exceptions: Optional[bool] = None
     compute_source: Optional[str] = None
+    max_job_timeout: Optional[int] = None
 
     @field_validator("validated")
     def _validate_datetime(cls, v: Optional[datetime]) -> Optional[datetime]:

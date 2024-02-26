@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Added missing field `Cluster.max_job_timeout`.
+
 ## [v1.25.0](https://github.com/allenai/beaker-py/releases/tag/v1.25.0) - 2024-02-22
 
 ### Changed
