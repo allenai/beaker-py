@@ -98,12 +98,18 @@ class ClusterClient(ServiceClient):
             ).json()
         )
 
-    def update(self, cluster: Union[str, Cluster], max_size: int) -> Cluster:
+    def update(
+        self,
+        cluster: Union[str, Cluster],
+        max_size: Optional[int] = None,
+        allow_preemptible: Optional[bool] = None,
+    ) -> Cluster:
         """
         Modify a cluster.
 
         :param cluster: The cluster ID, full name, or object.
         :param max_size: The maximum number of nodes.
+        :param allow_preemptible: Allow or disallow preemptible jobs.
 
         :raises ClusterNotFound: If the cluster doesn't exist.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
@@ -115,7 +121,9 @@ class ClusterClient(ServiceClient):
             self.request(
                 f"clusters/{cluster_name}",
                 method="PATCH",
-                data=ClusterPatch(capacity=max_size),
+                data=ClusterPatch(
+                    capacity=max_size, allow_preemptible_restriction_exceptions=allow_preemptible
+                ),
                 exceptions_for_status={404: ClusterNotFound(self._not_found_err_msg(cluster))},
             ).json()
         )
@@ -354,6 +362,33 @@ class ClusterClient(ServiceClient):
         """
         cluster_name = self.resolve_cluster(cluster).full_name
         return f"{self.config.agent_address}/cl/{cluster_name}/details"
+
+    def preempt_jobs(self, cluster: Union[str, Cluster]) -> List[Job]:
+        """
+        Preempt all preemptible jobs on the cluster.
+
+        :param cluster: The cluster ID, full name, or object.
+
+        :raises ClusterNotFound: If the cluster doesn't exist.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
+        cluster = self.resolve_cluster(cluster)
+        nodes = set(n.id for n in self.nodes(cluster))
+        current_jobs = self.beaker.job.list(cluster=cluster, finalized=False)
+        preempted_jobs = []
+        for job in current_jobs:
+            if job.node not in nodes:
+                continue
+            if job.execution is None:
+                continue
+            if job.status.current not in {CurrentJobStatus.running, CurrentJobStatus.idle}:
+                continue
+            if job.execution.spec.context.priority != Priority.preemptible:
+                continue
+            preempted_jobs.append(self.beaker.job.preempt(job))
+        return preempted_jobs
 
     def _not_found_err_msg(self, cluster: Union[str, Cluster]) -> str:
         cluster = cluster if isinstance(cluster, str) else cluster.id
