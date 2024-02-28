@@ -356,7 +356,7 @@ class ClusterClient(ServiceClient):
         """
         Get the URL for a cluster.
 
-        :param cluster: The custer ID, full name, or object.
+        :param cluster: The cluster ID, full name, or object.
 
         :raises ClusterNotFound: If the cluster doesn't exist.
         """
