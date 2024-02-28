@@ -90,4 +90,5 @@ class ClusterSpec(BaseModel):
 
 
 class ClusterPatch(BaseModel):
-    capacity: int
+    capacity: Optional[int] = None
+    allow_preemptible_restriction_exceptions: Optional[bool] = None

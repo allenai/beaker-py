@@ -9,6 +9,11 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added cluster method `Beaker.cluster.preempt_jobs()`.
+- Added argument `allow_preemptible` to `Beaker.cluster.update()`.
+
 ## [v1.25.1](https://github.com/allenai/beaker-py/releases/tag/v1.25.1) - 2024-02-26
 
 ### Fixed
