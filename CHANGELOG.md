@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.26.1](https://github.com/allenai/beaker-py/releases/tag/v1.26.1) - 2024-02-28
+
 ### Fixed
 
 - Made `public` argument optional for `Beaker.workspace.create()`.
