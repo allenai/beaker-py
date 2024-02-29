@@ -56,7 +56,7 @@ class WorkspaceClient(ServiceClient):
             raise
 
     def create(
-        self, workspace: str, *, description: Optional[str] = None, public: bool = False
+        self, workspace: str, *, description: Optional[str] = None, public: Optional[bool] = None
     ) -> Workspace:
         """
         Create a workspace.

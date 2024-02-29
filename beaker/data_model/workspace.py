@@ -54,7 +54,7 @@ class WorkspacePage(BasePage[Workspace]):
 class WorkspaceSpec(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    public: bool = False
+    public: Optional[bool] = None
     org: Optional[str] = None
 
 
