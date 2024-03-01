@@ -31,6 +31,7 @@ __all__ = [
     "ValidationError",
     "HTTPError",
     "RequestException",
+    "BeakerPermissionsError",
     "NotFoundError",
     "AccountNotFound",
     "OrganizationNotFound",
@@ -73,6 +74,12 @@ class BeakerError(Exception):
     Base class for all Beaker errors other than :exc:`HTTPError`, which is re-exported
     from :exc:`requests.exceptions.HTTPError`, and :exc:`ValidationError`, which is
     re-exported from `pydantic <https://pydantic-docs.helpmanual.io/>`_.
+    """
+
+
+class BeakerPermissionsError(BeakerError):
+    """
+    Raised when a user doesn't have sufficient permissions to perform an action.
     """
 
 

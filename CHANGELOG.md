@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `ignore_failures` option to `Beaker.cluster.preempt_jobs()`.
+
 ## [v1.26.1](https://github.com/allenai/beaker-py/releases/tag/v1.26.1) - 2024-02-28
 
 ### Fixed

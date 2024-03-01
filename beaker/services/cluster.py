@@ -363,11 +363,14 @@ class ClusterClient(ServiceClient):
         cluster_name = self.resolve_cluster(cluster).full_name
         return f"{self.config.agent_address}/cl/{cluster_name}/details"
 
-    def preempt_jobs(self, cluster: Union[str, Cluster]) -> List[Job]:
+    def preempt_jobs(
+        self, cluster: Union[str, Cluster], ignore_failures: bool = False
+    ) -> List[Job]:
         """
         Preempt all preemptible jobs on the cluster.
 
         :param cluster: The cluster ID, full name, or object.
+        :param ignore_failures: If ``True``, any jobs that fail to preempt will be ignored.
 
         :raises ClusterNotFound: If the cluster doesn't exist.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
@@ -387,7 +390,15 @@ class ClusterClient(ServiceClient):
                 continue
             if job.execution.spec.context.priority != Priority.preemptible:
                 continue
-            preempted_jobs.append(self.beaker.job.preempt(job))
+            try:
+                preempted_jobs.append(self.beaker.job.preempt(job))
+            except BeakerPermissionsError:
+                if ignore_failures:
+                    self.logger.warning(
+                        "Failed to preempt job '%s': insufficient permissions", job.id
+                    )
+                else:
+                    raise
         return preempted_jobs
 
     def _not_found_err_msg(self, cluster: Union[str, Cluster]) -> str:

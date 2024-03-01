@@ -125,7 +125,10 @@ class ServiceClient:
                     and 400 <= response.status_code < 500
                 ):
                     # Raise a BeakerError if we're misusing the API (4xx error code).
-                    raise BeakerError(msg)
+                    if response.status_code == 403:
+                        raise BeakerPermissionsError(msg)
+                    else:
+                        raise BeakerError(msg)
                 elif msg is not None:
                     raise HTTPError(msg, response=response)  # type: ignore
                 else:
