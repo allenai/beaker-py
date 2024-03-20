@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.26.3](https://github.com/allenai/beaker-py/releases/tag/v1.26.3) - 2024-03-20
+
 ### Fixed
 
 - Fixed logic in `Beaker.cluster.utilization()` to check `job.limits` instead of `job.requests` for the source of truth.
