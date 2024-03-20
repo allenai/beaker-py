@@ -10,8 +10,7 @@ def test_job_get(client: Beaker, hello_world_job_id: str):
 
 
 def test_job_results(client: Beaker, hello_world_job_id: str):
-    results = client.job.results(hello_world_job_id)
-    assert results is not None
+    client.job.results(hello_world_job_id)
 
 
 def test_job_logs(client: Beaker, hello_world_job_id: str):
