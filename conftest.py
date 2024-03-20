@@ -17,8 +17,8 @@ def unique_name() -> str:
     return petname.generate() + "-" + str(uuid.uuid4())[:8]  # type: ignore
 
 
-def beaker_object_fixture(client: Beaker, service: str):
-    name = unique_name()
+def beaker_object_fixture(client: Beaker, service: str, prefix: str = ""):
+    name = prefix + unique_name()
     service_client = getattr(client, service)
     not_found_exception = getattr(exceptions, f"{service.title()}NotFound")
     yield name
@@ -168,13 +168,17 @@ def archived_workspace(client: Beaker, archived_workspace_name: str) -> Workspac
 
 
 @pytest.fixture()
-def squad_dataset_name() -> str:
-    return "petew/squad-train"
+def squad_dataset_file_name() -> str:
+    return "squad-train.arrow"
 
 
 @pytest.fixture()
-def squad_dataset_file_name() -> str:
-    return "squad-train.arrow"
+def squad_dataset_name(client: Beaker, squad_dataset_file_name) -> Generator[str, None, None]:
+    for dataset_name in beaker_object_fixture(client, "dataset", prefix="squad"):
+        dataset = client.dataset.create(dataset_name, commit=False)
+        client.dataset.upload(dataset, b"blahblahblah", squad_dataset_file_name)
+        client.dataset.commit(dataset)
+        yield dataset_name
 
 
 @pytest.fixture()
@@ -197,6 +201,7 @@ def experiment_id_with_metrics() -> str:
     return "01G371J03VGJGK720TMZWFQNV3"
 
 
-@pytest.fixture()
-def experiment_id_with_results() -> str:
-    return "01G371J03VGJGK720TMZWFQNV3"
+# experiment was deleted
+#  @pytest.fixture()
+#  def experiment_id_with_results() -> str:
+#      return "01G371J03VGJGK720TMZWFQNV3"
