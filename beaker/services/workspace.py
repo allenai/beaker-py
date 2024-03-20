@@ -852,7 +852,7 @@ class WorkspaceClient(ServiceClient):
         datasets: bool = True,
         secrets: bool = True,
         older_than: Optional[datetime] = None,
-    ):
+    ) -> WorkspaceClearResult:
         """
         Remove groups, experiments, images, datasets, and secrets from a workspace.
 
@@ -931,7 +931,7 @@ class WorkspaceClient(ServiceClient):
             for future in done:
                 try:
                     future.result()
-                except NotFoundError:
+                except (NotFoundError, BeakerPermissionsError):
                     pass
 
         return WorkspaceClearResult(**deletion_counts)

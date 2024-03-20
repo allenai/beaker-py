@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Tuple
 
 from .base import BaseModel
 
@@ -11,6 +11,7 @@ class NodeResources(BaseModel):
     memory: Optional[str] = None
     gpu_count: Optional[int] = None
     gpu_type: Optional[str] = None
+    gpu_ids: Optional[Tuple[str, ...]] = None
 
 
 class Node(BaseModel):

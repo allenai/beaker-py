@@ -236,54 +236,55 @@ class ClusterClient(ServiceClient):
                 node_util["running_jobs"] += 1
                 if job.priority == Priority.preemptible:
                     node_util["running_preemptible_jobs"] += 1
-                if job.requests is not None:
-                    if job.requests.gpu_count is not None:
-                        node_util["gpus_used"] += job.requests.gpu_count
-                    if job.requests.cpu_count is not None:
-                        node_util["cpus_used"] += job.requests.cpu_count
+                if job.limits is not None:
+                    if job.limits.gpus is not None:
+                        node_util["gpus_used"] += len(job.limits.gpus)
+                    if job.limits.cpu_count is not None:
+                        node_util["cpus_used"] += job.limits.cpu_count
+
+        node_utilizations = []
+        for node in nodes:
+            node_util = node_to_util[node.id]
+
+            gpu_count = node.limits.gpu_count
+            gpus_used = None if gpu_count is None else int(min(gpu_count, node_util["gpus_used"]))
+            gpus_free = (
+                None if gpu_count is None else int(max(0, gpu_count - node_util["gpus_used"]))
+            )
+
+            cpu_count = node.limits.cpu_count
+            cpus_used = None if cpu_count is None else int(min(cpu_count, node_util["cpus_used"]))
+            cpus_free = (
+                None if cpu_count is None else int(max(0, cpu_count - node_util["cpus_used"]))
+            )
+
+            node_utilizations.append(
+                NodeUtilization(
+                    id=node.id,
+                    hostname=node.hostname,
+                    limits=node.limits,
+                    running_jobs=int(node_util["running_jobs"]),
+                    running_preemptible_jobs=int(node_util["running_preemptible_jobs"]),
+                    used=NodeResources(
+                        gpu_count=gpus_used,
+                        cpu_count=cpus_used,
+                        gpu_type=node.limits.gpu_type,
+                    ),
+                    free=NodeResources(
+                        gpu_count=gpus_free,
+                        cpu_count=cpus_free,
+                        gpu_type=node.limits.gpu_type,
+                    ),
+                    cordoned=node.cordoned is not None,
+                )
+            )
 
         return ClusterUtilization(
             cluster=cluster,
             running_jobs=running_jobs,
             queued_jobs=queued_jobs,
             running_preemptible_jobs=running_preemptible_jobs,
-            nodes=tuple(
-                [
-                    NodeUtilization(
-                        id=node.id,
-                        hostname=node.hostname,
-                        limits=node.limits,
-                        running_jobs=int(node_to_util[node.id]["running_jobs"]),
-                        running_preemptible_jobs=int(
-                            node_to_util[node.id]["running_preemptible_jobs"]
-                        ),
-                        used=NodeResources(
-                            gpu_count=None
-                            if node.limits.gpu_count is None
-                            else int(
-                                min(node.limits.gpu_count, node_to_util[node.id]["gpus_used"])
-                            ),
-                            cpu_count=None
-                            if node.limits.cpu_count is None
-                            else min(node.limits.cpu_count, node_to_util[node.id]["cpus_used"]),
-                            gpu_type=node.limits.gpu_type,
-                        ),
-                        free=NodeResources(
-                            gpu_count=None
-                            if node.limits.gpu_count is None
-                            else int(
-                                max(0, node.limits.gpu_count - node_to_util[node.id]["gpus_used"])
-                            ),
-                            cpu_count=None
-                            if node.limits.cpu_count is None
-                            else max(0, node.limits.cpu_count - node_to_util[node.id]["cpus_used"]),
-                            gpu_type=node.limits.gpu_type,
-                        ),
-                        cordoned=node.cordoned is not None,
-                    )
-                    for node in nodes
-                ]
-            ),
+            nodes=tuple(node_utilizations),
         )
 
     def filter_available(
