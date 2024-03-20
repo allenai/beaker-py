@@ -88,10 +88,11 @@ def test_experiment_metrics(client: Beaker, experiment_id_with_metrics: str):
     assert metrics is not None
 
 
-def test_experiment_results(client, experiment_id_with_results: str):
-    results = client.experiment.results(experiment_id_with_results)
-    assert results is not None
-    assert client.dataset.size(results) > 0
+# experiment was deleted
+#  def test_experiment_results(client, experiment_id_with_results: str):
+#      results = client.experiment.results(experiment_id_with_results)
+#      assert results is not None
+#      assert client.dataset.size(results) > 0
 
 
 def test_experiment_empty_results(client: Beaker, hello_world_experiment_id: str):

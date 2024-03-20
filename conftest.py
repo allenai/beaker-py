@@ -201,6 +201,7 @@ def experiment_id_with_metrics() -> str:
     return "01G371J03VGJGK720TMZWFQNV3"
 
 
-@pytest.fixture()
-def experiment_id_with_results() -> str:
-    return "01G371J03VGJGK720TMZWFQNV3"
+# experiment was deleted
+#  @pytest.fixture()
+#  def experiment_id_with_results() -> str:
+#      return "01G371J03VGJGK720TMZWFQNV3"
