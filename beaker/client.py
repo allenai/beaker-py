@@ -308,15 +308,6 @@ class Beaker:
         """
         Manage workspaces.
 
-        :examples:
-
-        >>> beaker.workspace.datasets(
-        ...     match="squad",
-        ...     uncommitted=False,
-        ...     results=False,
-        ... )[0].full_name
-        'petew/squad-train'
-
         .. tip::
             See the `Workspaces Overview <overview.html#workspaces>`_ for a walk-through of the
             main methods, or check out the `Workspace API Docs <#workspace>`_
@@ -362,11 +353,6 @@ class Beaker:
     def dataset(self) -> DatasetClient:
         """
         Manage datasets.
-
-        :examples:
-
-        >>> [file_info.path for file_info in beaker.dataset.ls("petew/squad-train")]
-        ['squad-train.arrow']
 
         .. tip::
             See the `Datasets Overview <overview.html#datasets>`_ for a walk-through of the
