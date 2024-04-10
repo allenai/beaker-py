@@ -175,3 +175,13 @@ def test_constraints_behave_like_dictionaries():
 def test_constraints_extra_fields():
     c = Constraints(cluster=["ai2/general-cirrascale"], gpus=["A100"])  # type: ignore
     assert hasattr(c, "gpus")
+
+
+def test_job_status_with_canceled_code():
+    from datetime import datetime
+
+    status = JobStatus(created=datetime.utcnow(), canceled_code=0)
+    assert status.canceled_code == CanceledCode.not_set
+
+    status = JobStatus(created=datetime.utcnow(), canceled_code=6)
+    assert status.canceled_code == 6

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from pydantic import Field
 
@@ -64,7 +64,7 @@ class JobStatus(BaseModel):
     finalized: Optional[datetime] = None
     canceled: Optional[datetime] = None
     canceled_for: Optional[str] = None
-    canceled_code: Optional[CanceledCode] = None
+    canceled_code: Optional[Union[CanceledCode, int]] = None
     idle_since: Optional[datetime] = None
     exit_code: Optional[int] = None
     message: Optional[str] = None
@@ -245,7 +245,7 @@ class JobStatusUpdate(BaseModel):
     finalized: Optional[bool] = None
     canceled: Optional[bool] = None
     canceled_for: Optional[str] = None
-    canceled_code: Optional[CanceledCode] = None
+    canceled_code: Optional[Union[CanceledCode, int]] = None
     idle: Optional[bool] = None
     message: Optional[str] = None
 
