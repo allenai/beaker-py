@@ -348,7 +348,7 @@ class TaskSpec(BaseModel, frozen=False):
     It must be unique among all tasks within its experiment.
     """
 
-    command: Optional[List[str]] = None
+    command: Optional[List[Union[str, int, float]]] = None
     """
     Command is the full shell command to run as a sequence of separate arguments.
 
@@ -358,7 +358,7 @@ class TaskSpec(BaseModel, frozen=False):
     Example: ``["python", "-u", "main.py"]``
     """
 
-    arguments: Optional[List[str]] = None
+    arguments: Optional[List[Union[str, int, float]]] = None
     """
     Arguments are appended to the command and replace default arguments such as Docker's ``CMD`` directive.
 
