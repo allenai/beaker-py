@@ -398,6 +398,11 @@ class TaskSpec(BaseModel, frozen=False):
     Enables leader selection for the replicas and passes the leader's hostname to the replicas.
     """
 
+    propagate_failure: Optional[bool] = None
+    """
+    Determines if whole experiment should fail if this task failures.
+    """
+
     @classmethod
     def new(
         cls,

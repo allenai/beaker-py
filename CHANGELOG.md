@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `propagate_failure` field to `TaskSpec`.
+
 ## [v1.26.5](https://github.com/allenai/beaker-py/releases/tag/v1.26.5) - 2024-04-18
 
 ### Fixed
