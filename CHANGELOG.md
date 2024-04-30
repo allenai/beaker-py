@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.26.7](https://github.com/allenai/beaker-py/releases/tag/v1.26.7) - 2024-04-30
+
 ### Added
 
 - Added `synchronized_start_timeout` field to `TaskSpec`.
