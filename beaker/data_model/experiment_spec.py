@@ -403,6 +403,13 @@ class TaskSpec(BaseModel, frozen=False):
     Determines if whole experiment should fail if this task failures.
     """
 
+    synchronized_start_timeout: Optional[str] = None
+    """
+    If set, jobs in the replicated task will wait to start, up to the specified timeout, 
+    until all other jobs are also ready. If the timeout is reached, the job will be canceled.
+    Must be greater than zero and less than or equal to 48 hours.
+    """
+
     @classmethod
     def new(
         cls,
