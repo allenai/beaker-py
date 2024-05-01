@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+- Added new fields `JobStatus.ready`, `JobExecution.replica_rank`, and `JobExecution.replica_group_id`.
+
 ## [v1.26.7](https://github.com/allenai/beaker-py/releases/tag/v1.26.7) - 2024-04-30
 
 ### Added

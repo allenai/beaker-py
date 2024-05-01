@@ -66,6 +66,7 @@ class JobStatus(BaseModel):
     canceled_for: Optional[str] = None
     canceled_code: Optional[Union[CanceledCode, int]] = None
     idle_since: Optional[datetime] = None
+    ready: Optional[datetime] = None
     exit_code: Optional[int] = None
     message: Optional[str] = None
 
@@ -130,6 +131,8 @@ class JobExecution(BaseModel):
     spec: TaskSpec
     result: ExecutionResult
     workspace: Optional[str] = None
+    replica_rank: Optional[int] = None
+    replica_group_id: Optional[str] = None
 
 
 class JobKind(StrEnum):

@@ -36,7 +36,9 @@ def to_lower_camel(s: str) -> str:
     Convert a snake-case string into lower camel case.
     """
     parts = s.split("_")
-    return parts[0] + "".join([p.title() for p in parts[1:]])
+    out = parts[0] + "".join([p.title() for p in parts[1:]])
+    out = re.sub(r"(^|[a-z0-9])Id($|[A-Z0-9])", r"\g<1>ID\g<2>", out)
+    return out
 
 
 def to_snake_case(s: str) -> str:
@@ -45,6 +47,7 @@ def to_snake_case(s: str) -> str:
     """
     if s.islower():
         return s
+    s = re.sub(r"(^|[a-z0-9])ID", r"\g<1>Id", s)
     parts = []
     for c in s:
         if c.isupper():
