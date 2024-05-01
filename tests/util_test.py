@@ -14,6 +14,7 @@ from beaker.util import *
         ("hostPath", "host_path"),
         ("fooBarBaz", "foo_bar_baz"),
         ("docker", "docker"),
+        ("replicaGroupID", "replica_group_id"),
     ],
 )
 def test_to_lower_camel_and_back(camel_case: str, snake_case: str):
