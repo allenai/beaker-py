@@ -403,11 +403,11 @@ class TaskSpec(BaseModel, frozen=False):
     Determines if whole experiment should fail if this task failures.
     """
 
-    synchronized_start_timeout: Optional[str] = None
+    synchronized_start_timeout: Optional[int] = None
     """
     If set, jobs in the replicated task will wait to start, up to the specified timeout, 
     until all other jobs are also ready. If the timeout is reached, the job will be canceled.
-    Must be greater than zero and less than or equal to 48 hours.
+    Represented using nanoseconds, must be greater than zero and less than or equal to 48 hours.
     """
 
     @classmethod
@@ -471,6 +471,12 @@ class TaskSpec(BaseModel, frozen=False):
                     constraints.cluster = [cluster]
                 else:
                     constraints = Constraints(cluster=[cluster])
+
+        # Allow setting the timeout using seconds, rather than nanoseconds.
+        synchronized_start_timeout_str = kwargs.pop("synchronized_start_timeout", None)
+        if synchronized_start_timeout_str is not None:
+            synchronized_start_timeout = int(synchronized_start_timeout_str * 1_000_000_000)
+            kwargs["synchronized_start_timeout"] = synchronized_start_timeout
 
         return TaskSpec(
             name=name,
