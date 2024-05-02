@@ -117,6 +117,46 @@ def format_since(since: Union[datetime, timedelta, str]) -> str:
         return since
 
 
+def parse_duration(dur: str) -> int:
+    """
+    Parse a duration string into nanoseconds.
+    """
+    dur_normalized = dur.replace(" ", "").lower()
+    match = re.match(r"^([0-9.e-]+)([a-z]*)$", dur_normalized)
+    if not match:
+        raise ValueError(f"invalid duration string '{dur}'")
+
+    value_str, unit = match.group(1), match.group(2)
+    try:
+        value = float(value_str)
+    except ValueError:
+        raise ValueError(f"invalid duration string '{dur}'")
+
+    if not unit:
+        # assume seconds
+        unit = "s"
+
+    if unit in ("ns", "nanosecond", "nanoseconds"):
+        # nanoseconds
+        return int(value)
+    elif unit in ("µs", "microsecond", "microseconds"):
+        return int(value * 1_000)
+    elif unit in ("ms", "millisecond", "milliseconds"):
+        # milliseconds
+        return int(value * 1_000_000)
+    elif unit in ("s", "sec", "second", "seconds"):
+        # seconds
+        return int(value * 1_000_000_000)
+    elif unit in ("m", "min", "minute", "minutes"):
+        # minutes
+        return int(value * 60_000_000_000)
+    elif unit in ("h", "hr", "hour", "hours"):
+        # hours
+        return int(value * 3_600_000_000_000)
+    else:
+        raise ValueError(f"invalid duration string '{dur}'")
+
+
 TIMESTAMP_RE = re.compile(rb"^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+Z)(.*)$")
 
 

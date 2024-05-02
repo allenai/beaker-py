@@ -49,3 +49,11 @@ def test_format_cursor():
     cursor = 100
     formatted = format_cursor(100)
     assert int.from_bytes(base64.urlsafe_b64decode(formatted), "little") == cursor
+
+
+def test_parse_duration():
+    assert parse_duration("1") == 1_000_000_000
+    assert parse_duration("1s") == 1_000_000_000
+    assert parse_duration("1sec") == 1_000_000_000
+    assert parse_duration("1m") == 60 * 1_000_000_000
+    assert parse_duration("1h") == 60 * 60 * 1_000_000_000

@@ -4,6 +4,7 @@ from pydantic import Field
 
 from ..aliases import PathOrStr
 from ..exceptions import *
+from ..util import parse_duration
 from .base import BaseModel, StrEnum, field_validator, model_validator
 
 __all__ = [
@@ -472,10 +473,11 @@ class TaskSpec(BaseModel, frozen=False):
                 else:
                     constraints = Constraints(cluster=[cluster])
 
-        # Allow setting the timeout using seconds, rather than nanoseconds.
+        # Allow setting the timeout as a string rather than nanoseconds, and assume a string
+        # without units means seconds.
         synchronized_start_timeout_str = kwargs.pop("synchronized_start_timeout", None)
         if synchronized_start_timeout_str is not None:
-            synchronized_start_timeout = int(synchronized_start_timeout_str * 1_000_000_000)
+            synchronized_start_timeout = parse_duration(synchronized_start_timeout_str)
             kwargs["synchronized_start_timeout"] = synchronized_start_timeout
 
         return TaskSpec(
