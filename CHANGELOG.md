@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.26.9](https://github.com/allenai/beaker-py/releases/tag/v1.26.9) - 2024-05-02
+
 ### Fixed
 
 - Update `synchronized_start_timeout` to send nanoseconds to the Beaker server instead of a string.
