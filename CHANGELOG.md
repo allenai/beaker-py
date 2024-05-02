@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Update `synchronized_start_timeout` to send nanoseconds to the Beaker server instead of a string.
+
 ## [v1.26.8](https://github.com/allenai/beaker-py/releases/tag/v1.26.8) - 2024-05-01
 
 - Added new fields `JobStatus.ready`, `JobExecution.replica_rank`, and `JobExecution.replica_group_id`.
