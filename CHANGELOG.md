@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.26.10](https://github.com/allenai/beaker-py/releases/tag/v1.26.10) - 2024-05-02
+
 ### Added
 
 - Added support for passing human-readable `synchronized_start_timeout` duration strings to `TaskSpec.new()`, like "10sec", "1m", etc.
