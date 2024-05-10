@@ -274,6 +274,11 @@ class TaskContext(BaseModel, frozen=False):
     Tasks with higher priority are placed ahead of tasks with lower priority in the queue.
     """
 
+    preemptible: Optional[bool] = None
+    """
+    Whether or not a job is marked as preemptible.
+    """
+
     @field_validator("priority")
     def _validate_priority(cls, v: str) -> str:
         if v is not None and v not in set(Priority):

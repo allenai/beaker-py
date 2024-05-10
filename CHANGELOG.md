@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added new field `TaskContext.preemptible`.
+
 ## [v1.26.10](https://github.com/allenai/beaker-py/releases/tag/v1.26.10) - 2024-05-02
 
 ### Added
