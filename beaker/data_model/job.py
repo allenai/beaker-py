@@ -182,6 +182,7 @@ class Job(BaseModel):
     host_networking: bool = False
     port_mappings: Optional[Dict[str, int]] = None
     result: Optional[ExecutionResult] = None
+    preemptible: Optional[bool] = None
 
     @property
     def display_name(self) -> str:
