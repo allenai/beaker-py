@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 from .account import Account
 from .base import BaseModel, BasePage, StrEnum
+from .experiment_spec import Priority
 
 __all__ = [
     "WorkspaceSize",
@@ -38,6 +39,7 @@ class Workspace(BaseModel):
     created: datetime
     modified: datetime
     archived: bool = False
+    max_workload_priority: Optional[Priority] = None
 
 
 class WorkspaceRef(BaseModel):

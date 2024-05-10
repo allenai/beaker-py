@@ -12,6 +12,8 @@ use patch releases for compatibility fixes instead.
 ### Added
 
 - Added `preemptible` argument to `TaskSpec.new()`.
+- Added `Workspace.max_workload_priority` field.
+- Added `Job.preemptible` field.
 
 ## [v1.26.11](https://github.com/allenai/beaker-py/releases/tag/v1.26.11) - 2024-05-10
 
