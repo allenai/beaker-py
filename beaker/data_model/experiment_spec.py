@@ -425,6 +425,7 @@ class TaskSpec(BaseModel, frozen=False):
         docker_image: Optional[str] = None,
         result_path: str = "/unused",
         priority: Optional[Union[str, Priority]] = None,
+        preemptible: Optional[bool] = None,
         **kwargs,
     ) -> "TaskSpec":
         """
@@ -450,6 +451,7 @@ class TaskSpec(BaseModel, frozen=False):
                 Mutually exclusive with ``beaker_image``.
 
         :param priority: The :data:`priority <TaskContext.priority>` of the :data:`context`.
+        :param preemptible: If the task should be preemptible.
         :param kwargs: Additional kwargs are passed as-is to :class:`TaskSpec`.
 
         :examples:
@@ -489,7 +491,9 @@ class TaskSpec(BaseModel, frozen=False):
             name=name,
             image=ImageSource(beaker=beaker_image, docker=docker_image),
             result=ResultSpec(path=result_path),
-            context=TaskContext(priority=None if priority is None else Priority(priority)),
+            context=TaskContext(
+                priority=None if priority is None else Priority(priority), preemptible=preemptible
+            ),
             constraints=constraints,
             **kwargs,
         )
@@ -781,10 +785,6 @@ class ExperimentSpec(BaseModel, frozen=False):
 
         :param beaker_image: The :data:`beaker <ImageSource.beaker>` image name in the
             :data:`image` source.
-
-            .. important::
-                Mutually exclusive with ``docker_image``.
-
         :param docker_image: The :data:`docker <ImageSource.docker>` image name in the
             :data:`image` source.
 
