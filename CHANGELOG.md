@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.26.13](https://github.com/allenai/beaker-py/releases/tag/v1.26.13) - 2024-05-28
+
 ### Added
 
 - Added `Secret.author_id` field.
