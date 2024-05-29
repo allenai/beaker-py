@@ -234,7 +234,7 @@ class ClusterClient(ServiceClient):
 
                 node_util = node_to_util[job.node]
                 node_util["running_jobs"] += 1
-                if job.priority == Priority.preemptible:
+                if job.priority == Priority.preemptible or job.preemptible:
                     node_util["running_preemptible_jobs"] += 1
                 if job.limits is not None:
                     if job.limits.gpus is not None:
