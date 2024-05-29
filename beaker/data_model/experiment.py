@@ -18,6 +18,8 @@ class Experiment(BaseModel):
     description: Optional[str] = None
     author: Account
     created: datetime
+    canceled: Optional[datetime] = None
+    canceled_for: Optional[str] = None
     workspace_ref: WorkspaceRef
     jobs: Tuple[Job, ...] = Field(default_factory=tuple)
 
