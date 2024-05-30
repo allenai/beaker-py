@@ -9,6 +9,12 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.26.15](https://github.com/allenai/beaker-py/releases/tag/v1.26.15) - 2024-05-30
+
+### Fixed
+
+- Fixed another bug with identifying preemptible jobs in `Beaker.cluster.utilization`.
+
 ## [v1.26.14](https://github.com/allenai/beaker-py/releases/tag/v1.26.14) - 2024-05-29
 
 ### Added
