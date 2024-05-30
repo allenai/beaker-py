@@ -223,7 +223,7 @@ class ClusterClient(ServiceClient):
                 if job.node not in node_to_util:
                     continue
                 running_jobs += 1
-                if job.priority == Priority.preemptible:
+                if job.priority == Priority.preemptible or job.preemptible:
                     running_preemptible_jobs += 1
             elif job.status.current == CurrentJobStatus.created:
                 queued_jobs += 1
