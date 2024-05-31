@@ -409,6 +409,11 @@ class TaskSpec(BaseModel, frozen=False):
     Determines if whole experiment should fail if this task failures.
     """
 
+    propagate_preemption: Optional[bool] = None
+    """
+    Determines if all tasks should be preempted if this one task is.
+    """
+
     synchronized_start_timeout: Optional[int] = None
     """
     If set, jobs in the replicated task will wait to start, up to the specified timeout, 
