@@ -112,7 +112,7 @@ def format_since(since: Union[datetime, timedelta, str]) -> str:
             since = since.astimezone(timezone.utc)
         return since.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
     elif isinstance(since, timedelta):
-        return format_since(datetime.now(tz=timezone.utc) - since)
+        return format_since(datetime.now(tz=timezone.utc) - abs(since))
     else:
         return since
 
