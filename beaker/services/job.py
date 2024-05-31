@@ -395,6 +395,7 @@ class JobClient(ServiceClient):
         timeout: Optional[float] = None,
         strict: bool = False,
         include_timestamps: bool = True,
+        since: Optional[Union[str, datetime, timedelta]] = None,
     ) -> Generator[bytes, None, Job]:
         """
         Follow a job live, creating a generator that produces log lines (as bytes) from the job
@@ -419,6 +420,10 @@ class JobClient(ServiceClient):
             :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
         :param include_timestamps: If ``True`` (the default) timestamps from the Beaker logs
             will be included in the output.
+        :param since: Only show logs since a particular time. Could be a :class:`~datetime.datetime` object
+            (naive datetimes will be treated as UTC), a timestamp string in the form of RFC 3339
+            (e.g. "2013-01-02T13:23:37Z"), or a relative time
+            (e.g. a :class:`~datetime.timedelta` or a string like "42m").
 
         :raises JobNotFound: If any job can't be found.
         :raises JobTimeoutError: If the ``timeout`` expires.
@@ -443,13 +448,13 @@ class JobClient(ServiceClient):
         ...
 
         """
-        from ..util import log_and_wait, split_timestamp
+        from ..util import format_since, log_and_wait, split_timestamp
 
         if timeout is not None and timeout <= 0:
             raise ValueError("'timeout' must be a positive number")
 
         start = time.monotonic()
-        last_timestamp: Optional[str] = None
+        last_timestamp: Optional[str] = None if since is None else format_since(since)
         lines_for_timestamp: Dict[str, Set[bytes]] = defaultdict(set)
 
         def get_line_to_yield(line: bytes) -> Optional[bytes]:
