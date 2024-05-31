@@ -129,8 +129,8 @@ class JobClient(ServiceClient):
         :param quiet: If ``True``, progress won't be displayed.
         :param since: Only show logs since a particular time. Could be a :class:`~datetime.datetime` object
             (naive datetimes will be treated as UTC), a timestamp string in the form of RFC 3339
-            (e.g. "2013-01-02T13:23:37Z"), or a relative time
-            (e.g. a :class:`~datetime.timedelta` or a string like "42m").
+            (e.g. "2013-01-02T13:23:37Z"), or a :class:`~datetime.timedelta`
+            (e.g. `timedelta(seconds=60)`, which will show you the logs beginning 60 seconds ago).
 
         :raises JobNotFound: If the job can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
@@ -422,8 +422,8 @@ class JobClient(ServiceClient):
             will be included in the output.
         :param since: Only show logs since a particular time. Could be a :class:`~datetime.datetime` object
             (naive datetimes will be treated as UTC), a timestamp string in the form of RFC 3339
-            (e.g. "2013-01-02T13:23:37Z"), or a relative time
-            (e.g. a :class:`~datetime.timedelta` or a string like "42m").
+            (e.g. "2013-01-02T13:23:37Z"), or a :class:`~datetime.timedelta`
+            (e.g. `timedelta(seconds=60)`, which will show you the logs beginning 60 seconds ago).
 
         :raises JobNotFound: If any job can't be found.
         :raises JobTimeoutError: If the ``timeout`` expires.

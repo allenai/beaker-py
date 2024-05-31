@@ -349,8 +349,8 @@ class ExperimentClient(ServiceClient):
         :param quiet: If ``True``, progress won't be displayed.
         :param since: Only show logs since a particular time. Could be a :class:`~datetime.datetime` object
             (naive datetimes will be treated as UTC), a timestamp string in the form of RFC 3339
-            (e.g. "2013-01-02T13:23:37Z"), or a relative time
-            (e.g. a :class:`~datetime.timedelta` or a string like "42m").
+            (e.g. "2013-01-02T13:23:37Z"), or a :class:`~datetime.timedelta`
+            (e.g. `timedelta(seconds=60)`, which will show you the logs beginning 60 seconds ago).
 
         :raises ValueError: The experiment has no tasks or jobs, or the experiment has multiple tasks but
             ``task`` is not specified.
@@ -699,6 +699,7 @@ class ExperimentClient(ServiceClient):
         timeout: Optional[float] = None,
         strict: bool = False,
         include_timestamps: bool = True,
+        since: Optional[Union[str, datetime, timedelta]] = None,
     ) -> Generator[bytes, None, Experiment]:
         """
         Follow an experiment live, creating a generator that produces log lines
@@ -726,6 +727,10 @@ class ExperimentClient(ServiceClient):
             :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
         :param include_timestamps: If ``True`` (the default) timestamps from the Beaker logs
             will be included in the output.
+        :param since: Only show logs since a particular time. Could be a :class:`~datetime.datetime` object
+            (naive datetimes will be treated as UTC), a timestamp string in the form of RFC 3339
+            (e.g. "2013-01-02T13:23:37Z"), or a :class:`~datetime.timedelta`
+            (e.g. `timedelta(seconds=60)`, which will show you the logs beginning 60 seconds ago).
 
         :raises ExperimentNotFound: If any experiment can't be found.
         :raises ValueError: The experiment has no tasks or jobs, or the experiment has multiple tasks but
@@ -779,7 +784,9 @@ class ExperimentClient(ServiceClient):
             time.sleep(2.0)
 
         assert job is not None  # for mypy
-        yield from self.beaker.job.follow(job, strict=strict, include_timestamps=include_timestamps)
+        yield from self.beaker.job.follow(
+            job, strict=strict, include_timestamps=include_timestamps, since=since
+        )
         return self.get(experiment.id if isinstance(experiment, Experiment) else experiment)
 
     def url(

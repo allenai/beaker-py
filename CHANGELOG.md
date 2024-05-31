@@ -9,6 +9,14 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `since` argument to `Beaker.experiment.follow()`.
+
+### Fixed
+
+- Fixed an issue with using `timedelta` objects for the `since` argument with `Beaker.(experiment|job).(follow|logs)`.
+
 ## [v1.27.1](https://github.com/allenai/beaker-py/releases/tag/v1.27.1) - 2024-05-31
 
 ### Added

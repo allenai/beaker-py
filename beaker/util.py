@@ -3,7 +3,7 @@ import re
 import time
 import warnings
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
 from typing import Any, Callable, Optional, Set, Tuple, Type, TypeVar, Union
@@ -107,12 +107,12 @@ def cached_property(ttl: float = 60):
 
 def format_since(since: Union[datetime, timedelta, str]) -> str:
     if isinstance(since, datetime):
-        if since.tzinfo is None:
-            return since.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-        else:
-            return since.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
+        if since.tzinfo is not None:
+            # Convert to UTC.
+            since = since.astimezone(timezone.utc)
+        return since.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
     elif isinstance(since, timedelta):
-        return f"{since.total_seconds()}s"
+        return format_since(datetime.now(tz=timezone.utc) - since)
     else:
         return since
 
