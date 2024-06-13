@@ -9,6 +9,11 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `author` filter to `Beaker.job.list()`.
+- Added `Beaker.experiment.list()` method.
+
 ## [v1.28.0](https://github.com/allenai/beaker-py/releases/tag/v1.28.0) - 2024-06-13
 
 ### Added

@@ -386,7 +386,7 @@ class Beaker:
         :examples:
 
         >>> running_jobs = beaker.job.list(
-        ...     beaker_on_prem_cluster_name,
+        ...     cluster=beaker_on_prem_cluster_name,
         ...     finalized=False,
         ... )
 
