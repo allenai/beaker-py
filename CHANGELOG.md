@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Raise `ExperimentConflict` when stopping an experiment that was already stopped from `Beaker.experiment.stop`.
+
 ## [v1.29.0](https://github.com/allenai/beaker-py/releases/tag/v1.29.0) - 2024-06-13
 
 ### Added

@@ -249,6 +249,7 @@ class ExperimentClient(ServiceClient):
         :param experiment: The experiment ID, name, or object.
 
         :raises ExperimentNotFound: If the experiment can't be found.
+        :raises ExperimentConflict: If the experiment was already stopped.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
         :raises RequestException: Any other exception that can occur when contacting the
             Beaker server.
@@ -257,7 +258,10 @@ class ExperimentClient(ServiceClient):
         self.request(
             f"experiments/{self.url_quote(experiment_id)}/stop",
             method="PUT",
-            exceptions_for_status={404: ExperimentNotFound(self._not_found_err_msg(experiment))},
+            exceptions_for_status={
+                404: ExperimentNotFound(self._not_found_err_msg(experiment)),
+                409: ExperimentConflict("Experiment already stopped"),
+            },
         )
 
     def resume(self, experiment: Union[str, Experiment]):

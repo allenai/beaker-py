@@ -154,7 +154,7 @@ class ExperimentNotFound(NotFoundError):
 
 class ExperimentConflict(BeakerError):
     """
-    Raised when attempting to create/rename an experiment if an experiment by that name already exists.
+    Raised when attempting to create/rename/stop an experiment that already exists or is already stopped.
     """
 
 
