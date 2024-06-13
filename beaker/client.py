@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from contextlib import contextmanager
 from typing import Generator, Optional, Tuple, Union
 
@@ -8,7 +9,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from .config import Config
+from .config import Config, InternalConfig
 from .data_model import *
 from .exceptions import *
 from .services import *
@@ -70,6 +71,7 @@ class Beaker:
 
     API_VERSION = "v3"
     CLIENT_VERSION = VERSION
+    VERSION_CHECK_INTERVAL = 12 * 3600  # 12 hours
 
     logger = logging.getLogger("beaker")
 
@@ -138,6 +140,14 @@ class Beaker:
         if _LATEST_VERSION_CHECKED:
             return
 
+        config = InternalConfig.load()
+        if (
+            config is not None
+            and config.version_checked is not None
+            and (time.time() - config.version_checked <= self.VERSION_CHECK_INTERVAL)
+        ):
+            return
+
         import warnings
 
         import packaging.version
@@ -149,7 +159,6 @@ class Beaker:
             )
             if response.ok:
                 latest_version = packaging.version.parse(response.json()["tag_name"])
-                _LATEST_VERSION_CHECKED = True
                 if latest_version > packaging.version.parse(self.CLIENT_VERSION):
                     warnings.warn(
                         f"You're using beaker-py v{self.CLIENT_VERSION}, "
@@ -159,6 +168,11 @@ class Beaker:
                         f"https://github.com/allenai/beaker-py/releases/tag/v{latest_version}\n",
                         UserWarning,
                     )
+
+                _LATEST_VERSION_CHECKED = True
+                if config is not None:
+                    config.version_checked = time.time()
+                    config.save()
         except Exception:
             pass
 

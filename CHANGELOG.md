@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Only check for upgrades once every 12 hours by default.
+
 ## [v1.29.1](https://github.com/allenai/beaker-py/releases/tag/v1.29.1) - 2024-06-13
 
 ### Fixed

@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import warnings
@@ -10,8 +11,10 @@ import yaml
 from .exceptions import ConfigurationError
 
 DEFAULT_CONFIG_LOCATION: Optional[Path] = None
+DEFAULT_INTERNAL_CONFIG_LOCATION: Optional[Path] = None
 try:
     DEFAULT_CONFIG_LOCATION = Path.home() / ".beaker" / "config.yml"
+    DEFAULT_INTERNAL_CONFIG_LOCATION = Path.home() / ".beaker" / ".beaker-py.json"
 except RuntimeError:
     # Can't locate home directory.
     pass
@@ -156,3 +159,28 @@ class Config:
             return DEFAULT_CONFIG_LOCATION
 
         return None
+
+
+@dataclass
+class InternalConfig:
+    version_checked: Optional[float] = None
+
+    @classmethod
+    def load(cls) -> Optional["InternalConfig"]:
+        path = DEFAULT_INTERNAL_CONFIG_LOCATION
+        if path is None:
+            return None
+        elif path.is_file():
+            with open(path, "r") as f:
+                return cls(**json.load(f))
+        else:
+            return cls()
+
+    def save(self):
+        path = DEFAULT_INTERNAL_CONFIG_LOCATION
+        if path is None:
+            return None
+        else:
+            path.parent.mkdir(exist_ok=True, parents=True)
+            with open(path, "w") as f:
+                json.dump(asdict(self), f)
