@@ -36,6 +36,8 @@ class JobClient(ServiceClient):
 
     def list(
         self,
+        *,
+        author: Optional[Union[str, Account]] = None,
         cluster: Optional[Union[str, Cluster]] = None,
         experiment: Optional[Union[str, Experiment]] = None,
         finalized: bool = False,
@@ -45,37 +47,44 @@ class JobClient(ServiceClient):
         """
         List jobs.
 
-        :param cluster: List jobs on a cluster.
+        :param author: List only jobs by particular author.
+        :param cluster: List jobs on a particular cluster.
         :param experiment: List jobs in an experiment.
         :param finalized: List only finalized or non-finalized jobs.
         :param kind: List jobs of a certain kind.
-        :param node: List jobs on a node.
+        :param node: List jobs on a particular node.
 
         .. important::
-            Either ``cluster``, ``experiment``, or ``node`` must be specified.
+            Either ``cluster``, ``author``, ``experiment``, or ``node`` must be specified.
             If ``node`` is specified, neither ``cluster`` nor ``experiment`` can be
             specified.
 
         :raises ValueError: If the arguments are invalid, e.g. both ``node`` and
             ``cluster`` are specified.
+        :raises AccountNotFound: If the specified author doesn't exist.
         :raises ClusterNotFound: If the specified cluster doesn't exist.
         :raises ExperimentNotFound: If the specified experiment doesn't exist.
         :raises NodeNotFound: If the specified node doesn't exist.
         """
+        if node is None and cluster is None and experiment is None and author is None:
+            raise ValueError("You must specify one of 'node', 'cluster', 'experiment', or 'author'")
+
         # Validate arguments.
         if node is not None:
             if cluster is not None:
                 raise ValueError("You cannot specify both 'node' and 'cluster'")
             if experiment is not None:
                 raise ValueError("You cannot specify both 'node' and 'experiment'")
-        else:
-            if cluster is None and experiment is None:
-                raise ValueError("You must specify one of 'node', 'experiment', or 'cluster'")
 
         jobs: List[Job] = []
 
         # Build request options.
         request_opts: Dict[str, Any] = {}
+        if author is not None:
+            author_id = (
+                author.id if isinstance(author, Account) else self.beaker.account.get(author).id
+            )
+            request_opts["author"] = author_id
         if cluster is not None:
             cluster_id = (
                 cluster.id if isinstance(cluster, Cluster) else self.beaker.cluster.get(cluster).id

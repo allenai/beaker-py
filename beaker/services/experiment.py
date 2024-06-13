@@ -136,6 +136,45 @@ class ExperimentClient(ServiceClient):
         assert spec is not None
         return spec, name, workspace
 
+    def list(
+        self,
+        *,
+        author: Optional[Union[str, Account]] = None,
+        cluster: Optional[Union[str, Cluster]] = None,
+        finalized: bool = False,
+        node: Optional[Union[str, Node]] = None,
+    ) -> List[Experiment]:
+        """
+        List experiments.
+
+        :param author: List only experiments by particular author.
+        :param cluster: List experiments on a particular cluster.
+        :param finalized: List only finalized or non-finalized experiments.
+        :param node: List experiments on a particular node.
+
+        .. important::
+            Either ``cluster``, ``author``, ``experiment``, or ``node`` must be specified.
+            If ``node`` is specified, neither ``cluster`` nor ``experiment`` can be
+            specified.
+
+        :raises ValueError: If the arguments are invalid, e.g. both ``node`` and
+            ``cluster`` are specified.
+        :raises AccountNotFound: If the specified author doesn't exist.
+        :raises ClusterNotFound: If the specified cluster doesn't exist.
+        :raises NodeNotFound: If the specified node doesn't exist.
+        """
+        jobs = self.beaker.job.list(
+            author=author, cluster=cluster, finalized=finalized, kind=JobKind.execution, node=node
+        )
+        experiments: List[Experiment] = []
+        exp_ids: Set[str] = set()
+        for job in jobs:
+            assert job.execution is not None
+            if (exp_id := job.execution.experiment) not in exp_ids:
+                exp_ids.add(exp_id)
+                experiments.append(self.get(exp_id))
+        return experiments
+
     def create(
         self,
         *args,
