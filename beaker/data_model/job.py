@@ -200,11 +200,23 @@ class Job(BaseModel):
         return self.status.current == CurrentJobStatus.finalized
 
     @property
+    def is_running(self) -> bool:
+        return self.status.current in (CurrentJobStatus.running, CurrentJobStatus.idle)
+
+    @property
+    def is_queued(self) -> bool:
+        return self.status.current == CurrentJobStatus.created
+
+    @property
     def was_preempted(self) -> bool:
         return self.status.canceled is not None and self.status.canceled_code in {
             CanceledCode.system_preemption,
             CanceledCode.user_preemption,
         }
+
+    @property
+    def is_preemptible(self) -> bool:
+        return self.preemptible or (self.priority == Priority.preemptible)
 
     @property
     def priority(self) -> Optional[Priority]:

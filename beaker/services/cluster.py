@@ -208,6 +208,7 @@ class ClusterClient(ServiceClient):
         running_jobs = 0
         queued_jobs = 0
         running_preemptible_jobs = 0
+        jobs: List[Job] = []
         node_to_util: Dict[str, Dict[str, Union[int, float]]] = {
             node.id: {
                 "running_jobs": 0,
@@ -219,14 +220,16 @@ class ClusterClient(ServiceClient):
         }
 
         for job in self.beaker.job.list(cluster=cluster, finalized=False):
-            if job.status.current in (CurrentJobStatus.running, CurrentJobStatus.idle):
+            if job.is_running:
                 if job.node not in node_to_util:
                     continue
                 running_jobs += 1
-                if job.priority == Priority.preemptible or job.preemptible:
+                if job.is_preemptible:
                     running_preemptible_jobs += 1
-            elif job.status.current == CurrentJobStatus.created:
+            elif job.is_queued:
                 queued_jobs += 1
+
+            jobs.append(job)
 
             if job.node is not None:
                 if job.node not in node_to_util:
@@ -234,7 +237,7 @@ class ClusterClient(ServiceClient):
 
                 node_util = node_to_util[job.node]
                 node_util["running_jobs"] += 1
-                if job.priority == Priority.preemptible or job.preemptible:
+                if job.is_preemptible:
                     node_util["running_preemptible_jobs"] += 1
                 if job.limits is not None:
                     if job.limits.gpus is not None:
@@ -285,6 +288,7 @@ class ClusterClient(ServiceClient):
             queued_jobs=queued_jobs,
             running_preemptible_jobs=running_preemptible_jobs,
             nodes=tuple(node_utilizations),
+            jobs=tuple(jobs),
         )
 
     def filter_available(

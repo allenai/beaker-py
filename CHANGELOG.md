@@ -9,6 +9,13 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `Job.is_preemptible` property.
+- Added `Job.is_running` property.
+- Added `Job.is_queued` property.
+- Added `ClusterUtilization.jobs` field.
+
 ## [v1.27.2](https://github.com/allenai/beaker-py/releases/tag/v1.27.2) - 2024-05-31
 
 ### Added
