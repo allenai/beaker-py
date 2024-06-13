@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, Tuple
 
 from .base import BaseModel, StrEnum, field_validator
+from .job import Job
 from .node import NodeResources, NodeUtilization
 
 __all__ = ["ClusterStatus", "Cluster", "ClusterUtilization", "ClusterSpec", "ClusterPatch"]
@@ -77,6 +78,7 @@ class ClusterUtilization(BaseModel):
     queued_jobs: int
     running_preemptible_jobs: int
     nodes: Tuple[NodeUtilization, ...]
+    jobs: Tuple[Job, ...]
 
     @property
     def id(self) -> str:
