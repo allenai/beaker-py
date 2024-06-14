@@ -93,10 +93,16 @@ def test_experiment_spec_validation():
 
 def test_snake_case_vs_lower_camel_case():
     for x in (DataSource(host_path="/tmp/foo"), DataSource(hostPath="/tmp/foo")):  # type: ignore
-        assert str(x) == "DataSource(beaker=None, host_path='/tmp/foo', result=None, secret=None)"
+        assert (
+            str(x)
+            == "DataSource(beaker=None, host_path='/tmp/foo', weka=None, result=None, secret=None)"
+        )
         assert x.host_path == "/tmp/foo"
         x.host_path = "/tmp/bar"
-        assert str(x) == "DataSource(beaker=None, host_path='/tmp/bar', result=None, secret=None)"
+        assert (
+            str(x)
+            == "DataSource(beaker=None, host_path='/tmp/bar', weka=None, result=None, secret=None)"
+        )
         assert x.to_json() == {"hostPath": "/tmp/bar"}
 
 
