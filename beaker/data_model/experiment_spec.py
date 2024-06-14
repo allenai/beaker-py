@@ -101,6 +101,11 @@ class DataSource(BaseModel, frozen=False):
     - ``/var/beaker/share`` as a shared local scratch space.
     """
 
+    weka: Optional[str] = None
+    """
+    The name of a weka bucket.
+    """
+
     result: Optional[str] = None
     """
     Name of a previous task whose result will be mounted.

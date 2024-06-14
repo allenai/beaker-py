@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `weka` option to `DataSource` model.
+
 ### Fixed
 
 - Only check for upgrades once every 12 hours by default.
