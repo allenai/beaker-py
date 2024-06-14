@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.30.0](https://github.com/allenai/beaker-py/releases/tag/v1.30.0) - 2024-06-14
+
 ### Added
 
 - Added `weka` option to `DataSource` model.
