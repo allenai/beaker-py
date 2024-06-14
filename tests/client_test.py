@@ -2,12 +2,15 @@ import pytest
 from flaky import flaky
 
 from beaker import Beaker
+from beaker.config import InternalConfig
 
 
 @flaky  # this can fail if the request to GitHub fails
 def test_warn_for_newer_version(monkeypatch):
     import beaker.client
     import beaker.version
+
+    InternalConfig().save()
 
     monkeypatch.setattr(Beaker, "CLIENT_VERSION", "0.1.0")
     monkeypatch.setattr(beaker.client, "_LATEST_VERSION_CHECKED", False)
