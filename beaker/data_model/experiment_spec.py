@@ -167,6 +167,7 @@ class DataMount(BaseModel, frozen=False):
         sub_path: Optional[str] = None,
         beaker: Optional[str] = None,
         host_path: Optional[str] = None,
+        weka: Optional[str] = None,
         result: Optional[str] = None,
         secret: Optional[str] = None,
     ) -> "DataMount":
@@ -177,6 +178,7 @@ class DataMount(BaseModel, frozen=False):
         :param sub_path: The :data:`sub_path`.
         :param beaker: The :data:`beaker <DataSource.beaker>` argument to :class:`DataSource`.
         :param host_path: The :data:`host_path <DataSource.host_path>` argument to :class:`DataSource`.
+        :param weka: The :data:`weka <DataSource.weka>` argument to :class:`DataSource`.
         :param result: The :data:`result <DataSource.result>` argument to :class:`DataSource`.
         :param url: The :data:`url <DataSource.url>` argument to :class:`DataSource`.
         :param secret: The :data:`secret <DataSource.secret>` argument to :class:`DataSource`.
@@ -187,6 +189,7 @@ class DataMount(BaseModel, frozen=False):
             source=DataSource(
                 beaker=beaker,
                 host_path=host_path,
+                weka=weka,
                 result=result,
                 secret=secret,
             ),
