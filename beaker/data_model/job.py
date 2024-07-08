@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import Field
 
@@ -175,6 +175,7 @@ class Job(BaseModel):
     name: Optional[str] = None
     cluster: Optional[str] = None
     execution: Optional[JobExecution] = None
+    execution_results: Optional[Dict[str, Any]] = None
     node: Optional[str] = None
     requests: Optional[JobRequests] = None
     limits: Optional[JobLimits] = None
