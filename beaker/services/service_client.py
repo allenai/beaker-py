@@ -105,8 +105,7 @@ class ServiceClient:
             else:
                 self.logger.debug("RECV %s %s %s", method, url, response)
 
-            if exceptions_for_status is not None and response.status_code in exceptions_for_status:
-                raise exceptions_for_status[response.status_code]
+            status_code = response.status_code
 
             try:
                 response.raise_for_status()
@@ -119,16 +118,20 @@ class ServiceClient:
                     except (TypeError, KeyError, json.JSONDecodeError):
                         pass
 
-                if (
-                    msg is not None
-                    and response.status_code is not None
-                    and 400 <= response.status_code < 500
-                ):
+                # HACK: sometimes Beaker doesn't use the right error code, so we try to guess based
+                # on the message.
+                if status_code == 400 and msg is not None and "already in use" in msg:
+                    status_code = 409
+
+                if exceptions_for_status is not None and status_code in exceptions_for_status:
+                    raise exceptions_for_status[status_code]
+
+                if msg is not None and status_code is not None and 400 <= status_code < 500:
                     # Raise a BeakerError if we're misusing the API (4xx error code).
-                    if response.status_code == 403:
+                    if status_code == 403:
                         raise BeakerPermissionsError(msg)
                     else:
-                        raise BeakerError(msg)
+                        raise BeakerError(f"[code={status_code}] {msg}")
                 elif msg is not None:
                     raise HTTPError(msg, response=response)  # type: ignore
                 else:
