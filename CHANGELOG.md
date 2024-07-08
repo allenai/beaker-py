@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.31.0](https://github.com/allenai/beaker-py/releases/tag/v1.31.0) - 2024-07-08
+
 ### Added
 
 - Added `execution_results` to `Job` model.
