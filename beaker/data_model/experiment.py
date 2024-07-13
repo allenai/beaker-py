@@ -41,7 +41,17 @@ class Task(BaseModel):
     schedulable: bool = False
     jobs: Tuple[Job, ...] = Field(default_factory=tuple)
     owner: Optional[Account] = None
-    replica_rank: Optional[int] = None
+    #  replica_rank: Optional[int] = None
+
+    @property
+    def replica_rank(self) -> Optional[int]:
+        if (
+            (job := self.latest_job) is not None
+            and job.execution is not None
+            and (replica_rank := job.execution.replica_rank) is not None
+        ):
+            return replica_rank
+        return None
 
     @property
     def display_name(self) -> str:

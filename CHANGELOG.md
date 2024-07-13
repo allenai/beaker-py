@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Fixed `Task.replica_rank` to be set to the right value now instead of always `None`.
+
 ## [v1.31.0](https://github.com/allenai/beaker-py/releases/tag/v1.31.0) - 2024-07-08
 
 ### Added
