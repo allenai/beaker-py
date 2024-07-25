@@ -177,6 +177,7 @@ class Job(BaseModel):
     execution: Optional[JobExecution] = None
     execution_results: Optional[Dict[str, Any]] = None
     node: Optional[str] = None
+    node_has_gpus: Optional[bool] = None
     requests: Optional[JobRequests] = None
     limits: Optional[JobLimits] = None
     session: Optional[Session] = None
