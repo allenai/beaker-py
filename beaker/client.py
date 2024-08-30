@@ -180,7 +180,7 @@ class Beaker:
     def from_env(
         cls,
         check_for_upgrades: bool = True,
-        timeout: Optional[Union[float, Tuple[float, float]]] = 5.0,
+        timeout: Optional[Union[float, Tuple[float, float]]] = 30.0,
         session: Optional[Union[bool, requests.Session]] = None,
         pool_maxsize: Optional[int] = None,
         user_agent: str = f"beaker-py v{VERSION}",
