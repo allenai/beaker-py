@@ -9,6 +9,7 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
 
 - Increased Beaker.from_env() default timeout from 5s to 30s
 
