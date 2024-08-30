@@ -17,6 +17,8 @@ use patch releases for compatibility fixes instead.
 
 ## [v1.31.2](https://github.com/allenai/beaker-py/releases/tag/v1.31.2) - 2024-07-26
 
+### Added
+
 - Added `node_has_gpus` field to `Job`.
 
 ## [v1.31.1](https://github.com/allenai/beaker-py/releases/tag/v1.31.1) - 2024-07-14
