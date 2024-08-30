@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.31.3](https://github.com/allenai/beaker-py/releases/tag/v1.31.3) - 2024-08-30
+
 ### Added
 
 - Increased Beaker.from_env() default timeout from 5s to 30s
