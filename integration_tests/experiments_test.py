@@ -24,6 +24,7 @@ def test_experiment_workflow(
             TaskSpec(
                 name="main",
                 image=ImageSource(docker="hello-world"),
+                context=TaskContext(preemptible=True),
                 result=ResultSpec(path="/unused"),  # required even if the task produces no output.
             ),
         ],
