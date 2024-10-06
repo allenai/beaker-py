@@ -16,6 +16,7 @@ __all__ = [
     "TaskResources",
     "Priority",
     "TaskContext",
+    "TaskRetrySpec",
     "TaskSpec",
     "SpecVersion",
     "ExperimentSpec",
@@ -319,6 +320,18 @@ class Constraints(BaseModel, frozen=False, extra="allow"):
         setattr(self, key, val)
 
 
+class TaskRetrySpec(BaseModel, frozen=False):
+    """
+    Defines the retry behavior of a task.
+    """
+
+    allowed_task_retries: int
+    """
+    A positive integer specifying the maximum number of task retries allowed for the experiment,
+    with a max limit of 10.
+    """
+
+
 class TaskSpec(BaseModel, frozen=False):
     """
     A :class:`TaskSpec` defines a :class:`~beaker.data_model.experiment.Task` within an :class:`ExperimentSpec`.
@@ -343,6 +356,11 @@ class TaskSpec(BaseModel, frozen=False):
     context: TaskContext
     """
     Context describes how and where this task should run.
+    """
+
+    retry: Optional[TaskRetrySpec] = None
+    """
+    Defines the retry behavior of a task.
     """
 
     constraints: Optional[Constraints] = None
@@ -558,6 +576,14 @@ class TaskSpec(BaseModel, frozen=False):
         >>> assert task_spec.context.cluster == "ai2/general-cirrascale"
         """
         return self.model_copy(deep=True, update={"context": TaskContext(**kwargs)})
+
+    def with_retries(self, allowed_task_retries: int) -> "TaskSpec":
+        """
+        Return a new :class:`TaskSpec` with the given number of retries.
+        """
+        return self.model_copy(
+            deep=True, update={"retries": TaskRetrySpec(allowed_task_retries=allowed_task_retries)}
+        )
 
     def with_name(self, name: str) -> "TaskSpec":
         """

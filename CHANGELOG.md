@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `retry` field to `TaskSpec`.
+
 ## [v1.31.3](https://github.com/allenai/beaker-py/releases/tag/v1.31.3) - 2024-08-30
 
 ### Added
