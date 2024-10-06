@@ -711,7 +711,7 @@ class RetrySpec(BaseModel, frozen=False):
     Defines the retry behavior of an experiment.
     """
 
-    allowed_task_retries: int
+    allowed_task_retries: Optional[int] = None
     """
     A positive integer specifying the maximum number of task retries allowed for the experiment,
     with a max limit of 10.
@@ -900,7 +900,7 @@ class ExperimentSpec(BaseModel, frozen=False):
         """
         return self.model_copy(deep=True, update={"description": description})
 
-    def with_retries(self, allowed_task_retries: int) -> "TaskSpec":
+    def with_retries(self, allowed_task_retries: int) -> "ExperimentSpec":
         """
         Return a new :class:`ExperimentSpec` with the given number of retries.
         """
