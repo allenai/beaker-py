@@ -16,7 +16,6 @@ def test_experiment_workflow(
     client: Beaker,
     experiment_name: str,
     alternate_experiment_name: str,
-    beaker_cluster_name: str,
     hello_world_experiment_name: str,
 ):
     spec = ExperimentSpec(
@@ -25,7 +24,7 @@ def test_experiment_workflow(
             TaskSpec(
                 name="main",
                 image=ImageSource(docker="hello-world"),
-                context=TaskContext(cluster=beaker_cluster_name),
+                context=TaskContext(preemptible=True),
                 result=ResultSpec(path="/unused"),  # required even if the task produces no output.
             ),
         ],

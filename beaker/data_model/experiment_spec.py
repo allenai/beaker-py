@@ -18,6 +18,7 @@ __all__ = [
     "TaskContext",
     "TaskSpec",
     "SpecVersion",
+    "RetrySpec",
     "ExperimentSpec",
     "Constraints",
 ]
@@ -705,6 +706,18 @@ class SpecVersion(StrEnum):
     v2_alpha = "v2-alpha"
 
 
+class RetrySpec(BaseModel, frozen=False):
+    """
+    Defines the retry behavior of an experiment.
+    """
+
+    allowed_task_retries: Optional[int] = None
+    """
+    A positive integer specifying the maximum number of task retries allowed for the experiment,
+    with a max limit of 10.
+    """
+
+
 class ExperimentSpec(BaseModel, frozen=False):
     """
     Experiments are the main unit of execution in Beaker.
@@ -747,6 +760,11 @@ class ExperimentSpec(BaseModel, frozen=False):
     description: Optional[str] = None
     """
     Long-form explanation for an experiment.
+    """
+
+    retry: Optional[RetrySpec] = None
+    """
+    Defines the retry behavior of an experiment.
     """
 
     @field_validator("tasks")
@@ -881,6 +899,14 @@ class ExperimentSpec(BaseModel, frozen=False):
         'Hello, Mars!'
         """
         return self.model_copy(deep=True, update={"description": description})
+
+    def with_retries(self, allowed_task_retries: int) -> "ExperimentSpec":
+        """
+        Return a new :class:`ExperimentSpec` with the given number of retries.
+        """
+        return self.model_copy(
+            deep=True, update={"retry": RetrySpec(allowed_task_retries=allowed_task_retries)}
+        )
 
     def validate(self):
         for task in self.tasks:
