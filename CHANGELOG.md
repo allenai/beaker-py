@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.32.0](https://github.com/allenai/beaker-py/releases/tag/v1.32.0) - 2024-10-07
+
 ### Added
 
 - Added `retry` field to `ExperimentSpec`.
