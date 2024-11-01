@@ -26,6 +26,7 @@ class WorkspaceSize(BaseModel):
     experiments: int
     groups: int
     images: int
+    environments: Optional[int] = None
 
 
 class Workspace(BaseModel):
