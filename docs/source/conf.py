@@ -130,7 +130,7 @@ def autodoc_skip_member(app, what, name, obj, skip, options):
     Skip documenting these Pydantic-specific attributes.
     """
     del app, what, obj, skip, options
-    exclude = name in {"model_config", "model_fields"}
+    exclude = name in {"model_config", "model_fields", "model_computed_fields"}
     return True if exclude else None
 
 

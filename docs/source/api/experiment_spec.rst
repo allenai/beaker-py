@@ -5,6 +5,10 @@ Experiment Spec
    :members:
    :undoc-members:
 
+.. autoclass:: beaker.RetrySpec
+   :members:
+   :undoc-members:
+
 .. autoclass:: beaker.TaskSpec
    :members:
    :undoc-members:
