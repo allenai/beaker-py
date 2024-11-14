@@ -90,7 +90,7 @@ class DockerLayerDownloadStatus(StrEnum):
 
 class DockerLayerUploadState(BaseModel):
     id: str
-    status: DockerLayerUploadStatus
+    status: str
     progress_detail: DockerLayerProgress
     progress: Optional[str] = None
 
@@ -101,7 +101,7 @@ class DockerLayerUploadState(BaseModel):
 
 class DockerLayerDownloadState(BaseModel):
     id: str
-    status: DockerLayerDownloadStatus
+    status: str
     progress_detail: DockerLayerProgress
     progress: Optional[str] = None
 

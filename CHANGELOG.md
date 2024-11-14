@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Relaxed requirements on Docker layer upload/download status strings.
+
 ## [v1.32.1](https://github.com/allenai/beaker-py/releases/tag/v1.32.1) - 2024-11-01
 
 ### Added
