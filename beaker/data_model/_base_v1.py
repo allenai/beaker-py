@@ -49,8 +49,8 @@ class BaseModelV1(_BaseModel):
                 issue_data_model_warning(cls, key, value)
         return as_snake_case
 
-    def model_copy(self, update: Optional[Dict[str, Any]] = None, deep: bool = False):
-        return self.copy(update=update, deep=deep)
+    def model_copy(self, update: Optional[Dict[str, Any]] = None, deep: bool = False):  # type: ignore
+        return self.copy(update=update, deep=deep)  # type: ignore
 
     def model_dump(self, *args, **kwargs):
-        return self.dict(*args, **kwargs)
+        return self.dict(*args, **kwargs)  # type: ignore
