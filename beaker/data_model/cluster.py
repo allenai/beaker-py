@@ -43,6 +43,7 @@ class Cluster(BaseModel):
     allow_preemptible_restriction_exceptions: Optional[bool] = None
     compute_source: Optional[str] = None
     max_job_timeout: Optional[int] = None
+    max_session_timeout: Optional[int] = None
     require_preemptible_tasks: Optional[bool] = None
 
     @field_validator("validated")

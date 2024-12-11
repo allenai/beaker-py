@@ -133,6 +133,7 @@ class JobExecution(BaseModel):
     workspace: Optional[str] = None
     replica_rank: Optional[int] = None
     replica_group_id: Optional[str] = None
+    retry_ancestor: Optional[str] = None
 
 
 class JobKind(StrEnum):

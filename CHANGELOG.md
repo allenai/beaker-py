@@ -9,6 +9,11 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added new field `Cluster.max_session_timeout: Optional[int]`.
+- Added new field `JobExecution.retry_ancestor: Optional[str]`.
+
 ### Fixed
 
 - Made checking for version upgrades more robust.
