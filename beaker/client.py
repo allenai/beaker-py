@@ -140,20 +140,20 @@ class Beaker:
         if _LATEST_VERSION_CHECKED:
             return
 
-        config = InternalConfig.load()
-        if (
-            config is not None
-            and config.version_checked is not None
-            and (time.time() - config.version_checked <= self.VERSION_CHECK_INTERVAL)
-        ):
-            return
-
         import warnings
 
         import packaging.version
         import requests
 
         try:
+            config = InternalConfig.load()
+            if (
+                config is not None
+                and config.version_checked is not None
+                and (time.time() - config.version_checked <= self.VERSION_CHECK_INTERVAL)
+            ):
+                return
+
             response = requests.get(
                 "https://api.github.com/repos/allenai/beaker-py/releases/latest", timeout=1
             )
