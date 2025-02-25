@@ -337,6 +337,31 @@ class ExperimentClient(ServiceClient):
             ).json()
         )
 
+    def set_description(self, experiment: Union[str, Experiment], description: str) -> Experiment:
+        """
+        Set the description of an experiment.
+
+        :param experiment: The experiment ID, name, or object.
+        :param description: The new description for the experiment.
+
+        :raises ValueError: If the new name is invalid.
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
+        experiment_id = self.resolve_experiment(experiment).id
+        return Experiment.from_json(
+            self.request(
+                f"experiments/{self.url_quote(experiment_id)}",
+                method="PATCH",
+                data=ExperimentPatch(description=description),
+                exceptions_for_status={
+                    404: ExperimentNotFound(self._not_found_err_msg(experiment)),
+                },
+            ).json()
+        )
+
     def tasks(self, experiment: Union[str, Experiment]) -> Tasks:
         """
         List the tasks in an experiment.

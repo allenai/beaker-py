@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `Beaker.experiment.set_description()` method.
+
 ## [v1.33.0](https://github.com/allenai/beaker-py/releases/tag/v1.33.0) - 2025-02-25
 
 ### Added
