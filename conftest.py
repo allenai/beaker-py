@@ -94,7 +94,7 @@ def beaker_cluster_name() -> str:
 
 @pytest.fixture()
 def beaker_on_prem_cluster_name() -> str:
-    return "ai2/allennlp-cirrascale"
+    return "ai2/jupiter-cirrascale-2"
 
 
 @pytest.fixture()
