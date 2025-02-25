@@ -144,7 +144,7 @@ def test_mapped_sequence():
 
 
 @pytest.mark.parametrize(
-    "cluster", [["ai2/general-cirrascale", "ai2/allennlp-cirrascale"], "ai2/general-cirrascale"]
+    "cluster", [["ai2/jupiter-cirrascale-2", "ai2/saturn-cirrascale"], "ai2/jupiter-cirrascale-2"]
 )
 def test_experiment_spec_new_with_cluster(cluster):
     spec = ExperimentSpec.new("ai2/allennlp", cluster=cluster)
@@ -154,13 +154,13 @@ def test_experiment_spec_new_with_cluster(cluster):
 
 
 def test_task_spec_with_constraint():
-    task_spec = TaskSpec.new("main", constraints=Constraints(cluster=["ai2/general-cirrascale"]))
-    new_task_spec = task_spec.with_constraint(cluster=["ai2/allennlp-cirrascale"])
+    task_spec = TaskSpec.new("main", constraints=Constraints(cluster=["ai2/saturn-cirrascale"]))
+    new_task_spec = task_spec.with_constraint(cluster=["ai2/jupiter-cirrascale-2"])
     assert new_task_spec.constraints is not None
-    assert new_task_spec.constraints.cluster == ["ai2/allennlp-cirrascale"]
+    assert new_task_spec.constraints.cluster == ["ai2/jupiter-cirrascale-2"]
     # Shouldn't modify the original.
     assert task_spec.constraints is not None
-    assert task_spec.constraints.cluster == ["ai2/general-cirrascale"]
+    assert task_spec.constraints.cluster == ["ai2/saturn-cirrascale"]
 
     # These methods should all be equivalent.
     for task_spec in (

@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added `timeout` field to `TaskSpec`.
+
 ## [v1.32.3](https://github.com/allenai/beaker-py/releases/tag/v1.32.3) - 2024-12-11
 
 ### Added

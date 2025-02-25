@@ -430,6 +430,11 @@ class TaskSpec(BaseModel, frozen=False):
     Represented using nanoseconds, must be greater than zero and less than or equal to 48 hours.
     """
 
+    timeout: Optional[Union[str, int]] = None
+    """
+    Timeout for jobs in the task, e.g. "30m", "24h".
+    """
+
     @classmethod
     def new(
         cls,
