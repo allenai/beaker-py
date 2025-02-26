@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.34.1](https://github.com/allenai/beaker-py/releases/tag/v1.34.1) - 2025-02-25
+
 ### Fixed
 
 - Fixed how we send task timeout to server.
