@@ -430,9 +430,9 @@ class TaskSpec(BaseModel, frozen=False):
     Represented using nanoseconds, must be greater than zero and less than or equal to 48 hours.
     """
 
-    timeout: Optional[Union[str, int]] = None
+    timeout: Optional[int] = None
     """
-    Timeout for jobs in the task, e.g. "30m", "24h".
+    Timeout for jobs in the task.
     """
 
     @classmethod
@@ -499,12 +499,14 @@ class TaskSpec(BaseModel, frozen=False):
                 else:
                     constraints = Constraints(cluster=[cluster])
 
-        # Allow setting the timeout as a string rather than nanoseconds, and assume a string
+        # Allow setting timeouts as a string rather than nanoseconds, and assume a string
         # without units means seconds.
-        synchronized_start_timeout_str = kwargs.pop("synchronized_start_timeout", None)
-        if synchronized_start_timeout_str is not None:
-            synchronized_start_timeout = parse_duration(synchronized_start_timeout_str)
-            kwargs["synchronized_start_timeout"] = synchronized_start_timeout
+        if (
+            synchronized_start_timeout_str := kwargs.pop("synchronized_start_timeout", None)
+        ) is not None:
+            kwargs["synchronized_start_timeout"] = parse_duration(synchronized_start_timeout_str)
+        if (timeout_str := kwargs.pop("timeout", None)) is not None:
+            kwargs["timeout"] = parse_duration(timeout_str)
 
         return TaskSpec(
             name=name,
