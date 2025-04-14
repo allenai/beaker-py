@@ -435,6 +435,14 @@ class TaskSpec(BaseModel, frozen=False):
     Timeout for jobs in the task.
     """
 
+    @field_validator("synchronized_start_timeout", "timeout", mode="before")
+    @classmethod
+    def ensure_nanoseconds(cls, value: Any) -> int:
+        if isinstance(value, (int, float)):
+            return int(value)
+        else:
+            return parse_duration(value)
+
     @classmethod
     def new(
         cls,
@@ -498,15 +506,6 @@ class TaskSpec(BaseModel, frozen=False):
                     constraints.cluster = [cluster]
                 else:
                     constraints = Constraints(cluster=[cluster])
-
-        # Allow setting timeouts as a string rather than nanoseconds, and assume a string
-        # without units means seconds.
-        if (
-            synchronized_start_timeout_str := kwargs.pop("synchronized_start_timeout", None)
-        ) is not None:
-            kwargs["synchronized_start_timeout"] = parse_duration(synchronized_start_timeout_str)
-        if (timeout_str := kwargs.pop("timeout", None)) is not None:
-            kwargs["timeout"] = parse_duration(timeout_str)
 
         return TaskSpec(
             name=name,

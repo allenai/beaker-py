@@ -45,6 +45,28 @@ def test_experiment_spec_from_and_to_json_and_file(beaker_cluster_name: str, tmp
     assert ExperimentSpec.from_file(spec_path) == spec
 
 
+def test_experiment_spec_from_with_timeout(beaker_cluster_name: str):
+    json_spec = {
+        "version": "v2",
+        "budget": "ai2/allennlp",
+        "tasks": [
+            {
+                "name": "main",
+                "image": {"docker": "hello-world"},
+                "context": {"cluster": beaker_cluster_name},
+                "result": {"path": "/unused"},
+                "resources": {"memory": "512m", "sharedMemory": "512m"},
+                "hostNetworking": False,
+                "leaderSelection": False,
+                "timeout": "10m",
+            },
+        ],
+    }
+
+    spec = ExperimentSpec.from_json(json_spec)
+    assert spec.tasks[0].timeout == 600000000000
+
+
 def test_experiment_spec_validation():
     with pytest.raises(ValidationError, match="Duplicate task name"):
         ExperimentSpec.from_json(
