@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Fixed bug introduced in last release where a `timeout` (or `synchronized_start_timeout`) of `None` in an experiment spec would cause a validation error.
+
 ## [v1.34.2](https://github.com/allenai/beaker-py/releases/tag/v1.34.2) - 2025-04-14
 
 ### Fixed

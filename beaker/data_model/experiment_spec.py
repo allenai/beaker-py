@@ -438,10 +438,10 @@ class TaskSpec(BaseModel, frozen=False):
     @field_validator("synchronized_start_timeout", "timeout", mode="before")
     @classmethod
     def ensure_nanoseconds(cls, value: Any) -> int:
-        if isinstance(value, (int, float)):
-            return int(value)
-        else:
+        if isinstance(value, str):
             return parse_duration(value)
+        else:
+            return value
 
     @classmethod
     def new(

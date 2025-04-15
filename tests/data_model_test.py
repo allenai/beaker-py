@@ -66,6 +66,47 @@ def test_experiment_spec_from_with_timeout(beaker_cluster_name: str):
     spec = ExperimentSpec.from_json(json_spec)
     assert spec.tasks[0].timeout == 600000000000
 
+    json_spec = {
+        "version": "v2",
+        "budget": "ai2/allennlp",
+        "tasks": [
+            {
+                "name": "main",
+                "image": {"docker": "hello-world"},
+                "context": {"cluster": beaker_cluster_name},
+                "result": {"path": "/unused"},
+                "resources": {"memory": "512m", "sharedMemory": "512m"},
+                "hostNetworking": False,
+                "leaderSelection": False,
+                "timeout": None,
+            },
+        ],
+    }
+
+    spec = ExperimentSpec.from_json(json_spec)
+    assert spec.tasks[0].timeout is None
+
+    json_spec = {
+        "version": "v2",
+        "budget": "ai2/allennlp",
+        "tasks": [
+            {
+                "name": "main",
+                "image": {"docker": "hello-world"},
+                "context": {"cluster": beaker_cluster_name},
+                "result": {"path": "/unused"},
+                "resources": {"memory": "512m", "sharedMemory": "512m"},
+                "hostNetworking": False,
+                "leaderSelection": False,
+                "timeout": 600000000000.0,
+            },
+        ],
+    }
+
+    spec = ExperimentSpec.from_json(json_spec)
+    assert isinstance(spec.tasks[0].timeout, int)
+    assert spec.tasks[0].timeout == 600000000000
+
 
 def test_experiment_spec_validation():
     with pytest.raises(ValidationError, match="Duplicate task name"):
