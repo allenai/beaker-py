@@ -1,4 +1,4 @@
-from beaker import Beaker, CurrentJobStatus, JobKind
+from beaker import Beaker, CurrentJobStatus, JobKind, JobNotFound
 
 
 def test_job_get(client: Beaker, hello_world_job_id: str):
@@ -41,3 +41,12 @@ def test_job_logs_since(client: Beaker, hello_world_job_id: str):
         ]
     )
     assert "Hello from Docker!" not in logs
+
+
+def test_summarized_job_events(client: Beaker):
+    client.job.summarized_events("01JSCFT1563SA35GXS206J575B")
+
+    try:
+        client.job.summarized_events("blah")
+    except JobNotFound:
+        pass

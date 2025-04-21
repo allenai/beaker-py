@@ -2,13 +2,15 @@ import logging
 import os
 import time
 from contextlib import contextmanager
-from typing import Generator, Optional, Tuple, Union
+from typing import Generator, List, Optional, Tuple, Union
 
 import docker
+import grpc
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from . import beaker_pb2, beaker_pb2_grpc
 from .config import Config, InternalConfig
 from .data_model import *
 from .exceptions import *
@@ -84,6 +86,7 @@ class Beaker:
         pool_maxsize: Optional[int] = None,
         user_agent: str = f"beaker-py v{VERSION}",
     ):
+        self.pb2 = beaker_pb2
         self._config = config
         self._docker: Optional[docker.DockerClient] = None
         self._pool_maxsize = pool_maxsize or min(100, (os.cpu_count() or 16) * 6)
@@ -275,6 +278,17 @@ class Beaker:
         finally:
             self._session = current
             session.close()
+
+    @contextmanager
+    def rpc_connection(self) -> Generator[beaker_pb2_grpc.BeakerStub, None, None]:
+        with grpc.secure_channel(
+            self.config.rpc_address, grpc.ssl_channel_credentials()
+        ) as channel:
+            yield beaker_pb2_grpc.BeakerStub(channel)
+
+    @property
+    def rpc_call_metadata(self) -> List[Tuple[str, str]]:
+        return [("authorization", f"bearer {self.config.user_token}")]
 
     @property
     def config(self) -> Config:
