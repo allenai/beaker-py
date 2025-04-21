@@ -27,6 +27,7 @@ dependencies = [
     "PyYAML",
     "docker>=5.0,<8.0",
     "grpcio",
+    "protobuf",
 ]
 
 [project.optional-dependencies]
