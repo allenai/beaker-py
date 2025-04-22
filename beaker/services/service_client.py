@@ -5,13 +5,15 @@ import urllib.parse
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import docker
+import grpc
 import requests
+from google.protobuf.message import Message
 
 from ..config import Config
 from ..data_model import *
 from ..data_model.base import BaseModel
 from ..exceptions import *
-from ..util import retriable
+from ..util import protobuf_to_json_dict, retriable
 
 if TYPE_CHECKING:
     from ..client import Beaker
@@ -149,6 +151,25 @@ class ServiceClient:
         else:
             with self.beaker._make_session() as session:
                 return make_request(session)
+
+    def rpc_request(
+        self,
+        request: Message,
+        method: grpc.UnaryUnaryMultiCallable,
+        exceptions_for_status: Optional[Dict[grpc.StatusCode, Exception]] = None,
+    ) -> Dict[str, Any]:
+        try:
+            response = method(request, metadata=self.beaker.rpc_call_metadata)
+            return protobuf_to_json_dict(response)
+        except RpcError as e:
+            if (
+                exceptions_for_status is not None
+                and isinstance(e, grpc.Call)
+                and e.code() in exceptions_for_status
+            ):
+                raise exceptions_for_status[e.code()]
+            else:
+                raise
 
     def resolve_cluster_name(self, cluster_name: str) -> str:
         if "/" not in cluster_name:

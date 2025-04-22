@@ -7,7 +7,6 @@ import grpc
 
 from ..data_model import *
 from ..exceptions import *
-from ..util import protobuf_to_json_dict
 from .service_client import ServiceClient
 
 if TYPE_CHECKING:
@@ -639,17 +638,10 @@ class JobClient(ServiceClient):
         job_id = job.id if isinstance(job, Job) else job
         with self.beaker.rpc_connection() as service:
             request = self.beaker.pb2.ListSummarizedJobEventsRequest(options={"job_id": job_id})
-
-            try:
-                response = service.ListSummarizedJobEvents(
-                    request, metadata=self.beaker.rpc_call_metadata
-                )
-            except RpcError as e:
-                if isinstance(e, grpc.Call) and e.code() == grpc.StatusCode.NOT_FOUND:
-                    raise JobNotFound(job_id) from e
-                else:
-                    raise
-
-            data = protobuf_to_json_dict(response)
-
+            method = service.ListSummarizedJobEvents
+            data = self.rpc_request(
+                request,
+                method,
+                exceptions_for_status={grpc.StatusCode.NOT_FOUND: JobNotFound(job_id)},
+            )
         return [SummarizedJobEvent.from_json(d) for d in data["summarizedJobEvents"]]
