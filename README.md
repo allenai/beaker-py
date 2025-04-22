@@ -7,7 +7,7 @@
 <p>A lightweight, standalone, pure Python client for <a href="https://beaker.org">Beaker</a></p>
 <hr/>
 <a href="https://github.com/allenai/beaker-py/actions">
-    <img alt="CI" src="https://github.com/allenai/beaker-py/workflows/Main/badge.svg?event=push&branch=main">
+    <img alt="CI" src="https://github.com/allenai/beaker-py/actions/workflows/main.yml/badge.svg">
 </a>
 <a href="https://pypi.org/project/beaker-py/">
     <img alt="PyPI" src="https://img.shields.io/pypi/v/beaker-py">
