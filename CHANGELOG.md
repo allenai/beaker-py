@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.35.0](https://github.com/allenai/beaker-py/releases/tag/v1.35.0) - 2025-04-21
+
 ### Added
 
 - Added `Beaker.job.summarized_events()` method.
