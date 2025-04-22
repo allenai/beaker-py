@@ -58,6 +58,11 @@ class Config:
     TOKEN_KEY: ClassVar[str] = "BEAKER_TOKEN"
     IGNORE_FIELDS: ClassVar[Set[str]] = {"updater_timestamp", "updater_message"}
 
+    @property
+    def rpc_address(self) -> str:
+        # TODO: hard-coded for now since this isn't part of the Beaker YAML configs.
+        return "beaker.org:443"
+
     def __str__(self) -> str:
         fields_str = "user_token=***, " + ", ".join(
             [f"{f.name}={getattr(self, f.name)}" for f in fields(self) if f.name != "user_token"]

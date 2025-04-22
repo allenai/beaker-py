@@ -3,8 +3,11 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Set, Union
 
+import grpc
+
 from ..data_model import *
 from ..exceptions import *
+from ..util import protobuf_to_json_dict
 from .service_client import ServiceClient
 
 if TYPE_CHECKING:
@@ -623,3 +626,30 @@ class JobClient(ServiceClient):
     def url(self, job: Union[str, Job]) -> str:
         job_id = job.id if isinstance(job, Job) else job
         return f"{self.config.agent_address}/job/{self.url_quote(job_id)}"
+
+    def summarized_events(self, job: Union[str, Job]) -> List[SummarizedJobEvent]:
+        """
+        Get a list of summarized job events.
+
+        :param job: The Beaker job ID or object.
+
+        :raises JobNotFound: If any job can't be found.
+        :raises RpcError: Any other RPC error.
+        """
+        job_id = job.id if isinstance(job, Job) else job
+        with self.beaker.rpc_connection() as service:
+            request = self.beaker.pb2.ListSummarizedJobEventsRequest(options={"job_id": job_id})
+
+            try:
+                response = service.ListSummarizedJobEvents(
+                    request, metadata=self.beaker.rpc_call_metadata
+                )
+            except RpcError as e:
+                if isinstance(e, grpc.Call) and e.code() == grpc.StatusCode.NOT_FOUND:
+                    raise JobNotFound(job_id) from e
+                else:
+                    raise
+
+            data = protobuf_to_json_dict(response)
+
+        return [SummarizedJobEvent.from_json(d) for d in data["summarizedJobEvents"]]

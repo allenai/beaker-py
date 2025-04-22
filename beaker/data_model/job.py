@@ -28,6 +28,7 @@ __all__ = [
     "JobStatusUpdate",
     "JobPatch",
     "Session",
+    "SummarizedJobEvent",
 ]
 
 
@@ -273,3 +274,12 @@ class JobPatch(BaseModel):
     status: Optional[JobStatusUpdate] = None
     limits: Optional[JobLimits] = None
     priority: Optional[Priority] = None
+
+
+class SummarizedJobEvent(BaseModel):
+    job_id: str
+    status: str
+    occurrences: int
+    earliest_occurrence: datetime
+    latest_occurrence: datetime
+    latest_message: str

@@ -6,7 +6,7 @@ from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, Set, Tuple, Type, TypeVar, Union
 
 from .aliases import PathOrStr
 from .exceptions import RequestException
@@ -212,3 +212,9 @@ def format_cursor(cursor: int) -> str:
         raise ValueError("cursor must be >= 0")
 
     return base64.urlsafe_b64encode(cursor.to_bytes(8, "little")).decode()
+
+
+def protobuf_to_json_dict(data) -> Dict[str, Any]:
+    from google.protobuf.json_format import MessageToDict
+
+    return MessageToDict(data)

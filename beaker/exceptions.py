@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
+from grpc import RpcError
 from pydantic import ValidationError  # noqa: F401, re-imported here for convenience
 from requests.exceptions import (  # noqa: F401, re-imported here for convenience
     HTTPError,
@@ -30,6 +31,7 @@ __all__ = [
     "BeakerError",
     "ValidationError",
     "HTTPError",
+    "RpcError",
     "RequestException",
     "BeakerPermissionsError",
     "NotFoundError",
