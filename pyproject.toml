@@ -103,6 +103,7 @@ exclude = '''
 [tool.isort]
 profile = "black"
 multi_line_output = 3
+skip_glob = ["beaker/beaker_pb2*"]
 
 [tool.ruff]
 line-length = 115
