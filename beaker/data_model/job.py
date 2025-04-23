@@ -29,6 +29,7 @@ __all__ = [
     "JobPatch",
     "Session",
     "SummarizedJobEvent",
+    "JobLog",
 ]
 
 
@@ -283,3 +284,14 @@ class SummarizedJobEvent(BaseModel):
     earliest_occurrence: datetime
     latest_occurrence: datetime
     latest_message: str
+
+
+class JobLog(BaseModel):
+    timestamp: datetime
+    """
+    The time that the log line was recorded.
+    """
+    message: str = ""
+    """
+    The contents of the log line.
+    """

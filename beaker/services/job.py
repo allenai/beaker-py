@@ -1,16 +1,17 @@
+import base64
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Set, Union
+from typing import Any, Dict, Generator, List, Optional, Set, Union
 
 import grpc
+from rich.progress import Progress, TaskID
 
 from ..data_model import *
 from ..exceptions import *
+from ..progress import get_jobs_progress, get_logs_progress
+from ..util import format_since, log_and_wait, split_timestamp
 from .service_client import ServiceClient
-
-if TYPE_CHECKING:
-    from rich.progress import Progress, TaskID
 
 
 class JobClient(ServiceClient):
@@ -151,8 +152,6 @@ class JobClient(ServiceClient):
         job_id = job.id if isinstance(job, Job) else job
         opts = {}
         if since is not None:
-            from ..util import format_since
-
             opts["since"] = format_since(since)
 
         response = self.request(
@@ -166,9 +165,6 @@ class JobClient(ServiceClient):
         # TODO: currently beaker doesn't provide the Content-Length header, update this if they do.
         #  content_length = response.headers.get("Content-Length")
         #  total = int(content_length) if content_length is not None else None
-
-        from ..progress import get_logs_progress
-
         with get_logs_progress(quiet) as progress:
             task_id = progress.add_task("Downloading:")
             total = 0
@@ -178,6 +174,60 @@ class JobClient(ServiceClient):
                     total += advance
                     progress.update(task_id, total=total + 1, advance=advance)
                     yield chunk
+
+    def structured_logs(
+        self,
+        job: Union[str, Job],
+        quiet: bool = False,
+        since: Optional[Union[datetime, timedelta]] = None,
+        tail_lines: Optional[int] = None,
+        follow: Optional[bool] = None,
+    ) -> Generator[JobLog, None, None]:
+        """
+        Download/stream structured :class:`~beaker.data_model.job.JobLog` objects from a job using the RPC interface.
+
+        Returns a generator of log objects.
+
+        .. seealso::
+            :meth:`logs()`
+
+        .. seealso::
+            :meth:`follow()`
+
+        :param job: The Beaker job ID or object.
+        :param quiet: If ``True``, progress won't be displayed.
+        :param since: Only show logs since a particular time. Could be a :class:`~datetime.datetime` object
+            (naive datetimes will be treated as UTC) or a :class:`~datetime.timedelta`
+            (e.g. `timedelta(seconds=60)`, which will show you the logs beginning 60 seconds ago).
+        :param tail_lines: Start tailing with the last ``tail_lines`` lines.
+        :param follow: Keep streaming as new log lines come in.
+
+        :raises JobNotFound: If the job can't be found.
+        :raises RpcError: Any other RPC error.
+        """
+        job_id = job.id if isinstance(job, Job) else job
+
+        with self.beaker.rpc_connection() as service:
+            opts: Dict[str, Any] = {}
+            if since is not None:
+                opts["since"] = since if isinstance(since, datetime) else datetime.utcnow() - since
+            if tail_lines is not None:
+                opts["tail_lines"] = tail_lines
+            if follow is not None:
+                opts["follow"] = follow
+
+            request = self.beaker.pb2.StreamJobLogsRequest(job_id=job_id, **opts)
+            with get_logs_progress(quiet, by_line=True) as progress:
+                task_id = progress.add_task("Downloading logs:")
+                for data in self.beaker.job.rpc_streaming_request(
+                    service.StreamJobLogs,
+                    request,
+                    exceptions_for_status={grpc.StatusCode.NOT_FOUND: JobNotFound(job_id)},
+                ):
+                    progress.update(task_id, advance=1)
+                    if "message" in data:
+                        data["message"] = base64.b64decode(data["message"]).decode()
+                    yield JobLog.from_json(data)
 
     def metrics(self, job: Union[str, Job]) -> Optional[Dict[str, Any]]:
         """
@@ -414,6 +464,9 @@ class JobClient(ServiceClient):
         :class:`~beaker.data_model.job.Job` object.
 
         .. seealso::
+            :meth:`follow_structured()`
+
+        .. seealso::
             :meth:`logs()`
 
         .. seealso::
@@ -459,8 +512,6 @@ class JobClient(ServiceClient):
         ...
 
         """
-        from ..util import format_since, log_and_wait, split_timestamp
-
         if timeout is not None and timeout <= 0:
             raise ValueError("'timeout' must be a positive number")
 
@@ -537,6 +588,58 @@ class JobClient(ServiceClient):
 
         return updated_job
 
+    def follow_structured(
+        self,
+        job: Union[str, Job],
+        timeout: Optional[float] = None,
+        strict: bool = False,
+        since: Optional[Union[datetime, timedelta]] = None,
+        tail_lines: Optional[int] = None,
+    ) -> Generator[JobLog, None, Job]:
+        """
+        Follow structured :class:`~beaker.data_model.job.JobLog` objects from a job using the RPC interface.
+        The return value of the generator is the finalized :class:`~beaker.data_model.job.Job` object.
+
+        .. seealso::
+            :meth:`structured_logs()`
+
+        .. seealso::
+            :meth:`follow()`
+
+        :param job: Job ID, name, or object.
+        :param timeout: Maximum amount of time to follow job for (in seconds).
+        :param strict: If ``True``, the exit code of each job will be checked, and a
+            :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
+        :param since: Only show logs since a particular time. Could be a :class:`~datetime.datetime` object
+            (naive datetimes will be treated as UTC) or a :class:`~datetime.timedelta`
+            (e.g. `timedelta(seconds=60)`, which will show you the logs beginning 60 seconds ago).
+        :param tail_lines: Start tailing with the last ``tail_lines`` lines.
+
+        :raises JobNotFound: If any job can't be found.
+        :raises JobTimeoutError: If the ``timeout`` expires.
+        :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
+        :raises RpcError: Any other RPC error.
+        """
+        if timeout is not None and timeout <= 0:
+            raise ValueError("'timeout' must be a positive number")
+
+        start = time.monotonic()
+        job = self.get(job.id if isinstance(job, Job) else job)
+
+        for job_log in self.structured_logs(
+            job, quiet=True, since=since, tail_lines=tail_lines, follow=not job.is_finalized
+        ):
+            yield job_log
+
+            # Check timeout if we're still waiting for job to complete.
+            if timeout is not None and time.monotonic() - start >= timeout:
+                raise JobTimeoutError(job.id)
+
+        if strict:
+            job.check()
+
+        return job
+
     def _as_completed(
         self,
         *jobs: Union[str, Job],
@@ -569,8 +672,6 @@ class JobClient(ServiceClient):
                     f"[b cyan]{exp_id_to_name[j.execution.experiment]}[/] "
                     f"\N{rightwards arrow} [i]{task_id_to_name[j.execution.task]}[/]"
                 )
-
-        from ..progress import get_jobs_progress
 
         job_ids: List[str] = []
         start = time.monotonic()
@@ -622,10 +723,6 @@ class JobClient(ServiceClient):
             if owned_progress:
                 progress.stop()
 
-    def url(self, job: Union[str, Job]) -> str:
-        job_id = job.id if isinstance(job, Job) else job
-        return f"{self.config.agent_address}/job/{self.url_quote(job_id)}"
-
     def summarized_events(self, job: Union[str, Job]) -> List[SummarizedJobEvent]:
         """
         Get a list of summarized job events.
@@ -637,11 +734,15 @@ class JobClient(ServiceClient):
         """
         job_id = job.id if isinstance(job, Job) else job
         with self.beaker.rpc_connection() as service:
-            request = self.beaker.pb2.ListSummarizedJobEventsRequest(options={"job_id": job_id})
-            method = service.ListSummarizedJobEvents
+            opts = self.beaker.pb2.ListSummarizedJobEventsRequest.Opts(job_id=job_id)
+            request = self.beaker.pb2.ListSummarizedJobEventsRequest(options=opts)
             data = self.rpc_request(
+                service.ListSummarizedJobEvents,
                 request,
-                method,
                 exceptions_for_status={grpc.StatusCode.NOT_FOUND: JobNotFound(job_id)},
             )
         return [SummarizedJobEvent.from_json(d) for d in data["summarizedJobEvents"]]
+
+    def url(self, job: Union[str, Job]) -> str:
+        job_id = job.id if isinstance(job, Job) else job
+        return f"{self.config.agent_address}/job/{self.url_quote(job_id)}"

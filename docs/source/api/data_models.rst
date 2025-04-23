@@ -127,6 +127,12 @@ Job
 .. autoclass:: beaker.Session
    :members:
 
+.. autoclass:: beaker.SummarizedJobEvent
+   :members:
+
+.. autoclass:: beaker.JobLog
+   :members:
+
 Experiment
 ~~~~~~~~~~
 
