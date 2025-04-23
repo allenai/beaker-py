@@ -1,3 +1,8 @@
+from datetime import datetime, timedelta
+from typing import Optional, Union
+
+import pytest
+
 from beaker import Beaker, CurrentJobStatus, JobKind, JobNotFound
 
 
@@ -23,6 +28,28 @@ def test_job_logs(client: Beaker, hello_world_job_id: str):
         ]
     )
     assert "Hello from Docker!" in logs
+
+
+@pytest.mark.parametrize(
+    "since, tail_lines",
+    [
+        (None, None),
+        (None, 10),
+        (datetime.utcnow(), None),
+        (timedelta(hours=1), None),
+    ],
+)
+def test_structured_job_logs(
+    client: Beaker,
+    hello_world_job_id: str,
+    since: Optional[Union[datetime, timedelta]],
+    tail_lines: Optional[int],
+):
+    list(
+        client.job.structured_logs(
+            hello_world_job_id, quiet=True, since=since, tail_lines=tail_lines
+        )
+    )
 
 
 def test_job_logs_since(client: Beaker, hello_world_job_id: str):

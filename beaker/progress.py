@@ -232,9 +232,15 @@ def get_jobs_progress(quiet: bool = False) -> Progress:
         )
 
 
-def get_logs_progress(quiet: bool = False) -> Progress:
+def get_logs_progress(quiet: bool = False, by_line: bool = False) -> Progress:
     if quiet:
         return QuietProgress()  # type: ignore
+    elif by_line:
+        return Progress(
+            "[progress.description]{task.description} {task.completed} lines",
+            TimeElapsedColumn(),
+            SpinnerColumn(),
+        )
     else:
         return Progress(
             "[progress.description]{task.description}",

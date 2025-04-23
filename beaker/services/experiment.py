@@ -409,6 +409,9 @@ class ExperimentClient(ServiceClient):
             will be returned.
 
         .. seealso::
+            :meth:`structured_logs()`
+
+        .. seealso::
             :meth:`Beaker.job.logs() <JobClient.logs>`
 
         :param experiment: The experiment ID, name, or object.
@@ -439,6 +442,60 @@ class ExperimentClient(ServiceClient):
                     f"'{task if isinstance(task, str) else task.display_name}'"
                 )
         return self.beaker.job.logs(job.id, quiet=quiet, since=since)
+
+    def structured_logs(
+        self,
+        experiment: Union[str, Experiment],
+        task: Optional[Union[str, Task]] = None,
+        quiet: bool = False,
+        since: Optional[Union[datetime, timedelta]] = None,
+        tail_lines: Optional[int] = None,
+        follow: Optional[bool] = None,
+    ) -> Generator[JobLog, None, None]:
+        """
+        Download/stream structured :class:`~beaker.data_model.job.JobLog` objects from an experiment.
+
+        Returns a generator of log objects.
+
+        .. important::
+            When there are multiple jobs for the given experiment / task, the logs for the latest job
+            will be returned.
+
+        .. seealso::
+            :meth:`logs()`
+
+        .. seealso::
+            :meth:`Beaker.job.structured_logs() <JobClient.logs>`
+
+        :param experiment: The experiment ID, name, or object.
+        :param task: The task ID, name, or object of a specific task from the Beaker experiment
+            to fetch logs for. Required if there are multiple tasks in the experiment.
+        :param quiet: If ``True``, progress won't be displayed.
+        :param since: Only show logs since a particular time. Could be a :class:`~datetime.datetime` object
+            (naive datetimes will be treated as UTC) or a :class:`~datetime.timedelta`
+            (e.g. `timedelta(seconds=60)`, which will show you the logs beginning 60 seconds ago).
+        :param tail_lines: Start tailing with the last ``tail_lines`` lines.
+        :param follow: Keep streaming as new log lines come in.
+
+        :raises ValueError: The experiment has no tasks or jobs, or the experiment has multiple tasks but
+            ``task`` is not specified.
+        :raises TaskNotFound: If the given task doesn't exist.
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises RpcError: Any other RPC error.
+        """
+        exp = self.resolve_experiment(experiment)
+        job = self.latest_job(exp, task=task, ensure_finalized=False)
+        if job is None:
+            if task is None:
+                raise ValueError(f"Experiment {exp.id} has no jobs")
+            else:
+                raise ValueError(
+                    f"Experiment {exp.id} has no jobs for task "
+                    f"'{task if isinstance(task, str) else task.display_name}'"
+                )
+        return self.beaker.job.structured_logs(
+            job.id, quiet=quiet, since=since, tail_lines=tail_lines, follow=follow
+        )
 
     def metrics(
         self, experiment: Union[str, Experiment], task: Optional[Union[str, Task]] = None
@@ -776,6 +833,9 @@ class ExperimentClient(ServiceClient):
         :class:`~beaker.data_model.experiment.Experiment` object.
 
         .. seealso::
+            :meth:`follow_structured()`
+
+        .. seealso::
             :meth:`logs()`
 
         .. seealso::
@@ -851,10 +911,92 @@ class ExperimentClient(ServiceClient):
                 )
             time.sleep(2.0)
 
-        assert job is not None  # for mypy
+        assert job is not None
         yield from self.beaker.job.follow(
-            job, strict=strict, include_timestamps=include_timestamps, since=since
+            job,
+            timeout=None if timeout is None else max(timeout - (time.monotonic() - start), 1.0),
+            strict=strict,
+            include_timestamps=include_timestamps,
+            since=since,
         )
+        return self.get(experiment.id if isinstance(experiment, Experiment) else experiment)
+
+    def follow_structured(
+        self,
+        experiment: Union[str, Experiment],
+        task: Optional[Union[str, Task]] = None,
+        timeout: Optional[float] = None,
+        strict: bool = False,
+        since: Optional[Union[datetime, timedelta]] = None,
+        tail_lines: Optional[int] = None,
+    ) -> Generator[JobLog, None, Experiment]:
+        """
+        Follow structured :class:`~beaker.data_model.job.JobLog` objects from a job
+        in an experiment using the RPC interface.
+        The return value of the generator is the finalized :class:`~beaker.data_model.experiment.Experiment`
+        object.
+
+        .. seealso::
+            :meth:`follow()`
+
+        .. seealso::
+            :meth:`Beaker.job.follow_structured() <JobClient.follow_structured>`
+
+        :param experiment: Experiment ID, name, or object.
+        :param task: The task ID, name, or object of a specific task from the Beaker experiment
+            to follow. Required if there are multiple tasks in the experiment.
+        :param timeout: Maximum amount of time to wait for (in seconds).
+        :param strict: If ``True``, the exit code of each job will be checked, and a
+            :class:`~beaker.exceptions.JobFailedError` will be raised for non-zero exit codes.
+        :param since: Only show logs since a particular time. Could be a :class:`~datetime.datetime` object
+            (naive datetimes will be treated as UTC) or a :class:`~datetime.timedelta`
+            (e.g. `timedelta(seconds=60)`, which will show you the logs beginning 60 seconds ago).
+        :param tail_lines: Start tailing with the last ``tail_lines`` lines.
+
+        :raises ExperimentNotFound: If any experiment can't be found.
+        :raises ValueError: The experiment has no tasks or jobs, or the experiment has multiple tasks but
+            ``task`` is not specified.
+        :raises TaskNotFound: If the given task doesn't exist.
+        :raises TaskStoppedError: If ``strict=True`` and a task is stopped
+            before a corresponding job is initialized.
+        :raises JobTimeoutError: If the ``timeout`` expires.
+        :raises JobFailedError: If ``strict=True`` and any job finishes with a non-zero exit code.
+        :raises RpcError: Any other RPC error.
+        """
+        if timeout is not None and timeout <= 0:
+            raise ValueError("'timeout' must be a positive number")
+
+        start = time.monotonic()
+        job: Optional[Job] = None
+        while job is None:
+            actual_task = self._task(experiment, task=task)
+            if actual_task.jobs:
+                job = self.latest_job(experiment, task=actual_task)
+            elif not actual_task.schedulable:
+                if strict:
+                    raise TaskStoppedError(
+                        task.id if isinstance(task, Task) else task, task=actual_task
+                    )
+                else:
+                    return self.get(
+                        experiment.id if isinstance(experiment, Experiment) else experiment
+                    )
+
+            if timeout is not None and time.monotonic() - start >= timeout:
+                raise JobTimeoutError(
+                    "Job for task failed to initialize within '{timeout}' seconds"
+                )
+            time.sleep(2.0)
+
+        assert job is not None
+        yield from self.beaker.job.follow_structured(
+            job,
+            timeout=None if timeout is None else max(timeout - (time.monotonic() - start), 1.0),
+            strict=strict,
+            since=since,
+            tail_lines=tail_lines,
+        )
+
         return self.get(experiment.id if isinstance(experiment, Experiment) else experiment)
 
     def url(

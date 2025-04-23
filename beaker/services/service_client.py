@@ -2,7 +2,7 @@ import io
 import json
 import logging
 import urllib.parse
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple, Union
 
 import docker
 import grpc
@@ -154,13 +154,33 @@ class ServiceClient:
 
     def rpc_request(
         self,
-        request: Message,
         method: grpc.UnaryUnaryMultiCallable,
+        request: Message,
         exceptions_for_status: Optional[Dict[grpc.StatusCode, Exception]] = None,
     ) -> Dict[str, Any]:
         try:
             response = method(request, metadata=self.beaker.rpc_call_metadata)
             return protobuf_to_json_dict(response)
+        except RpcError as e:
+            if (
+                exceptions_for_status is not None
+                and isinstance(e, grpc.Call)
+                and e.code() in exceptions_for_status
+            ):
+                raise exceptions_for_status[e.code()]
+            else:
+                raise
+
+    def rpc_streaming_request(
+        self,
+        method: grpc.UnaryStreamMultiCallable,
+        request: Message,
+        exceptions_for_status: Optional[Dict[grpc.StatusCode, Exception]] = None,
+    ) -> Generator[Dict[str, Any], None, None]:
+        try:
+            response = method(request, metadata=self.beaker.rpc_call_metadata)
+            for item in response:
+                yield protobuf_to_json_dict(item)
         except RpcError as e:
             if (
                 exceptions_for_status is not None

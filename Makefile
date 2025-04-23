@@ -1,5 +1,12 @@
 BEAKER_PROTO_PATH = "../beaker/msg"
 
+.PHONY : checks
+checks :
+	mypy .
+	ruff check .
+	black . --check
+	isort --check .
+
 .PHONY : docs
 docs :
 	rm -rf docs/build/
