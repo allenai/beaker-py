@@ -1,3 +1,4 @@
+import base64
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -224,6 +225,8 @@ class JobClient(ServiceClient):
                     exceptions_for_status={grpc.StatusCode.NOT_FOUND: JobNotFound(job_id)},
                 ):
                     progress.update(task_id, advance=1)
+                    if "message" in data:
+                        data["message"] = base64.b64decode(data["message"]).decode()
                     yield JobLog.from_json(data)
 
     def metrics(self, job: Union[str, Job]) -> Optional[Dict[str, Any]]:
