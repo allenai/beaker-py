@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Fixed
+
+- Fixed a bug where some remaining logs lines might not get downloaded from `Beaker.job.follow_structured()`.
+
 ## [v1.36.0](https://github.com/allenai/beaker-py/releases/tag/v1.36.0) - 2025-04-23
 
 ### Added

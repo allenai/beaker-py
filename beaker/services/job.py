@@ -627,7 +627,7 @@ class JobClient(ServiceClient):
         job = self.get(job.id if isinstance(job, Job) else job)
 
         for job_log in self.structured_logs(
-            job, quiet=True, since=since, tail_lines=tail_lines, follow=not job.is_finalized
+            job, quiet=True, since=since, tail_lines=tail_lines, follow=True
         ):
             yield job_log
 
