@@ -1,18 +1,16 @@
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Set, Union
+from typing import Any, Dict, Generator, List, Optional, Set, Union
 
 import grpc
+from rich.progress import Progress, TaskID
 
 from ..data_model import *
 from ..exceptions import *
-from ..progress import get_logs_progress
+from ..progress import get_jobs_progress, get_logs_progress
 from ..util import format_since, log_and_wait, split_timestamp
 from .service_client import ServiceClient
-
-if TYPE_CHECKING:
-    from rich.progress import Progress, TaskID
 
 
 class JobClient(ServiceClient):
@@ -671,8 +669,6 @@ class JobClient(ServiceClient):
                     f"[b cyan]{exp_id_to_name[j.execution.experiment]}[/] "
                     f"\N{rightwards arrow} [i]{task_id_to_name[j.execution.task]}[/]"
                 )
-
-        from ..progress import get_jobs_progress
 
         job_ids: List[str] = []
         start = time.monotonic()

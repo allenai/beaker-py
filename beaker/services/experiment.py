@@ -17,6 +17,7 @@ from typing import (
 from ..aliases import PathOrStr
 from ..data_model import *
 from ..exceptions import *
+from ..progress import get_exps_and_jobs_progress
 from .service_client import ServiceClient
 
 if TYPE_CHECKING:
@@ -661,8 +662,6 @@ class ExperimentClient(ServiceClient):
         """
         if timeout is not None and timeout <= 0:
             raise ValueError("'timeout' must be a positive number")
-
-        from ..progress import get_exps_and_jobs_progress
 
         start = time.monotonic()
         # Initialize progress trackers.
