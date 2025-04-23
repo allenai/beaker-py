@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.36.0](https://github.com/allenai/beaker-py/releases/tag/v1.36.0) - 2025-04-23
+
 ### Added
 
 - Added `Beaker.(job|experiment).follow_structured()` and `Beaker.(job|experiment).structured_logs()` methods, which stream structured log events using the RPC interface.
