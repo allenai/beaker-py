@@ -26,8 +26,8 @@ dependencies = [
     "rich>=12.3,<14.0",
     "PyYAML",
     "docker>=5.0,<8.0",
-    "grpcio==1.70.0",
-    "protobuf",
+    "grpcio>=1.70.0",
+    "protobuf>=5.0",
 ]
 
 [project.optional-dependencies]
