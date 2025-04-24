@@ -38,6 +38,7 @@ __all__ = [
     "AccountNotFound",
     "OrganizationNotFound",
     "OrganizationNotSet",
+    "BudgetNotFound",
     "ConfigurationError",
     "ImageNotFound",
     "ImageConflict",
@@ -105,6 +106,12 @@ class OrganizationNotSet(BeakerError):
     """
     Raised when an identifying doesn't start with an organization name and
     :data:`Config.default_org <beaker.Config.default_org>` is not set.
+    """
+
+
+class BudgetNotFound(NotFoundError):
+    """
+    Raised when a specified budget doesn't exist.
     """
 
 

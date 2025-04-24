@@ -37,6 +37,16 @@ def workspace_name() -> str:
 
 
 @pytest.fixture()
+def budget_name() -> str:
+    return "ai2/oe-training"
+
+
+@pytest.fixture()
+def budget_id() -> str:
+    return "01HPM52AQC9E4NGTDV4K34CYTX"
+
+
+@pytest.fixture()
 def alternate_workspace_name() -> str:
     name = "ai2/beaker-py-testing-alternative"
     return name

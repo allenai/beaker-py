@@ -2,6 +2,9 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, Generator, List, Optional, Type, TypeVar, Union
 
+import grpc
+
+from .. import beaker_pb2 as pb2
 from ..data_model import *
 from ..data_model.base import BasePage
 from ..exceptions import *
@@ -827,6 +830,29 @@ class WorkspaceClient(ServiceClient):
             exceptions_for_status={404: WorkspaceNotFound(self._not_found_err_msg(workspace_name))},
         )
         return self.get_permissions(workspace=workspace_name)
+
+    def set_budget(
+        self, budget: str, workspace: Optional[Union[str, Workspace]] = None
+    ) -> pb2.UpdateWorkspaceResponse:
+        """
+        :raises BudgetNotFound: If the budget doesn't exist.
+        :raises WorkspaceNotFound: If the workspace doesn't exist.
+        :raises WorkspaceNotSet: If neither ``workspace`` nor
+            :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` are set.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RpcError: Any other RPC error that can occur.
+        """
+        workspace_id = self.resolve_workspace(workspace).id
+        budget_id = self.resolve_budget(budget)
+        with self.rpc_connection() as service:
+            return self.rpc_request(
+                service.UpdateWorkspace,
+                pb2.UpdateWorkspaceRequest(workspace_id=workspace_id, budget_id=budget_id),
+                pb2.UpdateWorkspaceResponse,
+                exceptions_for_status={
+                    grpc.StatusCode.NOT_FOUND: WorkspaceNotFound(workspace_id),
+                },
+            )
 
     def url(self, workspace: Optional[Union[str, Workspace]] = None) -> str:
         """

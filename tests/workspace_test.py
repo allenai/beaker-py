@@ -5,6 +5,7 @@ import pytest
 from beaker import (
     Account,
     Beaker,
+    BudgetNotFound,
     Permission,
     Workspace,
     WorkspaceNotFound,
@@ -131,3 +132,9 @@ def test_workspace_url(client: Beaker):
         client.workspace.url("ai2/beaker-py-testing")
         == "https://beaker.org/ws/ai2/beaker-py-testing"
     )
+
+
+def test_resolve_budget(client: Beaker, budget_name: str, budget_id: str):
+    assert client.workspace.resolve_budget(budget_name) == budget_id
+    with pytest.raises(BudgetNotFound):
+        client.workspace.resolve_budget("ai2/foo-bar")

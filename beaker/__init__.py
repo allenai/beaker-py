@@ -326,6 +326,7 @@ __all__ = [
     "AccountNotFound",
     "OrganizationNotFound",
     "OrganizationNotSet",
+    "BudgetNotFound",
     "ConfigurationError",
     "ImageNotFound",
     "ImageConflict",

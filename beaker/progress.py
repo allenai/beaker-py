@@ -2,6 +2,7 @@ import io
 import time
 from typing import List, Optional, Tuple, Union
 
+import rich
 from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
@@ -18,6 +19,7 @@ from rich.progress import (
     TimeElapsedColumn,
     TransferSpeedColumn,
 )
+from rich.status import Status
 from rich.table import Table
 from rich.text import Text
 
@@ -52,6 +54,21 @@ class QuietLive:
     """
     Quiet version of rich's `Live`.
     """
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):  # type: ignore
+        del args, kwargs
+
+
+class QuietStatus:
+    """
+    Quiet version of rich's `Status`.
+    """
+
+    def update(self, *args, **kwargs):
+        del args, kwargs
 
     def __enter__(self):
         return self
@@ -341,3 +358,12 @@ def get_image_upload_progress(quiet: bool = False) -> Progress:
 
 def get_image_download_progress(quiet: bool = False) -> Progress:
     return get_image_upload_progress(quiet)
+
+
+def get_status(
+    description: str, spinner: str = "point", speed: float = 0.8, quiet: bool = False
+) -> Status:
+    if quiet:
+        return QuietStatus()  # type: ignore
+    else:
+        return rich.get_console().status(description, spinner=spinner, speed=speed)
