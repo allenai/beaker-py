@@ -1036,16 +1036,22 @@ class ExperimentClient(ServiceClient):
         experiment: Union[str, Experiment],
         task: Optional[Union[str, Task]] = None,
         ensure_finalized: bool = False,
+        strict: bool = True,
     ) -> Optional[Job]:
         """
         Get the latest job that ran for a task in an experiment.
 
+        .. seealso::
+            :meth:`all_latest_jobs()`
+
         :param experiment: The experiment ID, name, or object.
         :param task: The take ID, name, or object.
         :param ensure_finalized: Consider only finalized jobs.
+        :param strict: If ``True``, a ``ValueError`` is raised when ``task`` isn't specified
+            and the experiment has multiple tasks.
 
         :raises ValueError: The experiment has no tasks, or the experiment has multiple tasks but
-            ``task`` is not specified.
+            ``task`` is not specified and ``strict=True`` (the default).
         :raises TaskNotFound: If the given task doesn't exist.
         :raises ExperimentNotFound: If the experiment can't be found.
         :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
@@ -1053,11 +1059,36 @@ class ExperimentClient(ServiceClient):
             Beaker server.
         """
         return self._latest_job(
-            self._task(experiment, task).jobs, ensure_finalized=ensure_finalized
+            self._task(experiment, task, strict=strict).jobs, ensure_finalized=ensure_finalized
         )
 
+    def all_latest_jobs(
+        self, experiment: Union[str, Experiment], ensure_finalized: bool = False
+    ) -> List[Optional[Job]]:
+        """
+        Get the latest job for each task in the experiment.
+
+        .. seealso::
+            :meth:`latest_job()`
+
+        :param experiment: The experiment ID, name, or object.
+        :param ensure_finalized: Consider only finalized jobs.
+
+        :raises ExperimentNotFound: If the experiment can't be found.
+        :raises BeakerError: Any other :class:`~beaker.exceptions.BeakerError` type that can occur.
+        :raises RequestException: Any other exception that can occur when contacting the
+            Beaker server.
+        """
+        jobs: List[Optional[Job]] = []
+        for task in self.tasks(experiment):
+            jobs.append(self.latest_job(experiment, task=task, ensure_finalized=ensure_finalized))
+        return jobs
+
     def _task(
-        self, experiment: Union[str, Experiment], task: Optional[Union[str, Task]] = None
+        self,
+        experiment: Union[str, Experiment],
+        task: Optional[Union[str, Task]] = None,
+        strict: bool = True,
     ) -> Task:
         tasks = list(self.tasks(experiment))
         exp_id = experiment if isinstance(experiment, str) else experiment.id
@@ -1066,7 +1097,7 @@ class ExperimentClient(ServiceClient):
             raise ValueError(f"Experiment '{exp_id}' has no tasks")
         else:
             if task is None:
-                if len(tasks) == 1:
+                if len(tasks) == 1 or not strict:
                     return tasks[0]
                 else:
                     raise ValueError(

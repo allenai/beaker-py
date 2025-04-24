@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from .base import BaseModel
@@ -12,3 +13,4 @@ class Account(BaseModel):
     institution: Optional[str] = None
     pronouns: Optional[str] = None
     email: Optional[str] = None
+    created: Optional[datetime] = None

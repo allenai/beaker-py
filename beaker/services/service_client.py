@@ -2,21 +2,36 @@ import io
 import json
 import logging
 import urllib.parse
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import docker
 import grpc
 import requests
 from google.protobuf.message import Message
 
+from .. import beaker_pb2 as pb2
 from ..config import Config
 from ..data_model import *
 from ..data_model.base import BaseModel
 from ..exceptions import *
-from ..util import protobuf_to_json_dict, retriable
+from ..util import retriable
 
 if TYPE_CHECKING:
     from ..client import Beaker
+
+
+T = TypeVar("T")
 
 
 class ServiceClient:
@@ -152,15 +167,19 @@ class ServiceClient:
             with self.beaker._make_session() as session:
                 return make_request(session)
 
+    def rpc_connection(self):
+        return self.beaker.rpc_connection()
+
     def rpc_request(
         self,
         method: grpc.UnaryUnaryMultiCallable,
         request: Message,
+        response_type: Type[T],
         exceptions_for_status: Optional[Dict[grpc.StatusCode, Exception]] = None,
-    ) -> Dict[str, Any]:
+    ) -> T:
+        del response_type
         try:
-            response = method(request, metadata=self.beaker.rpc_call_metadata)
-            return protobuf_to_json_dict(response)
+            return cast(T, method(request, metadata=self.beaker.rpc_call_metadata))
         except RpcError as e:
             if (
                 exceptions_for_status is not None
@@ -175,12 +194,14 @@ class ServiceClient:
         self,
         method: grpc.UnaryStreamMultiCallable,
         request: Message,
+        response_type: Type[T],
         exceptions_for_status: Optional[Dict[grpc.StatusCode, Exception]] = None,
-    ) -> Generator[Dict[str, Any], None, None]:
+    ) -> Generator[T, None, None]:
+        del response_type
         try:
             response = method(request, metadata=self.beaker.rpc_call_metadata)
             for item in response:
-                yield protobuf_to_json_dict(item)
+                yield cast(T, item)
         except RpcError as e:
             if (
                 exceptions_for_status is not None
@@ -288,6 +309,21 @@ class ServiceClient:
             return org
         else:
             return self.beaker.organization.get(org)
+
+    def resolve_budget(self, budget: str) -> str:
+        if "/" not in budget:
+            return budget
+        org_name, budget_name = budget.split("/", 1)
+        with self.rpc_connection() as service:
+            data = self.rpc_request(
+                service.ResolveBudgetName,
+                pb2.ResolveBudgetNameRequest(organization_name=org_name, budget_name=budget_name),
+                pb2.ResolveBudgetNameResponse,
+                exceptions_for_status={
+                    grpc.StatusCode.NOT_FOUND: BudgetNotFound(budget),
+                },
+            )
+        return data.budget_id
 
     def url_quote(self, id: str) -> str:
         return urllib.parse.quote(id, safe="")

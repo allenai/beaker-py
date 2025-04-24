@@ -1,16 +1,16 @@
-import base64
 import time
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Generator, List, Optional, Set, Union
 
 import grpc
 from rich.progress import Progress, TaskID
 
+from .. import beaker_pb2 as pb2
 from ..data_model import *
 from ..exceptions import *
 from ..progress import get_jobs_progress, get_logs_progress
-from ..util import format_since, log_and_wait, split_timestamp
+from ..util import format_since, log_and_wait, protobuf_to_json_dict, split_timestamp
 from .service_client import ServiceClient
 
 
@@ -207,7 +207,7 @@ class JobClient(ServiceClient):
         """
         job_id = job.id if isinstance(job, Job) else job
 
-        with self.beaker.rpc_connection() as service:
+        with self.rpc_connection() as service:
             opts: Dict[str, Any] = {}
             if since is not None:
                 opts["since"] = since if isinstance(since, datetime) else datetime.utcnow() - since
@@ -216,18 +216,22 @@ class JobClient(ServiceClient):
             if follow is not None:
                 opts["follow"] = follow
 
-            request = self.beaker.pb2.StreamJobLogsRequest(job_id=job_id, **opts)
+            request = pb2.StreamJobLogsRequest(job_id=job_id, **opts)
             with get_logs_progress(quiet, by_line=True) as progress:
                 task_id = progress.add_task("Downloading logs:")
-                for data in self.beaker.job.rpc_streaming_request(
+                for data in self.rpc_streaming_request(
                     service.StreamJobLogs,
                     request,
+                    pb2.JobLog,
                     exceptions_for_status={grpc.StatusCode.NOT_FOUND: JobNotFound(job_id)},
                 ):
                     progress.update(task_id, advance=1)
-                    if "message" in data:
-                        data["message"] = base64.b64decode(data["message"]).decode()
-                    yield JobLog.from_json(data)
+                    yield JobLog(
+                        message=data.message.decode(),
+                        timestamp=datetime.fromtimestamp(data.timestamp.seconds).replace(
+                            microsecond=data.timestamp.nanos // 1_000, tzinfo=timezone.utc
+                        ),
+                    )
 
     def metrics(self, job: Union[str, Job]) -> Optional[Dict[str, Any]]:
         """
@@ -733,15 +737,19 @@ class JobClient(ServiceClient):
         :raises RpcError: Any other RPC error.
         """
         job_id = job.id if isinstance(job, Job) else job
-        with self.beaker.rpc_connection() as service:
-            opts = self.beaker.pb2.ListSummarizedJobEventsRequest.Opts(job_id=job_id)
-            request = self.beaker.pb2.ListSummarizedJobEventsRequest(options=opts)
-            data = self.rpc_request(
+        with self.rpc_connection() as service:
+            response = self.rpc_request(
                 service.ListSummarizedJobEvents,
-                request,
+                pb2.ListSummarizedJobEventsRequest(
+                    options=pb2.ListSummarizedJobEventsRequest.Opts(job_id=job_id)
+                ),
+                pb2.ListSummarizedJobEventsResponse,
                 exceptions_for_status={grpc.StatusCode.NOT_FOUND: JobNotFound(job_id)},
             )
-        return [SummarizedJobEvent.from_json(d) for d in data["summarizedJobEvents"]]
+            return [
+                SummarizedJobEvent.from_json(protobuf_to_json_dict(d))
+                for d in response.summarized_job_events
+            ]
 
     def url(self, job: Union[str, Job]) -> str:
         job_id = job.id if isinstance(job, Job) else job
