@@ -12,7 +12,7 @@ def test_warn_for_newer_version(monkeypatch):
 
     InternalConfig().save()
 
-    monkeypatch.setattr(Beaker, "CLIENT_VERSION", "0.1.0")
+    monkeypatch.setattr(Beaker, "CLIENT_VERSION", "1.0.0")
     monkeypatch.setattr(beaker.client, "_LATEST_VERSION_CHECKED", False)
 
     with pytest.warns(UserWarning, match="Please upgrade with"):
