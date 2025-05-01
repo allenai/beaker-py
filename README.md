@@ -21,6 +21,12 @@
 <br/>
 </div>
 
+<hr/>
+
+❗ NOTICE: this project has moved! The latest version of beaker-py is now maintained in [allenai/beaker](https://github.com/allenai/beaker/tree/main/bindings/python).
+
+<hr/>
+
 ## Features
 
 <!-- start features -->
