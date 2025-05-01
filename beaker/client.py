@@ -161,11 +161,15 @@ class Beaker:
             )
             if response.ok:
                 latest_version = packaging.version.parse(response.json()["tag_name"])
-                if latest_version > packaging.version.parse(self.CLIENT_VERSION):
+                current_version = packaging.version.parse(self.CLIENT_VERSION)
+                if (
+                    latest_version > current_version
+                    and latest_version.major == current_version.major
+                ):
                     warnings.warn(
                         f"You're using beaker-py v{self.CLIENT_VERSION}, "
                         f"but a newer version (v{latest_version}) is available.\n\n"
-                        f"Please upgrade with `pip install --upgrade beaker-py`.\n\n"
+                        f"Please upgrade with `pip install --upgrade 'beaker-py<{current_version.major + 1}.0'`.\n\n"
                         f"You can find the release notes for v{latest_version} at "
                         f"https://github.com/allenai/beaker-py/releases/tag/v{latest_version}\n",
                         UserWarning,
