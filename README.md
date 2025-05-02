@@ -9,9 +9,6 @@
 <a href="https://github.com/allenai/beaker-py/actions">
     <img alt="CI" src="https://github.com/allenai/beaker-py/actions/workflows/main.yml/badge.svg">
 </a>
-<a href="https://pypi.org/project/beaker-py/">
-    <img alt="PyPI" src="https://img.shields.io/pypi/v/beaker-py">
-</a>
 <a href="https://beaker-py.readthedocs.io/en/latest/">
     <img src="https://readthedocs.org/projects/beaker-py/badge/?version=latest" alt="Documentation Status" />
 </a>
@@ -23,7 +20,7 @@
 
 <hr/>
 
-❗ NOTICE: this project has moved! The latest version of beaker-py is now maintained in [allenai/beaker](https://github.com/allenai/beaker/tree/main/bindings/python).
+❗ NOTICE: this project has moved! The latest version of beaker-py is now maintained in [allenai/beaker](https://github.com/allenai/beaker/tree/main/bindings/python). Version 1 will continue to survive here for folks that need it.
 
 <hr/>
 
@@ -73,7 +70,7 @@
 **beaker-py** is available [on PyPI](https://pypi.org/project/beaker-py/). Just run
 
 ```bash
-pip install beaker-py
+pip install beaker-py<2.0
 ```
 
 ### Installing from source
