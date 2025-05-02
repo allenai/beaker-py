@@ -70,7 +70,7 @@
 **beaker-py** is available [on PyPI](https://pypi.org/project/beaker-py/). Just run
 
 ```bash
-pip install beaker-py<2.0
+pip install 'beaker-py<2.0'
 ```
 
 ### Installing from source
