@@ -108,6 +108,7 @@ html_theme_options = {
             "class": "",
         },
     ],
+    "announcement": "<em>Important!</em> These docs are for <a href='https://github.com/allenai/beaker-py'>version 1</a> of beaker-py.",
 }
 
 # -- Hack to get rid of stupid warnings from sphinx_autodoc_typehints --------
