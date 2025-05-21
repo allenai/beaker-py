@@ -6,19 +6,7 @@
 <h1>beaker-py</h1>
 <p>A lightweight, standalone, pure Python client for <a href="https://beaker.org">Beaker</a></p>
 <hr/>
-<a href="https://github.com/allenai/beaker-py/actions">
-    <img alt="CI" src="https://github.com/allenai/beaker-py/actions/workflows/main.yml/badge.svg">
-</a>
-<a href="https://beaker-py.readthedocs.io/en/latest/">
-    <img src="https://readthedocs.org/projects/beaker-py/badge/?version=latest" alt="Documentation Status" />
-</a>
-<a href="https://github.com/allenai/beaker-py/blob/main/LICENSE">
-    <img alt="License" src="https://img.shields.io/github/license/allenai/beaker-py.svg?color=blue&cachedrop">
-</a>
-<br/>
 </div>
-
-<hr/>
 
 ❗ NOTICE: this project has moved! The latest version of beaker-py is now maintained in [allenai/beaker](https://github.com/allenai/beaker/tree/main/bindings/python). Version 1 will continue to survive here for folks that need it.
 
