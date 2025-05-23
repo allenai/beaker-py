@@ -8,7 +8,7 @@
 <hr/>
 </div>
 
-❗ NOTICE: this project has moved! The latest version of beaker-py is now maintained in [allenai/beaker](https://github.com/allenai/beaker/tree/main/bindings/python). Version 1 will continue to survive here for folks that need it.
+❗ NOTICE: this project has moved! The latest version of beaker-py is now maintained in [allenai/beaker](https://github.com/allenai/beaker/tree/main/bindings/python), with documentation at [beaker-py-docs.allen.ai](https://beaker-py-docs.allen.ai/index.html). Version 1 will continue to survive here for folks that need it. We also provide a [migration guide](https://github.com/allenai/beaker/blob/main/bindings/python/MIGRATION_GUIDE.md) to make upgrading easier.
 
 <hr/>
 
