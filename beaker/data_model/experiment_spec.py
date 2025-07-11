@@ -253,6 +253,7 @@ class Priority(StrEnum):
     Defines the urgency with which a task will run.
     """
 
+    immediate = "immediate"
     urgent = "urgent"
     high = "high"
     normal = "normal"
