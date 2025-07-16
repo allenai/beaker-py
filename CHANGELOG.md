@@ -9,6 +9,10 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added new `aliases` field to `Cluster` data model.
+
 ## [v1.36.3](https://github.com/allenai/beaker-py/releases/tag/v1.36.3) - 2025-07-11
 
 ### Added

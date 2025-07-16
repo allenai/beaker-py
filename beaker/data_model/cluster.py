@@ -29,6 +29,7 @@ class Cluster(BaseModel):
     preemptible: bool
     status: ClusterStatus
     status_message: Optional[str] = None
+    aliases: Optional[Tuple[str, ...]] = None
     node_spec: Optional[NodeResources] = None
     """
     The requested node configuration.
