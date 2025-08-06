@@ -37,14 +37,13 @@
 
 ## Quick links
 
-- [Documentation](https://beaker-py.readthedocs.io/)
 - [PyPI package](https://pypi.org/project/beaker-py/)
 - [Contributing](https://github.com/allenai/beaker-py/blob/main/CONTRIBUTING.md)
 - [License](https://github.com/allenai/beaker-py/blob/main/LICENSE)
 
 *See also 👇*
 
-- [Beaker (CLI)](https://github.com/allenai/beaker)
+- [Beaker project](https://github.com/allenai/beaker)
 - [Beaker Gantry](https://github.com/allenai/beaker-gantry)
 - Beaker-relevant *GitHub Actions*
   - [setup-beaker](https://github.com/marketplace/actions/setup-beaker)
@@ -105,5 +104,3 @@ The **beaker-py** equivalent would be:
 beaker.dataset.create("foo", ".")
 ```
 <!-- end quickstart -->
-
-See the [API Docs](https://beaker-py.readthedocs.io/en/latest/overview.html) to learn about the Beaker client's methods.
