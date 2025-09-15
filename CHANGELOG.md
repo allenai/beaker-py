@@ -9,6 +9,8 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+## [v1.37.0](https://github.com/allenai/beaker-py/releases/tag/v1.37.0) - 2025-09-15
+
 ### Added
 
 - Added missing `budget` field for `Experiment` data model.
