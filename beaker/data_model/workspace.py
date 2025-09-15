@@ -38,6 +38,7 @@ class Workspace(BaseModel):
     size: Optional[WorkspaceSize] = None
     owner: Optional[Account] = None
     owner_org: Optional[Organization] = None
+    budget: Optional[str] = None
     author: Account
     created: datetime
     modified: datetime
