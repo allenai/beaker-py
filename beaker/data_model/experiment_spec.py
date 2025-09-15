@@ -748,7 +748,7 @@ class ExperimentSpec(BaseModel, frozen=False):
     ... )
     """
 
-    budget: str
+    budget: Optional[str] = None
     """
     The name of the budget account for your team.
     See https://beaker-docs.apps.allenai.org/concept/budgets.html for more details.
@@ -800,7 +800,7 @@ class ExperimentSpec(BaseModel, frozen=False):
     @classmethod
     def new(
         cls,
-        budget: str,
+        budget: Optional[str] = None,
         task_name: str = "main",
         description: Optional[str] = None,
         cluster: Optional[Union[str, List[str]]] = None,
