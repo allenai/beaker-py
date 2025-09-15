@@ -16,6 +16,7 @@ class Experiment(BaseModel):
     name: Optional[str] = None
     full_name: Optional[str] = None
     description: Optional[str] = None
+    budget: Optional[str] = None
     author: Account
     created: datetime
     canceled: Optional[datetime] = None
