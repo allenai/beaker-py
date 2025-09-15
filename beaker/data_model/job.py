@@ -177,6 +177,7 @@ class Job(BaseModel):
     status: JobStatus
     name: Optional[str] = None
     cluster: Optional[str] = None
+    budget: Optional[str] = None
     execution: Optional[JobExecution] = None
     execution_results: Optional[Dict[str, Any]] = None
     node: Optional[str] = None
