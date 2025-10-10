@@ -115,6 +115,7 @@ class ImageSpec(BaseModel):
     image_id: Optional[str] = None
     image_tag: Optional[str] = None
     description: Optional[str] = None
+    budget: Optional[str] = None
 
 
 class ImagePatch(BaseModel):

@@ -24,6 +24,18 @@ def test_image_create_workflow(
     image = client.image.rename(image, alternate_beaker_image_name)
     assert image.name == alternate_beaker_image_name
 
+    # Test with budget parameter
+    print(f"Creating image with budget '{beaker_image_name}-budget'")
+    image_with_budget = client.image.create(
+        beaker_image_name + "-budget",
+        LOCAL_IMAGE_TAG,
+        budget="ai2/compute",
+        description="Test image with budget",
+    )
+    assert image_with_budget.name == beaker_image_name + "-budget"
+    assert image_with_budget.original_tag == LOCAL_IMAGE_TAG
+    client.image.delete(image_with_budget)
+
 
 def test_image_pull_workflow(client: Beaker, beaker_python_image_name: str):
     print(f"Pulling image '{beaker_python_image_name}' from Beaker")

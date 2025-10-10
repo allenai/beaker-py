@@ -58,6 +58,7 @@ class ImageClient(ServiceClient):
         image_tag: str,
         workspace: Optional[Union[Workspace, str]] = None,
         description: Optional[str] = None,
+        budget: Optional[str] = None,
         quiet: bool = False,
         commit: bool = True,
     ) -> Image:
@@ -69,6 +70,7 @@ class ImageClient(ServiceClient):
         :param workspace: The workspace to upload the image to. If not specified,
             :data:`Beaker.config.default_workspace <beaker.Config.default_workspace>` is used.
         :param description: Text description of the image.
+        :param budget: Budget to associate with the image (e.g. "ai2/compute"). If not specified, uses workspace default.
         :param quiet: If ``True``, progress won't be displayed.
         :param commit: Whether to commit the image after successful upload.
 
@@ -91,12 +93,13 @@ class ImageClient(ServiceClient):
         image_id = self.request(
             "images",
             method="POST",
-            data=ImageSpec(
-                workspace=workspace.id,
-                image_id=image.id,
-                image_tag=image_tag,
-                description=description,
-            ),
+            data={
+                "workspace": workspace.id,
+                "imageId": image.id,
+                "imageTag": image_tag,
+                "description": description,
+                "budget": self.resolve_budget(budget) if budget else None,
+            },
             query={"name": name},
             exceptions_for_status={409: ImageConflict(name)},
         ).json()["id"]
