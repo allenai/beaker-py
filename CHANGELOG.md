@@ -9,6 +9,11 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added optional `budget` parameter to `Beaker.dataset.create()` method for specifying budget during dataset creation.
+- Added optional `budget` parameter to `Beaker.image.create()` method for specifying budget during image creation.
+
 ## [v1.37.0](https://github.com/allenai/beaker-py/releases/tag/v1.37.0) - 2025-09-15
 
 ### Added

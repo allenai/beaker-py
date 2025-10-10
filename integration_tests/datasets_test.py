@@ -33,6 +33,7 @@ class TestDataset:
             client.dataset.sync(dataset, self.file_b.name)
 
     def test_dataset_basics(self, client: Beaker, dataset_name: str, alternate_dataset_name: str):
+        # Test create dataset without budget parameter
         dataset = client.dataset.create(
             dataset_name,
             self.file_a.name,
@@ -58,6 +59,23 @@ class TestDataset:
         # Rename it.
         dataset = client.dataset.rename(dataset, alternate_dataset_name)
         assert dataset.name == alternate_dataset_name
+
+        # Test with dataset creation with specified budget parameter
+        dataset_with_budget = client.dataset.create(
+            alternate_dataset_name + "-budget",
+            self.file_a.name,
+            budget="ai2/compute",
+            commit=True,
+            description="Testing dataset with budget",
+        )
+        assert dataset_with_budget.name == alternate_dataset_name + "-budget"
+
+        contents = b"".join(
+            list(client.dataset.stream_file(dataset_with_budget, Path(self.file_a.name).name))
+        )
+        assert contents == self.file_a_contents
+
+        client.dataset.delete(dataset_with_budget)
 
 
 class TestLargeFileDataset:

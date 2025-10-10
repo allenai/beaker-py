@@ -275,6 +275,7 @@ class DatasetInfo(BaseModel):
 class DatasetSpec(BaseModel):
     workspace: Optional[str] = None
     description: Optional[str] = None
+    budget: Optional[str] = None
 
 
 class DatasetPatch(BaseModel):
