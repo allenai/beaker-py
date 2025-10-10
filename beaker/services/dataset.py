@@ -144,7 +144,7 @@ class DatasetClient(ServiceClient):
                     "datasets",
                     method="POST",
                     query={"name": name},
-                    data=dict(
+                    data=DatasetSpec(
                         workspace=workspace_id,
                         description=description,
                         budget=self.resolve_budget(budget) if budget is not None else None,
