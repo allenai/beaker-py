@@ -9,6 +9,12 @@ use patch releases for compatibility fixes instead.
 
 ## Unreleased
 
+### Added
+
+- Added missing optional `budget` for `Image` data model.
+- Added missing optional `budget` for `Dataset` data model.
+
+
 ## [v1.38.0](https://github.com/allenai/beaker-py/releases/tag/v1.38.0) - 2025-10-10
 
 ### Added

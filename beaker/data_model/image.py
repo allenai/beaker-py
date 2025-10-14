@@ -34,6 +34,7 @@ class Image(BaseModel):
     description: Optional[str] = None
     committed: Optional[datetime] = None
     size: Optional[int] = None
+    budget: Optional[str] = None
 
     @property
     def display_name(self) -> str:
