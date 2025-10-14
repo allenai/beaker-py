@@ -72,6 +72,7 @@ class Dataset(BaseModel):
     workspace_ref: WorkspaceRef
     source_execution: Optional[str] = None
     storage: Optional[DatasetStorage] = None
+    budget: Optional[str] = None
 
     @property
     def display_name(self) -> str:
